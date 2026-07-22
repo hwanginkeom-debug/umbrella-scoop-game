@@ -218,16 +218,14 @@ scene.add((function() {
 })());
 
 // ============================================================
-// 물 수면
+// 물 (박스 형태로 차오름)
 // ============================================================
-var waterMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(W - 0.3, D - 0.3),
-    new THREE.MeshStandardMaterial({
-        color: 0x1a6688, transparent: true, opacity: 0.8,
-        roughness: 0.02, metalness: 0.55,
-    })
-);
-waterMesh.rotation.x = -Math.PI / 2;
+var waterGeo = new THREE.BoxGeometry(W - 0.3, 1, D - 0.3);
+var waterMat = new THREE.MeshStandardMaterial({
+    color: 0x1a6688, transparent: true, opacity: 0.75,
+    roughness: 0.02, metalness: 0.55,
+});
+var waterMesh = new THREE.Mesh(waterGeo, waterMat);
 waterMesh.position.y = 0.21;
 scene.add(waterMesh);
 
@@ -563,9 +561,11 @@ function animate() {
     controls.update();
     updateGame();
 
-    // 물 높이
-    var waterY = 0.21 + state.waterLevel * (H - 0.21);
-    waterMesh.position.y = waterY;
+    // 물 높이 (박스 scaleY로 차오름)
+    var waterHeight = state.waterLevel * (H - 0.21);
+    waterMesh.scale.y = Math.max(waterHeight, 0.01);
+    waterMesh.position.y = 0.21 + waterHeight / 2;
+    var waterY = 0.21 + waterHeight;
 
     // 비
     var rArr = rainGeo.attributes.position.array;
