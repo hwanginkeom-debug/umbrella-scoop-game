@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌂 우산 퍼내기 게임</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            overflow: hidden;
+            background: #1a1a2e;
+            font-family: 'Press Start 2P', monospace, sans-serif;
+            user-select: none;
+        }
+        canvas { display: block; cursor: pointer; }
+
+        /* 픽셀 배경 (그리스 고딕 양식 요소) */
+        #pixelBg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            image-rendering: pixelated;
+        }
+
+        #ui {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #timer {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #000, 0 0 8px rgba(255,215,0,0.5);
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+        #info {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            margin-top: 4px;
+            font-family: monospace;
+        }
+        #phase {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #7fdbff;
+            margin-top: 6px;
+            font-family: monospace;
+            text-shadow: 1px 1px 0 #000;
+        }
+        #level {
+            font-size: 0.75rem;
+            color: #ff6b6b;
+            margin-top: 4px;
+            font-family: monospace;
+        }
+
+        #gauge {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 55vh;
+            background: rgba(0,0,0,0.5);
+            border-radius: 4px;
+            border: 2px solid rgba(255,255,255,0.3);
+            overflow: hidden;
+            z-index: 100;
+            pointer-events: none;
+            image-rendering: pixelated;
+        }
+        #gaugeFill {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: 0%;
+            background: linear-gradient(to top, #1a5276, #2e86c1, #85c1e9);
+            transition: height 0.2s;
+        }
+        #gaugeFill.danger { background: linear-gradient(to top, #922b21, #e74c3c, #f1948a); }
+        #gaugePercent {
+            position: absolute;
+            top: -20px; left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem; font-weight: 700; color: #fff;
+            font-family: monospace;
+        }
+
+        #gameOver {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center; justify-content: center;
+            flex-direction: column; z-index: 200;
+        }
+        #gameOver.show { display: flex; }
+        #gameOver h1 { color: #ff6b6b; font-size: 2rem; margin-bottom: 1rem; font-family: monospace; text-shadow: 2px 2px 0 #000; }
+        #gameOver p { color: rgba(255,255,255,0.7); font-size: 1rem; margin-bottom: 1.5rem; font-family: monospace; }
+        #gameOver button {
+            padding: 12px 32px; font-size: 1rem; border: 3px solid #fff;
+            border-radius: 0; background: #2c3e50; color: #fff;
+            cursor: pointer; font-family: monospace; font-weight: 700;
+            text-transform: uppercase;
+        }
+        #gameOver button:hover { background: #3498db; }
+
+        .click-text {
+            position: fixed; pointer-events: none; z-index: 150;
+            font-size: 0.85rem; font-weight: 700; color: #ffd700;
+            font-family: monospace;
+            text-shadow: 1px 1px 0 #000, 2px 2px 0 rgba(0,0,0,0.3);
+            animation: floatUp 0.8s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-40px) scale(0.8); }
+        }
+
+        /* 번개 플래시 */
+        #lightning {
+            position: fixed; inset: 0;
+            background: rgba(255,255,255,0.9);
+            pointer-events: none; z-index: 90;
+            opacity: 0;
+            transition: opacity 0.05s;
+        }
+        #lightning.flash { opacity: 1; }
+    </style>
+</head>
+<body>
+    <canvas id="pixelBg"></canvas>
+    <div id="lightning"></div>
+
+    <div id="ui">
+        <div id="timer">0:00</div>
+        <div id="info">💧 0%</div>
+        <div id="phase">🪣 클릭해서 물을 퍼 담으세요!</div>
+        <div id="level">⚡ Lv.1</div>
+    </div>
+    <div id="gauge">
+        <div id="gaugeFill"></div>
+        <div id="gaugePercent">0%</div>
+    </div>
+    <div id="gameOver">
+        <h1>💀 GAME OVER</h1>
+        <p id="resultText"></p>
+        <button id="retryBtn">RETRY</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
