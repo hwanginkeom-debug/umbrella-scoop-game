@@ -7,93 +7,7 @@
  * - 픽셀 스타일 배경
  */
 
-// ============================================================
-// 픽셀 배경 (그리스 고딕 건축 요소)
-// ============================================================
-(function drawPixelBackground() {
-    var canvas = document.getElementById('pixelBg');
-    var ctx = canvas.getContext('2d');
-    var scale = 4; // 픽셀 크기
-    var w = Math.ceil(window.innerWidth / scale);
-    var h = Math.ceil(window.innerHeight / scale);
-    canvas.width = w;
-    canvas.height = h;
-    canvas.style.width = '100vw';
-    canvas.style.height = '100vh';
-    canvas.style.imageRendering = 'pixelated';
-
-    // 밤하늘 그라데이션
-    for (var y = 0; y < h; y++) {
-        var t = y / h;
-        var r = Math.floor(10 + t * 15);
-        var g = Math.floor(10 + t * 20);
-        var b = Math.floor(30 + t * 25);
-        ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-        ctx.fillRect(0, y, w, 1);
-    }
-
-    // 별
-    for (var i = 0; i < 40; i++) {
-        ctx.fillStyle = 'rgba(255,255,200,' + (0.3 + Math.random() * 0.7) + ')';
-        ctx.fillRect(Math.floor(Math.random() * w), Math.floor(Math.random() * h * 0.4), 1, 1);
-    }
-
-    // 고딕 기둥 (양쪽)
-    var colW = 3;
-    var colH = Math.floor(h * 0.7);
-    var colY = h - colH;
-    var colColor = '#3d3428';
-    var capColor = '#5a4a3a';
-
-    // 왼쪽 기둥들
-    for (var ci = 0; ci < 3; ci++) {
-        var cx = 2 + ci * 5;
-        ctx.fillStyle = colColor;
-        ctx.fillRect(cx, colY, colW, colH);
-        // 주두 (코린트식 장식)
-        ctx.fillStyle = capColor;
-        ctx.fillRect(cx - 1, colY - 2, colW + 2, 3);
-        ctx.fillRect(cx - 1, colY - 3, colW + 2, 1);
-        // 기둥 홈 (fluting)
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(cx + 1, colY + 2, 1, colH - 4);
-    }
-
-    // 오른쪽 기둥들
-    for (var ci2 = 0; ci2 < 3; ci2++) {
-        var cx2 = w - 5 - ci2 * 5;
-        ctx.fillStyle = colColor;
-        ctx.fillRect(cx2, colY, colW, colH);
-        ctx.fillStyle = capColor;
-        ctx.fillRect(cx2 - 1, colY - 2, colW + 2, 3);
-        ctx.fillRect(cx2 - 1, colY - 3, colW + 2, 1);
-        ctx.fillStyle = 'rgba(0,0,0,0.3)';
-        ctx.fillRect(cx2 + 1, colY + 2, 1, colH - 4);
-    }
-
-    // 아치 (상단)
-    var archY = colY - 4;
-    ctx.fillStyle = '#4a3c2e';
-    ctx.fillRect(0, archY, w, 2);
-    // 삼각 페디먼트 (양쪽)
-    for (var px = 0; px < 15; px++) {
-        var ph = Math.max(0, 5 - Math.abs(px - 7));
-        ctx.fillStyle = '#4a3c2e';
-        ctx.fillRect(px, archY - ph, 1, ph);
-        ctx.fillRect(w - 15 + px, archY - ph, 1, ph);
-    }
-
-    // 바닥 (대리석 패턴)
-    var floorY = h - 5;
-    ctx.fillStyle = '#2a2a3a';
-    ctx.fillRect(0, floorY, w, 5);
-    for (var fx = 0; fx < w; fx += 4) {
-        ctx.fillStyle = (fx % 8 === 0) ? '#333345' : '#222235';
-        ctx.fillRect(fx, floorY, 4, 5);
-    }
-
-    window.addEventListener('resize', drawPixelBackground);
-})();
+// 픽셀 배경 제거 — 3D 씬 배경 사용
 
 // ============================================================
 // 설정
@@ -151,11 +65,10 @@ var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHei
 camera.position.set(7, 7, 9);
 camera.lookAt(0, 2, 0);
 
-var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+var renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
-renderer.setClearColor(0x000000, 0); // 투명 → 뒤에 픽셀 배경 보임
 document.body.appendChild(renderer.domElement);
 
 var controls = new THREE.OrbitControls(camera, renderer.domElement);
