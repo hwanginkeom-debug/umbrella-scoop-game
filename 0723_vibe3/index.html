@@ -210,6 +210,13 @@
             if (!toothModel) return;
             toothModel.traverse(function(child) {
                 if (child.isMesh) {
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(function(m) { m.dispose(); });
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
                     child.material = new THREE.MeshPhysicalMaterial({
                         color: fruit.color,
                         roughness: fruit.roughness,
@@ -218,6 +225,7 @@
                         clearcoatRoughness: 0.3,
                         side: THREE.DoubleSide
                     });
+                    child.material.needsUpdate = true;
                 }
             });
         }
@@ -225,7 +233,7 @@
         function onClickHandler(e) {
             var timeDiff = Date.now() - mouseDownTime;
             var posDiff = Math.abs(e.clientX - mouseDownPos.x) + Math.abs(e.clientY - mouseDownPos.y);
-            if (timeDiff < 300 && posDiff < 10) changeFruit();
+            if (timeDiff < 500 && posDiff < 20) changeFruit();
         }
 
         function changeFruit() {
