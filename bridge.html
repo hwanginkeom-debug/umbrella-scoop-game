@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>바이브코딩 Lab</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5f5f5;
+            color: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            position: relative;
+            z-index: 10;
+            padding: 48px 40px 24px;
+        }
+
+        .header-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            position: relative;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+            padding: 24px 40px 60px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: #fff;
+            padding: 28px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        .card:hover {
+            background: #fafafa;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .card-category {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #999;
+            border: 1px solid #ddd;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 2px;
+            margin-bottom: 16px;
+            align-self: flex-start;
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+
+        .card p {
+            font-size: 0.82rem;
+            color: #666;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .card-date {
+            font-size: 0.72rem;
+            color: #aaa;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .card-arrow {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        .card:hover .card-arrow {
+            transform: translate(3px, -3px);
+        }
+
+        .card-arrow svg {
+            width: 14px;
+            height: 14px;
+            fill: none;
+            stroke: #1a1a1a;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 32px 20px 16px; }
+            .grid { 
+                padding: 16px 20px 40px; 
+                grid-template-columns: 1fr; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-title">바이브코딩 Lab</div>
+    </header>
+
+    <div class="grid" id="projectGrid"></div>
+
+    <script>
+        const projects = [
+            {
+                icon: '🌂',
+                title: '우산 퍼내기 게임',
+                description: '빗물이 차오르기 전에 클릭으로 물을 퍼내는 서바이벌 게임.',
+                path: './index.html',
+                category: '게임',
+                date: '2026.07.16'
+            },
+            {
+                icon: '🦷',
+                title: '어금니 과일 3D',
+                description: '어금니 모양의 3D 과일. 클릭하면 딸기, 수박, 키위로 변신.',
+                path: './0723_바이브코딩 3/index.html',
+                category: '아트',
+                date: '2026.07.23'
+            }
+        ];
+
+        function renderProjects() {
+            const grid = document.getElementById('projectGrid');
+            let html = '';
+
+            projects.forEach((project) => {
+                html += `
+                    <a class="card" href="${project.path}">
+                        <span class="card-category">${project.category}</span>
+                        <h2>${project.icon} ${project.title}</h2>
+                        <p>${project.description}</p>
+                        <div class="card-footer">
+                            <span class="card-date">${project.date}</span>
+                            <div class="card-arrow">
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        renderProjects();
+    </script>
+</body>
+</html>
