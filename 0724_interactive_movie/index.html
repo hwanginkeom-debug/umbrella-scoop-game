@@ -310,7 +310,7 @@ function drawBlocks(bl,offFn){
     for(let x=0;x<SAMPLE_W;x++){
       const c=PALETTE[bl[y*SAMPLE_W+x]];
       ctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
-      ctx.fillRect(x*BLOCK+ox,y*BLOCK,BLOCK,BLOCK);
+      ctx.fillRect(Math.floor(x*BLOCK+ox),y*BLOCK,BLOCK+1,BLOCK);
     }
   }
 }
