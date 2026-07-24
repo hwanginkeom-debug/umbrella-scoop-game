@@ -11,8 +11,8 @@ body{background:#000;overflow:hidden;display:flex;flex-direction:column;align-it
 canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
 #narration{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#eee;font-size:14px;font-family:monospace;text-align:center;max-width:85%;opacity:0;transition:opacity .6s;z-index:100;letter-spacing:.5px;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7)}
 #narration.show{opacity:1}
-#progress-wrap{width:100%;height:6px;background:#111;position:relative;padding:0 3.125%}
-#progress-fill{height:100%;background:#fff;transition:width .3s;min-width:3px}
+#progress-wrap{width:100%;height:6px;background:#000;position:relative;overflow:hidden}
+#progress-fill{height:100%;background:#fff;transition:width .3s;min-width:2px;margin-left:3.125%;max-width:93.75%}
 #notice{color:#555;font-size:8px;font-family:monospace;margin-top:10px;letter-spacing:.3px}
 #ending-btns{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;gap:20px;z-index:300}
 #ending-btns.show{display:flex}
