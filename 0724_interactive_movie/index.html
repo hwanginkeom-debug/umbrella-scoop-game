@@ -243,12 +243,14 @@ function _synthBgm(type){
   }
 }
 
+let _curSfx=null;
+function stopSfx(){if(_curSfx){_curSfx.pause();_curSfx.currentTime=0;_curSfx=null;}}
 function playSfx(type){
-  initA();
-  // 파일 기반 재생 시도
+  initA();stopSfx();
   const sfxFile='assets/audio/sfx_'+type+'.mp3';
   const sa=new Audio(sfxFile);
   sa.volume=0.6;sa.play().catch(()=>_synthSfx(type));
+  _curSfx=sa;
   return;
 }
 function _synthSfx(type){
@@ -409,6 +411,7 @@ function goTo(idx){
   initA();
   if(sc.bgm)playBgm(sc.bgm);
   if(sc.sfx)playSfx(sc.sfx);
+  else stopSfx();
   updateBar();
   loadScene(idx,bl=>{
     if(sc.fx&&sc.fx!=='cut'&&blocks){
