@@ -24,8 +24,8 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 #fullscreen-replay button:hover{background:#fff;color:#000}
 .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
 #credits-screen{position:fixed;inset:0;background:#000;display:none;z-index:9998;overflow:hidden}
-#credits-screen.show{display:flex;align-items:center;justify-content:center}
-#credits-screen .credits-roll{color:#888;font-family:monospace;font-size:11px;line-height:2.2;text-align:center;white-space:pre-line;animation:rollUp 50s linear forwards;padding-bottom:15vh}
+#credits-screen.show{display:flex;align-items:flex-start;justify-content:center}
+#credits-screen .credits-roll{color:#888;font-family:monospace;font-size:11px;line-height:2.2;text-align:center;white-space:pre-line;animation:rollUp 35s linear forwards;padding-bottom:15vh}
 #credits-screen .credits-roll img{width:95%;max-width:700px;margin:14px auto;display:block;image-rendering:pixelated}
 @keyframes rollUp{from{transform:translateY(100vh)}to{transform:translateY(-100%)}}
 .back-btn:hover{color:#aaa}
@@ -564,20 +564,8 @@ document.getElementById('btn-credits').addEventListener('click',e=>{
   el.classList.add('show');
   const scenes=SCENES.filter(s=>s.img);
   let lines='\n\n\n飛翔\n\n픽셀아트 시네마틱\n\n\n';
-  const desc={
-    s01:'어두운 방, 기상',s02:'핸드폰을 던진다',s03:'한숨',
-    s04:'복도로 나선다',s05:'飛翔',s06:'하늘을 바라본다',
-    s07:'눈 클로즈업',s08:'도시 전경',s09:'새들과 비상',
-    s10:'군중 위에 들림',s11:'초원, 추락',s12:'암전',
-    s13:'바닥의 시신',s14:'빗속 군중',s15:'눈을 감다',
-    s16:'꽃밭 속',s17:'꽃이 자라난다',s18:'꽃이 무성해짐',
-    s19:'꽃밭 풀필드',s20:'극장, end'
-  };
   scenes.forEach(s=>{
-    const id=s.id;
-    const d=desc[id]||'';
-    lines+='<img src="'+s.img+'">\n';
-    if(d) lines+=d+'\n\n';
+    lines+='<img src="'+s.img+'">\n'+s.id+'\n\n';
   });
   lines+='\n\n\n— CREDITS —\n\n';
   lines+='기획 · 연출 · 개발\nhwanginkeom\n\n';
