@@ -120,6 +120,7 @@
         <div class="horror-text">다시보기</div>
         <div class="sub-text">나갈 수 없습니다</div>
     </div>
+<script src="./sprites.js"></script>
 <script>
 // === AUDIO ===
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -457,21 +458,16 @@ function s4_late(t){ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);}
 
 function s5_run(t){
     ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
-    // 스카이라인
-    for(let i=0;i<10;i++){
-        const bh=20+(i*11)%30;
-        px(i*32,H-10-bh,24,bh,'#1a1a2e');
-        px(i*32+1,H-10-bh,1,bh,'#222238');
-        for(let r=0;r<Math.floor(bh/6);r++){
-            for(let c=0;c<2;c++){
-                px(i*32+4+c*10,H-10-bh+4+r*6,3,3,Math.random()>0.4?C.windowLit:'#111');
-            }
-        }
+    // 스카이라인 (빌딩 스프라이트)
+    for(let i=0;i<5;i++){
+        drawSprite(SPRITE_BUILDING, i*65, H-10-35, 1);
     }
-    px(0,H-10,W,10,'#111');px(0,H-10,W,1,'#333');
-    const rx=50+(t*0.5)%40;
-    const bob=Math.floor(t/3)%2;
-    drawManDetailed(rx,H-12-bob,{running:true,bread:true});
+    px(0,H-10,W,10,'#0d0d14');px(0,H-10,W,1,'#333');
+    // 달리는 캐릭터 (스프라이트)
+    const rx=60+(t*0.5)%50;
+    const bob=Math.floor(t/4)%2;
+    drawSprite(SPRITE_MAN_RUN, rx, H-32-bob, 1.5);
+    drawCameraOverlay(t);
 }
 
 function s6_hall(t){
@@ -493,50 +489,54 @@ function s_trans1(t){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);if(t>40)nextShot
 
 // === PART 2 ===
 function s9_window(t){
-    // 하늘
     for(let i=0;i<H;i++){
         const r=10+i*0.08,g=22+i*0.12,b=40+i*0.18;
         px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
     }
-    drawSunDetailed(W-50,35,t);
-    drawCloudDetailed(20+(t*0.08)%100,25,2);
-    drawCloudDetailed(100+(t*0.06)%80,40,1.5);
-    drawCloudDetailed(180+(t*0.07)%70,30,1.8);
-    // 산
+    drawSprite(SPRITE_SUN, W-60, 20, 2);
+    drawSprite(SPRITE_CLOUD, 20+(t*0.08)%100, 25, 2);
+    drawSprite(SPRITE_CLOUD, 120+(t*0.06)%80, 45, 1.5);
+    drawSprite(SPRITE_CLOUD, 200+(t*0.07)%70, 30, 1.8);
     for(let i=0;i<W;i++){const mh=20+Math.sin(i*0.015)*12+Math.sin(i*0.04)*6;px(i,H*0.55-mh+80,1,mh,'#1a3a2a');}
-    // 나무들
-    drawTreeDetailed(35,H*0.72,1.2);
-    drawTreeDetailed(80,H*0.74,1);
-    drawTreeDetailed(140,H*0.71,1.3);
-    drawTreeDetailed(200,H*0.73,1.1);
-    // 풀밭
+    drawSprite(SPRITE_TREE, 25, H*0.72-28, 1.2);
+    drawSprite(SPRITE_TREE, 80, H*0.74-28, 1);
+    drawSprite(SPRITE_TREE, 150, H*0.71-28, 1.3);
+    drawSprite(SPRITE_TREE, 210, H*0.73-28, 1.1);
     px(0,H*0.74,W,H*0.26,C.grass);
     for(let i=0;i<W;i+=2){const h=1+Math.floor(Math.random()*4);px(i,H*0.74-h,1,h,Math.random()>0.5?C.grassLight:C.grass);}
-    // 새
-    for(let i=0;i<6;i++){drawBirdDetailed(25+i*40+Math.sin(t*0.02+i)*12,40+Math.sin(t*0.015+i*1.5)*15,t+i*4);}
-    // 창틀
+    for(let i=0;i<6;i++){
+        const bx=25+i*40+Math.sin(t*0.02+i)*12;
+        const by=40+Math.sin(t*0.015+i*1.5)*15;
+        drawSprite(Math.floor(t/6+i)%2?SPRITE_BIRD_1:SPRITE_BIRD_2, bx, by, 1.5);
+    }
     px(0,0,W,8,C.wood);px(0,H-8,W,8,C.wood);px(0,0,8,H,C.wood);px(W-8,0,8,H,C.wood);
     px(W/2-2,0,4,H,C.wood);px(0,H/2-2,W,4,C.wood);
-    px(0,0,W,8,C.woodDark);
+    drawCameraOverlay(t);
 }
 
 function s10_sky(t){
     for(let i=0;i<H;i++){const r=14+i*0.06,g=28+i*0.1,b=48+i*0.15;px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);}
-    drawCloudDetailed(10+(t*0.1)%(W+30),25,2.5);
-    drawCloudDetailed(80+(t*0.07)%(W+30),55,2);
-    drawCloudDetailed(160+(t*0.08)%(W+30),80,1.8);
-    drawCloudDetailed(-20+(t*0.05)%(W+40),110,1.5);
+    drawSprite(SPRITE_CLOUD, 10+(t*0.1)%(W+30), 20, 2.5);
+    drawSprite(SPRITE_CLOUD, 80+(t*0.07)%(W+30), 50, 2);
+    drawSprite(SPRITE_CLOUD, 160+(t*0.08)%(W+30), 80, 1.8);
+    drawSprite(SPRITE_CLOUD, -20+(t*0.05)%(W+40), 110, 1.5);
     const fy=H*0.4+Math.sin(t*0.015)*18;
-    drawManDetailed(W/2,fy,{arms:'spread'});
+    drawSprite(SPRITE_MAN_SPREAD, W/2-9, fy-10, 1.5);
     for(let i=0;i<10;i++){
         const a=t*0.01+i*(Math.PI*2/10);
-        const r=40+Math.sin(t*0.006+i)*10;
-        drawBirdDetailed(W/2+Math.cos(a)*r,fy-8+Math.sin(a)*(r*0.4),t+i*4);
+        const r2=40+Math.sin(t*0.006+i)*10;
+        const bx=W/2+Math.cos(a)*r2;
+        const by=fy-8+Math.sin(a)*(r2*0.4);
+        drawSprite(Math.floor(t/6+i)%2?SPRITE_BIRD_1:SPRITE_BIRD_2, bx, by, 1.5);
     }
+    const bfSprites=[SPRITE_BUTTERFLY_1, SPRITE_BUTTERFLY_2];
     const bfColors=[C.flower1,C.flower2,C.flower3,C.flower4,'#ffaacc'];
     for(let i=0;i<5;i++){
-        drawButterflyDetailed(W*0.1+i*W*0.2+Math.sin(t*0.014+i*1.8)*15,H*0.7+Math.cos(t*0.018+i)*12,t+i*6,bfColors[i]);
+        const bx=W*0.1+i*W*0.2+Math.sin(t*0.014+i*1.8)*15;
+        const by=H*0.7+Math.cos(t*0.018+i)*12;
+        drawSprite(bfSprites[Math.floor(t/5+i)%2], bx, by, 2);
     }
+    drawCameraOverlay(t);
 }
 
 function s11_neighbors(t){
