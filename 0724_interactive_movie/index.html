@@ -313,21 +313,36 @@ resize();window.addEventListener('resize',resize);
 
 // ===================== PIXEL ENGINE =====================
 function imageToBlocks(img,callback){
+    // 원본 해상도로 읽어서 블록별 최빈색 결정 (중간색 제거)
     const oc=document.createElement('canvas');
-    oc.width=SAMPLE_W;oc.height=SAMPLE_H;
+    const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height;
+    oc.width=iw;oc.height=ih;
     const octx=oc.getContext('2d');
-    octx.drawImage(img,0,0,SAMPLE_W,SAMPLE_H);
-    const raw=octx.getImageData(0,0,SAMPLE_W,SAMPLE_H);
+    octx.drawImage(img,0,0,iw,ih);
+    const raw=octx.getImageData(0,0,iw,ih);
+    const bw=iw/SAMPLE_W,bh=ih/SAMPLE_H;
     const blocks=new Uint8Array(SAMPLE_W*SAMPLE_H);
-    for(let i=0;i<blocks.length;i++){
-        const idx=i*4;
-        const r=raw.data[idx],g=raw.data[idx+1],b=raw.data[idx+2];
-        let minD=Infinity,best=0;
-        for(let p=0;p<PALETTE.length;p++){
-            const d=(r-PALETTE[p][0])**2+(g-PALETTE[p][1])**2+(b-PALETTE[p][2])**2;
-            if(d<minD){minD=d;best=p;}
+    for(let by=0;by<SAMPLE_H;by++){
+        for(let bx=0;bx<SAMPLE_W;bx++){
+            const votes=new Uint16Array(PALETTE.length);
+            const sx=Math.floor(bx*bw),sy=Math.floor(by*bh);
+            const ex=Math.min(Math.floor((bx+1)*bw),iw),ey=Math.min(Math.floor((by+1)*bh),ih);
+            for(let y=sy;y<ey;y++){
+                for(let x=sx;x<ex;x++){
+                    const idx=(y*iw+x)*4;
+                    const r=raw.data[idx],g=raw.data[idx+1],b2=raw.data[idx+2];
+                    let minD=Infinity,best=0;
+                    for(let p=0;p<PALETTE.length;p++){
+                        const d=(r-PALETTE[p][0])**2+(g-PALETTE[p][1])**2+(b2-PALETTE[p][2])**2;
+                        if(d<minD){minD=d;best=p;}
+                    }
+                    votes[best]++;
+                }
+            }
+            let maxV=0,winner=0;
+            for(let p=0;p<PALETTE.length;p++){if(votes[p]>maxV){maxV=votes[p];winner=p;}}
+            blocks[by*SAMPLE_W+bx]=winner;
         }
-        blocks[i]=best;
     }
     callback(blocks);
 }
@@ -356,7 +371,7 @@ function renderBlocks(blocks,offsetFn){
 }
 
 function defaultOffset(y,t){
-    return 0;
+    return Math.sin(t*.015+y*.12)*Math.sin(t*.006)*2.5;
 }
 
 function render(){
