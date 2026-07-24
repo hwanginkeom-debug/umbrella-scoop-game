@@ -265,20 +265,36 @@ function s10_sky(t){
             window._birdRef.bCols=bCols;
             window._birdRef.bRows=bRows;
             window._birdRef.pal=pal;
-            // 후처리: 실루엣 내부 배경색 구멍 → 피부색으로 채움
-            // 피부색(1)으로 둘러싸인 배경색(0,10) 블록을 피부색으로 교체
-            for(let pass=0;pass<3;pass++){
-                for(let by=1;by<bRows-1;by++){
-                    for(let bx=1;bx<bCols-1;bx++){
-                        const ci=blocks[by*bCols+bx];
-                        if(ci!==0&&ci!==10) continue; // 배경색만 체크
-                        // 상하좌우 4방향 중 피부색(1) 또는 갈색(7) 개수
-                        let skinN=0;
-                        const neighbors=[blocks[(by-1)*bCols+bx],blocks[(by+1)*bCols+bx],blocks[by*bCols+bx-1],blocks[by*bCols+bx+1]];
-                        neighbors.forEach(n=>{if(n===1||n===7)skinN++;});
-                        if(skinN>=3) blocks[by*bCols+bx]=1;
+            // 후처리: 피부색(1) 블록 중 가장 큰 덩어리만 남기고 나머지는 배경색으로
+            const visited=new Uint8Array(bRows*bCols);
+            const blobs=[];
+            for(let by=0;by<bRows;by++){
+                for(let bx=0;bx<bCols;bx++){
+                    const idx2=by*bCols+bx;
+                    if(blocks[idx2]!==1||visited[idx2]) continue;
+                    // BFS로 연결된 피부색 블록 찾기
+                    const queue=[idx2],blob=[];
+                    visited[idx2]=1;
+                    while(queue.length){
+                        const cur=queue.shift();blob.push(cur);
+                        const cy2=Math.floor(cur/bCols),cx2=cur%bCols;
+                        [[cy2-1,cx2],[cy2+1,cx2],[cy2,cx2-1],[cy2,cx2+1]].forEach(([ny,nx2])=>{
+                            if(ny>=0&&ny<bRows&&nx2>=0&&nx2<bCols){
+                                const ni=ny*bCols+nx2;
+                                if(!visited[ni]&&blocks[ni]===1){visited[ni]=1;queue.push(ni);}
+                            }
+                        });
                     }
+                    blobs.push(blob);
                 }
+            }
+            // 가장 큰 덩어리 찾기
+            let maxBlob=blobs[0]||[];
+            blobs.forEach(b=>{if(b.length>maxBlob.length)maxBlob=b;});
+            const maxSet=new Set(maxBlob);
+            // 나머지 피부색 블록을 배경색(0)으로
+            for(let i=0;i<bRows*bCols;i++){
+                if(blocks[i]===1&&!maxSet.has(i)) blocks[i]=0;
             }
             window._birdRef.loaded=true;
         };
