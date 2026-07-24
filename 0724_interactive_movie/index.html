@@ -390,6 +390,38 @@ function imgToBlocks(img,cb){
       out[by*SAMPLE_W+bx]=w;
     }
   }
+  // 후처리: 고립된 어두운 블록(0,10) 제거 — 5개 이하 연결이면 주변 최빈색으로
+  const visited2=new Uint8Array(SAMPLE_W*SAMPLE_H);
+  for(let i=0;i<out.length;i++){
+    if((out[i]!==0&&out[i]!==10)||visited2[i]) continue;
+    const queue2=[i],blob2=[];visited2[i]=1;
+    while(queue2.length){
+      const c2=queue2.shift();blob2.push(c2);
+      const cy=Math.floor(c2/SAMPLE_W),cx=c2%SAMPLE_W;
+      [[cy-1,cx],[cy+1,cx],[cy,cx-1],[cy,cx+1]].forEach(([ny,nx])=>{
+        if(ny>=0&&ny<SAMPLE_H&&nx>=0&&nx<SAMPLE_W){
+          const ni=ny*SAMPLE_W+nx;
+          if(!visited2[ni]&&(out[ni]===0||out[ni]===10)){visited2[ni]=1;queue2.push(ni);}
+        }
+      });
+    }
+    if(blob2.length<=5){
+      // 주변 비-어두운 색 중 최빈 찾기
+      const votes2=new Uint16Array(PALETTE.length);
+      blob2.forEach(bi=>{
+        const by2=Math.floor(bi/SAMPLE_W),bx2=bi%SAMPLE_W;
+        [[by2-1,bx2],[by2+1,bx2],[by2,bx2-1],[by2,bx2+1]].forEach(([ny,nx])=>{
+          if(ny>=0&&ny<SAMPLE_H&&nx>=0&&nx<SAMPLE_W){
+            const ni=ny*SAMPLE_W+nx;
+            if(out[ni]!==0&&out[ni]!==10) votes2[out[ni]]++;
+          }
+        });
+      });
+      let mv2=0,w2=5; // default to blue-ish
+      for(let p=0;p<PALETTE.length;p++){if(votes2[p]>mv2){mv2=votes2[p];w2=p;}}
+      blob2.forEach(bi=>{out[bi]=w2;});
+    }
+  }
   cb(out);
 }
 
@@ -467,7 +499,7 @@ function render(){
     transP+=(SCENES[cur]&&SCENES[cur].fx==='pan_down')?.008:.02;
     if(transP>=1){trans=false;blocks=nextBlocks;nextBlocks=null;}
   }else{
-    if((cur===8||cur===9)&&blocks){
+    if((cur===8||cur===9||cur===10)&&blocks){
       // s09/s10: 어두운 실루엣(인덱스 0,10)만 위아래 부유
       const floatY=Math.sin(animT*.03)*2;
       for(let y=0;y<SAMPLE_H;y++){
