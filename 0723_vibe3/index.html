@@ -21,7 +21,7 @@
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            color: rgba(255,255,255,0.6);
+            color: rgba(255, 255, 255, 0.6);
             font-size: 14px;
             letter-spacing: 1px;
             text-align: center;
@@ -63,20 +63,6 @@
         }
 
         .back-btn:hover { background: rgba(255,255,255,0.2); }
-
-        #loading {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(255,255,255,0.5);
-            font-size: 14px;
-            z-index: 100;
-            pointer-events: none;
-        }
-
-        #loading.hidden { display: none; }
     </style>
 </head>
 <body>
@@ -84,200 +70,306 @@
     <div id="canvas-container"></div>
     <div id="fruit-name">🍓 딸기</div>
     <div id="info">클릭하면 과일이 바뀝니다</div>
-    <div id="loading">로딩 중...</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/DRACOLoader.js"></script>
-    <script>
-        var fruits = [
-            { name: '🍓 딸기', color: 0xcc1133, roughness: 0.4, metalness: 0.0, clearcoat: 0.3 },
-            { name: '🍉 수박', color: 0x2d7a2d, roughness: 0.5, metalness: 0.0, clearcoat: 0.2 },
-            { name: '🥝 키위', color: 0x5c3d1e, roughness: 0.8, metalness: 0.0, clearcoat: 0.1 },
-            { name: '🍊 오렌지', color: 0xff7700, roughness: 0.5, metalness: 0.0, clearcoat: 0.4 },
-            { name: '🍇 포도', color: 0x3d0055, roughness: 0.2, metalness: 0.1, clearcoat: 0.6 }
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 과일 데이터
+        const fruits = [
+            {
+                name: '🍓 딸기',
+                outerColor: 0xcc1133,
+                innerColor: 0xff4466,
+                coreColor: 0xffeaea,
+                veinColor: 0xffcccc,
+                seedColor: 0xffdd44,
+            },
+            {
+                name: '🍉 수박',
+                outerColor: 0x2d7a2d,
+                innerColor: 0xff2233,
+                coreColor: 0xff8899,
+                veinColor: 0xff6677,
+                seedColor: 0x111111,
+            },
+            {
+                name: '🥝 키위',
+                outerColor: 0x5c3d1e,
+                innerColor: 0x88cc22,
+                coreColor: 0xeeffcc,
+                veinColor: 0xaadd55,
+                seedColor: 0x1a1a1a,
+            },
+            {
+                name: '🍊 오렌지',
+                outerColor: 0xff7700,
+                innerColor: 0xffaa22,
+                coreColor: 0xfff0cc,
+                veinColor: 0xffcc77,
+                seedColor: 0xffbb44,
+            },
+            {
+                name: '🍇 포도',
+                outerColor: 0x3d0055,
+                innerColor: 0x8833aa,
+                coreColor: 0xddbbff,
+                veinColor: 0xaa66cc,
+                seedColor: 0x220033,
+            }
         ];
 
-        var currentFruitIndex = 0;
-        var scene, camera, renderer, controls;
-        var toothModel = null;
-        var isAnimating = false;
-        var mouseDownTime = 0;
-        var mouseDownPos = { x: 0, y: 0 };
-        var baseScale = 1;
+        let currentFruitIndex = 0;
+        let scene, camera, renderer, controls, toothGroup;
+        let isAnimating = false;
 
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x0a0a0a);
 
             camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
-            camera.position.set(0, 0, 5);
+            camera.position.set(0, 0, 6);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 1.2;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
+            controls.enableZoom = true;
+            controls.minDistance = 3;
             controls.maxDistance = 10;
 
             // 조명
-            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-            var keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
             keyLight.position.set(4, 6, 5);
+            keyLight.castShadow = true;
             scene.add(keyLight);
 
-            var fillLight = new THREE.DirectionalLight(0x8899ff, 0.4);
+            const fillLight = new THREE.DirectionalLight(0x8899ff, 0.4);
             fillLight.position.set(-4, 2, 3);
             scene.add(fillLight);
 
-            var backLight = new THREE.DirectionalLight(0xffeedd, 0.6);
+            const backLight = new THREE.DirectionalLight(0xffeedd, 0.6);
             backLight.position.set(0, -2, -5);
             scene.add(backLight);
 
-            var topLight = new THREE.PointLight(0xffffff, 0.4, 10);
+            const topLight = new THREE.PointLight(0xffffff, 0.3, 10);
             topLight.position.set(0, 5, 0);
             scene.add(topLight);
 
-            // GLB 로드
-            var dracoLoader = new THREE.DRACOLoader();
-            dracoLoader.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/draco/');
+            createMolarTooth(fruits[currentFruitIndex]);
 
-            var loader = new THREE.GLTFLoader();
-            loader.setDRACOLoader(dracoLoader);
-            loader.load(
-                './tooth.glb',
-                function(gltf) {
-                    toothModel = gltf.scene;
-
-                    var box = new THREE.Box3().setFromObject(toothModel);
-                    var size = box.getSize(new THREE.Vector3());
-                    var center = box.getCenter(new THREE.Vector3());
-                    var maxDim = Math.max(size.x, size.y, size.z);
-                    baseScale = 2.5 / maxDim;
-
-                    toothModel.scale.setScalar(baseScale);
-                    toothModel.position.set(
-                        -center.x * baseScale,
-                        -center.y * baseScale,
-                        -center.z * baseScale
-                    );
-
-                    applyFruitMaterial(fruits[currentFruitIndex]);
-
-                    toothModel.traverse(function(child) {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-
-                    scene.add(toothModel);
-                    document.getElementById('loading').classList.add('hidden');
-                },
-                function(progress) {
-                    if (progress.total > 0) {
-                        var pct = Math.round((progress.loaded / progress.total) * 100);
-                        document.getElementById('loading').textContent = '로딩 중... ' + pct + '%';
-                    }
-                },
-                function(error) {
-                    console.error('GLB 로드 에러:', error);
-                    document.getElementById('loading').textContent = 'GLB 로드 실패: ' + error.message;
-                }
-            );
-
-            // 이벤트
-            renderer.domElement.addEventListener('mousedown', function(e) {
-                mouseDownTime = Date.now();
-                mouseDownPos = { x: e.clientX, y: e.clientY };
-            });
             renderer.domElement.addEventListener('click', onClickHandler);
             window.addEventListener('resize', onResize);
 
             animate();
         }
 
-        function applyFruitMaterial(fruit) {
-            if (!toothModel) return;
-            toothModel.traverse(function(child) {
-                if (child.isMesh) {
+        function createMolarTooth(fruit) {
+            if (toothGroup) {
+                scene.remove(toothGroup);
+                toothGroup.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
                     if (child.material) {
-                        if (Array.isArray(child.material)) {
-                            child.material.forEach(function(m) { m.dispose(); });
-                        } else {
-                            child.material.dispose();
-                        }
+                        if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                        else child.material.dispose();
                     }
-                    child.material = new THREE.MeshPhysicalMaterial({
-                        color: fruit.color,
-                        roughness: fruit.roughness,
-                        metalness: fruit.metalness,
-                        clearcoat: fruit.clearcoat,
-                        clearcoatRoughness: 0.3,
-                        side: THREE.DoubleSide
-                    });
-                    child.material.needsUpdate = true;
-                }
+                });
+            }
+
+            toothGroup = new THREE.Group();
+
+            const outerMaterial = new THREE.MeshPhysicalMaterial({
+                color: fruit.outerColor,
+                roughness: 0.45,
+                metalness: 0.0,
+                clearcoat: 0.3,
+                clearcoatRoughness: 0.4,
+                side: THREE.DoubleSide
             });
+
+            // 메인 바디
+            const bodyGeometry = new THREE.SphereGeometry(1, 64, 64);
+            bodyGeometry.scale(1, 0.85, 0.7);
+            const body = new THREE.Mesh(bodyGeometry, outerMaterial);
+            body.position.y = 0.3;
+            body.castShadow = true;
+            toothGroup.add(body);
+
+            // 두 봉우리
+            const cuspGeometry = new THREE.SphereGeometry(0.55, 48, 48);
+
+            const leftCusp = new THREE.Mesh(cuspGeometry, outerMaterial.clone());
+            leftCusp.position.set(-0.4, 1.0, 0);
+            leftCusp.scale.set(1, 0.8, 0.8);
+            toothGroup.add(leftCusp);
+
+            const rightCusp = new THREE.Mesh(cuspGeometry.clone(), outerMaterial.clone());
+            rightCusp.position.set(0.4, 1.0, 0);
+            rightCusp.scale.set(1, 0.8, 0.8);
+            toothGroup.add(rightCusp);
+
+            // 뿌리
+            const rootGeometry = createRootGeometry();
+            const rootMaterial = new THREE.MeshPhysicalMaterial({
+                color: fruit.outerColor,
+                roughness: 0.6,
+                clearcoat: 0.1
+            });
+
+            const leftRoot = new THREE.Mesh(rootGeometry, rootMaterial);
+            leftRoot.position.set(-0.35, -0.7, 0);
+            leftRoot.rotation.z = 0.15;
+            toothGroup.add(leftRoot);
+
+            const rightRoot = new THREE.Mesh(rootGeometry.clone(), rootMaterial.clone());
+            rightRoot.position.set(0.35, -0.7, 0);
+            rightRoot.rotation.z = -0.15;
+            toothGroup.add(rightRoot);
+
+            // 단면
+            createFruitCrossSection(fruit);
+
+            toothGroup.position.y = -0.2;
+            scene.add(toothGroup);
         }
 
+        function createRootGeometry() {
+            const points = [];
+            for (let i = 0; i <= 20; i++) {
+                const t = i / 20;
+                const radius = 0.25 * (1 - t * 0.85) * (1 + 0.1 * Math.sin(t * Math.PI));
+                points.push(new THREE.Vector2(radius, -t * 1.3));
+            }
+            return new THREE.LatheGeometry(points, 32);
+        }
+
+        function createFruitCrossSection(fruit) {
+            const crossSection = new THREE.Mesh(
+                new THREE.CircleGeometry(0.75, 64),
+                new THREE.MeshPhysicalMaterial({ color: fruit.innerColor, roughness: 0.7, side: THREE.FrontSide })
+            );
+            crossSection.position.set(0, 0.3, 0.71);
+            toothGroup.add(crossSection);
+
+            const core = new THREE.Mesh(
+                new THREE.CircleGeometry(0.25, 48),
+                new THREE.MeshStandardMaterial({ color: fruit.coreColor, roughness: 0.5, side: THREE.FrontSide })
+            );
+            core.position.set(0, 0.3, 0.72);
+            toothGroup.add(core);
+
+            // 방사형 줄기
+            for (let i = 0; i < 16; i++) {
+                const angle = (i / 16) * Math.PI * 2;
+                const pts = [];
+                for (let j = 0; j <= 10; j++) {
+                    const t = j / 10;
+                    const r = 0.1 + t * 0.45;
+                    const wobble = Math.sin(t * Math.PI) * 0.02;
+                    pts.push(new THREE.Vector3(
+                        Math.cos(angle + wobble) * r,
+                        0.3 + Math.sin(angle + wobble) * r,
+                        0.725
+                    ));
+                }
+                const curve = new THREE.CatmullRomCurve3(pts);
+                const vein = new THREE.Mesh(
+                    new THREE.TubeGeometry(curve, 8, 0.012, 6, false),
+                    new THREE.MeshStandardMaterial({ color: fruit.veinColor, roughness: 0.6, transparent: true, opacity: 0.6 })
+                );
+                toothGroup.add(vein);
+            }
+
+            // 씨앗
+            for (let i = 0; i < 10; i++) {
+                const angle = (i / 10) * Math.PI * 2 + Math.random() * 0.3;
+                const radius = 0.35 + Math.random() * 0.2;
+                const seedGeo = new THREE.SphereGeometry(0.035, 12, 12);
+                seedGeo.scale(1, 1.4, 0.5);
+                const seed = new THREE.Mesh(seedGeo, new THREE.MeshStandardMaterial({ color: fruit.seedColor, roughness: 0.2, metalness: 0.1 }));
+                seed.position.set(Math.cos(angle) * radius, 0.3 + Math.sin(angle) * radius, 0.73);
+                seed.rotation.z = angle;
+                toothGroup.add(seed);
+            }
+
+            // 외곽 링
+            const ring = new THREE.Mesh(
+                new THREE.TorusGeometry(0.75, 0.04, 16, 64),
+                new THREE.MeshPhysicalMaterial({ color: fruit.outerColor, roughness: 0.3, clearcoat: 0.5 })
+            );
+            ring.position.set(0, 0.3, 0.71);
+            toothGroup.add(ring);
+        }
+
+        // 클릭
+        let mouseDownTime = 0, mouseDownPos = { x: 0, y: 0 };
+
         function onClickHandler(e) {
-            var timeDiff = Date.now() - mouseDownTime;
-            var posDiff = Math.abs(e.clientX - mouseDownPos.x) + Math.abs(e.clientY - mouseDownPos.y);
-            if (timeDiff < 500 && posDiff < 20) changeFruit();
+            const timeDiff = Date.now() - mouseDownTime;
+            const posDiff = Math.abs(e.clientX - mouseDownPos.x) + Math.abs(e.clientY - mouseDownPos.y);
+            if (timeDiff < 300 && posDiff < 10) changeFruit();
         }
 
         function changeFruit() {
-            if (isAnimating || !toothModel) return;
+            if (isAnimating) return;
             isAnimating = true;
 
-            var nameEl = document.getElementById('fruit-name');
+            const nameEl = document.getElementById('fruit-name');
             nameEl.classList.add('changing');
 
-            var startRotY = toothModel.rotation.y;
-            var startTime = Date.now();
+            const startRotY = toothGroup.rotation.y;
+            const startTime = Date.now();
 
             function shrink() {
-                var t = Math.min((Date.now() - startTime) / 350, 1);
-                var ease = t * t;
-
-                toothModel.scale.setScalar(baseScale * (1 - ease * 0.3));
-                toothModel.rotation.y = startRotY + ease * Math.PI;
+                const t = Math.min((Date.now() - startTime) / 350, 1);
+                const ease = t * t;
+                toothGroup.scale.setScalar(1 - ease * 0.4);
+                toothGroup.rotation.y = startRotY + ease * Math.PI;
 
                 if (t < 1) {
                     requestAnimationFrame(shrink);
                 } else {
                     currentFruitIndex = (currentFruitIndex + 1) % fruits.length;
-                    applyFruitMaterial(fruits[currentFruitIndex]);
-                    nameEl.textContent = fruits[currentFruitIndex].name;
-                    setTimeout(function() { nameEl.classList.remove('changing'); }, 50);
+                    createMolarTooth(fruits[currentFruitIndex]);
 
-                    toothModel.scale.setScalar(baseScale * 0.7);
-                    toothModel.rotation.y = -Math.PI * 0.5;
-                    var growStart = Date.now();
+                    nameEl.textContent = fruits[currentFruitIndex].name;
+                    setTimeout(() => nameEl.classList.remove('changing'), 50);
+
+                    toothGroup.scale.setScalar(0.6);
+                    toothGroup.rotation.y = -Math.PI * 0.5;
+                    const growStart = Date.now();
 
                     function grow() {
-                        var gt = Math.min((Date.now() - growStart) / 450, 1);
-                        var c1 = 1.70158, c3 = c1 + 1;
-                        var easeBack = 1 + c3 * Math.pow(gt - 1, 3) + c1 * Math.pow(gt - 1, 2);
+                        const gt = Math.min((Date.now() - growStart) / 450, 1);
+                        const c1 = 1.70158, c3 = c1 + 1;
+                        const easeBack = 1 + c3 * Math.pow(gt - 1, 3) + c1 * Math.pow(gt - 1, 2);
 
-                        toothModel.scale.setScalar(baseScale * (0.7 + easeBack * 0.3));
-                        toothModel.rotation.y = -Math.PI * 0.5 * (1 - easeBack);
+                        toothGroup.scale.setScalar(0.6 + easeBack * 0.4);
+                        toothGroup.rotation.y = -Math.PI * 0.5 * (1 - easeBack);
 
                         if (gt < 1) {
                             requestAnimationFrame(grow);
                         } else {
-                            toothModel.scale.setScalar(baseScale);
-                            toothModel.rotation.y = 0;
+                            toothGroup.scale.setScalar(1);
+                            toothGroup.rotation.y = 0;
                             isAnimating = false;
                         }
                     }
@@ -291,8 +383,9 @@
             requestAnimationFrame(animate);
             controls.update();
 
-            if (toothModel && !isAnimating) {
-                toothModel.rotation.y += 0.003;
+            if (toothGroup && !isAnimating) {
+                toothGroup.rotation.y += 0.002;
+                toothGroup.position.y = -0.2 + Math.sin(Date.now() * 0.0008) * 0.05;
             }
 
             renderer.render(scene, camera);
@@ -304,7 +397,15 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
+        function setupMouseTracking() {
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                mouseDownTime = Date.now();
+                mouseDownPos = { x: e.clientX, y: e.clientY };
+            });
+        }
+
         init();
+        setupMouseTracking();
     </script>
 </body>
 </html>
