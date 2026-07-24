@@ -21,10 +21,12 @@
         #fullscreen-replay button:hover{background:#fff;color:#000}
         .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
         .back-btn:hover{color:#aaa}
+        #notice{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);color:#444;font-size:8px;font-family:monospace;z-index:10000;letter-spacing:.3px}
     </style>
 </head>
 <body>
 <a href="../bridge.html" class="back-btn">← BACK</a>
+<div id="notice">이 작품은 픽셀아트 시네마틱 실험작입니다. 클릭하여 진행하세요.</div>
 <div id="game-container">
     <canvas id="canvas"></canvas>
     <div id="narration"></div>
@@ -181,17 +183,17 @@ const PALETTE=[
 const SCENES=[
 {id:'s01_room_wake',img:'assets/s01_room_wake.png.jpeg',bgm:'calm',beats:[
  {type:'action',text:''},
- {type:'nar',text:'인생은 삶의 반복이다.'},
- {type:'nar',text:'아침은 지겨울 정도로 허기지고'},
- {type:'nar',text:'점심은 정신을 차리지 못할 정도로 숨가쁘며'},
- {type:'nar',text:'새벽은 언제 어두워질지도 모를 정도로 각박하고 길다.'}
+ {type:'nar',text:'- 인생은 삶의 반복이다.'},
+ {type:'nar',text:'- 아침은 지겨울 정도로 허기지고'},
+ {type:'nar',text:'- 점심은 정신을 차리지 못할 정도로 숨가쁘며'},
+ {type:'nar',text:'- 새벽은 언제 어두워질지도 모를 정도로 각박하고 길다.'}
 ],auto:4000},
 {id:'s02_room_throw',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[
- {type:'nar',text:'인생은 삶의 반복이다.'}
+ {type:'nar',text:'- 인생은 삶의 반복이다.'}
 ],auto:3000},
 {id:'s03_room_sigh',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
- {type:'nar',text:'새 탄생의 빛을 보면 설탕물과 소금물 정도의 밀도 차이를 느낀다'},
- {type:'nar',text:'혈류는 이럴 때만 야속하게 힘있게 뛰지 않는다'}
+ {type:'nar',text:'- 새 탄생의 빛을 보면 설탕물과 소금물 정도의 밀도 차이를 느낀다.'},
+ {type:'nar',text:'- 혈류는 이럴 때만 야속하게 힘 있게 뛰지 않는다.'}
 ],auto:4000},
 {id:'s04_hall_exit',img:'assets/s04_hall_exit.png',bgm:'footsteps',beats:[
  {type:'action',text:''}
@@ -203,19 +205,19 @@ const SCENES=[
  {type:'action',text:''}
 ],auto:3500},
 {id:'s07_eyes_closeup',img:'assets/s07_eyes_closeup.jpeg',beats:[
- {type:'nar',text:'하늘을 보며 눈망울을 치켜 올려든다.'}
+ {type:'nar',text:'- 하늘을 보며 눈망울을 치켜올린다.'}
 ],auto:3500},
 {id:'s08_city_view',img:'assets/s08_city_view.jpg',beats:[
- {type:'nar',text:'개미집을 멀리서 보면 광활한 우주가 보인다.'}
+ {type:'nar',text:'- 개미집을 멀리서 보면 광활한 우주가 보인다.'}
 ],auto:4000},
 {id:'s09_birds_float',img:'assets/s09_birds_float.jpeg',bgm:'classic',transition:'glitch',beats:[
- {type:'nar',text:'몸을 던지면 모이를 쪼러 온갖 새들이 나에게 몰려온다.'}
+ {type:'nar',text:'- 몸을 던지면 모이를 쪼러 온갖 새들이 나에게 몰려온다.'}
 ],auto:5000},
 {id:'s10_crowd_sunset',img:'assets/s10_crowd_sunset.jpeg',transition:'glitch',beats:[
- {type:'nar',text:'오늘은 사람들에게 인사를 했다.'},
- {type:'nar',text:'반갑습니다'},
- {type:'nar',text:'고마워요'},
- {type:'nar',text:'さよなら'}
+ {type:'nar',text:'- 오늘은 사람들에게 인사를 했다.'},
+ {type:'nar',text:'- 반갑습니다'},
+ {type:'nar',text:'- 고마워요'},
+ {type:'nar',text:'- さよなら'}
 ],auto:3500},
 {id:'s11_meadow_fall',img:'assets/s11_meadow_fall.jpeg',transition:'glitch',beats:[
  {type:'nar',text:'어 세상이 …',glitch:true}
@@ -227,9 +229,9 @@ const SCENES=[
  {type:'action',text:''}
 ],auto:4000},
 {id:'s14_rain_crowd',img:'assets/s14_rain_crowd.jpeg',sfx:'crowd',beats:[
- {type:'nar',text:'집 값 떨어지게 어!'},
- {type:'nar',text:'에휴 말세다 말세'},
- {type:'nar',text:'저런 거 보면 안 돼!'}
+ {type:'nar',text:'- 집값 떨어지게 어!'},
+ {type:'nar',text:'- 에휴 말세다 말세'},
+ {type:'nar',text:'- 저런 거 보면 안 돼!'}
 ],auto:3000},
 {id:'s15_dark_rest',img:'assets/s15_dark_rest.jpg',bgm:'quiet',beats:[
  {type:'action',text:''}
@@ -347,10 +349,17 @@ function render(){
             renderBlocks(nextPixelBlocks,defaultOffset);
             ctx.globalAlpha=1;
         }else if(scene.transition==='iris'){
-            renderBlocks(nextPixelBlocks,defaultOffset);
-            const r=Math.max(0,(1-t)*Math.max(W,H));
+            // 이전 씬을 보여주면서 원형 마스크가 줄어듦 → 검은화면
+            if(pixelBlocks) renderBlocks(pixelBlocks,defaultOffset);
+            // 검은 원형 마스크 (바깥에서 안으로 닫힘)
+            const maxR=Math.sqrt(W*W+H*H)/2;
+            const r=maxR*(1-t);
             ctx.fillStyle='#000';
-            ctx.beginPath();ctx.rect(0,0,W,H);ctx.arc(W/2,H/2,r,0,Math.PI*2,true);ctx.fill();
+            ctx.beginPath();ctx.rect(0,0,W,H);
+            ctx.moveTo(W/2+r,H/2);ctx.arc(W/2,H/2,r,0,Math.PI*2,true);
+            ctx.fill();
+            // 완전히 닫히면 다음 씬 표시
+            if(t>0.95){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);}
         }else if(scene.transition==='slide'){
             if(pixelBlocks) renderBlocks(pixelBlocks,defaultOffset);
             ctx.fillStyle='#000';ctx.fillRect(0,0,W,H*t);
@@ -361,7 +370,7 @@ function render(){
         }else{
             renderBlocks(nextPixelBlocks,defaultOffset);
         }
-        transProgress+=0.02;
+        transProgress+=(SCENES[currentScene]&&SCENES[currentScene].transition==='iris')?0.012:0.02;
         if(transProgress>=1){transitioning=false;pixelBlocks=nextPixelBlocks;nextPixelBlocks=null;}
     }else{
         renderBlocks(pixelBlocks,defaultOffset);
