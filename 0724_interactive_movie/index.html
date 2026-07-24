@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인터랙티브 무비</title>
+    <title>비상</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -19,7 +19,7 @@
 
         #game-container {
             position: relative;
-            background: #000;
+            background: #0a0a14;
             overflow: hidden;
             transition: width 1.2s ease, height 1.2s ease;
             border: 1px solid #222;
@@ -38,9 +38,8 @@
             bottom: 14px;
             left: 50%;
             transform: translateX(-50%);
-            color: #ccc;
-            padding: 0;
-            font-size: 10px;
+            color: #eee;
+            font-size: 11px;
             font-family: monospace;
             line-height: 1.8;
             text-align: center;
@@ -63,10 +62,7 @@
             animation: blink 2s infinite;
         }
 
-        @keyframes blink {
-            0%, 100% { opacity: 0.2; }
-            50% { opacity: 0.6; }
-        }
+        @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:0.6} }
 
         #ending-btns {
             position: absolute;
@@ -82,7 +78,7 @@
 
         #ending-btns button {
             font-family: monospace;
-            font-size: 10px;
+            font-size: 11px;
             padding: 10px 22px;
             background: #000;
             color: #fff;
@@ -91,16 +87,15 @@
             letter-spacing: 1px;
         }
 
-        #ending-btns button:hover {
-            background: #fff;
-            color: #000;
-        }
+        #ending-btns button:hover { background: #fff; color: #000; }
 
+        /* 나가기 → 공포 다시보기 */
         #fullscreen-replay {
             position: fixed;
             inset: 0;
             background: #000;
             display: none;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 9999;
@@ -109,19 +104,32 @@
 
         #fullscreen-replay.show { display: flex; }
 
-        #fullscreen-replay span {
+        #fullscreen-replay .horror-text {
             font-family: monospace;
-            font-size: 13px;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 16px 36px;
-            letter-spacing: 2px;
-            animation: pulse 2s infinite;
+            font-size: 32px;
+            color: #c00;
+            letter-spacing: 4px;
+            animation: horror-pulse 0.8s infinite;
+            text-shadow: 0 0 10px #f00, 0 0 20px #900;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+        @keyframes horror-pulse {
+            0%,100% { opacity: 1; transform: scale(1); }
+            25% { opacity: 0.7; transform: scale(1.02) skewX(-1deg); }
+            50% { opacity: 1; transform: scale(0.98); }
+            75% { opacity: 0.8; transform: scale(1.01) skewX(1deg); }
+        }
+
+        #fullscreen-replay .sub-text {
+            font-family: monospace;
+            font-size: 10px;
+            color: #666;
+            margin-top: 20px;
+            animation: flicker 3s infinite;
+        }
+
+        @keyframes flicker {
+            0%,100%{opacity:0.6} 50%{opacity:0.2} 52%{opacity:0.8} 54%{opacity:0.3}
         }
 
         .back-btn {
@@ -154,7 +162,8 @@
     </div>
 
     <div id="fullscreen-replay">
-        <span>다시보기</span>
+        <div class="horror-text">다시보기</div>
+        <div class="sub-text">나갈 수 없습니다</div>
     </div>
 
     <script>
@@ -171,7 +180,7 @@
         osc.type = 'square'; g.gain.value = 0.06;
         osc.start();
         let c = 0;
-        const iv = setInterval(() => { osc.frequency.value = c % 2 ? 550 : 440; c++; if (c > 8) { clearInterval(iv); g.gain.value = 0; osc.stop(); } }, 120);
+        const iv = setInterval(() => { osc.frequency.value = c%2 ? 550 : 440; c++; if(c>8){clearInterval(iv);g.gain.value=0;osc.stop();}}, 120);
     }
 
     function playSiren() {
@@ -182,19 +191,19 @@
         osc.type = 'sawtooth'; g.gain.value = 0.05;
         osc.start();
         let t = 0;
-        const iv = setInterval(() => { osc.frequency.value = 280 + Math.sin(t * 3) * 180; t += 0.04; }, 25);
-        setTimeout(() => { clearInterval(iv); g.gain.value = 0; osc.stop(); }, 2200);
+        const iv = setInterval(() => { osc.frequency.value = 280+Math.sin(t*3)*180; t+=0.04; }, 25);
+        setTimeout(() => { clearInterval(iv); g.gain.value=0; osc.stop(); }, 2200);
     }
 
     function playClap() {
         initAudio();
-        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.06, audioCtx.sampleRate);
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.06, audioCtx.sampleRate);
         const d = buf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.5);
+        for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
         const src = audioCtx.createBufferSource();
         const g = audioCtx.createGain();
-        src.buffer = buf; src.connect(g); g.connect(audioCtx.destination);
-        g.gain.value = 0.15; src.start();
+        src.buffer=buf; src.connect(g); g.connect(audioCtx.destination);
+        g.gain.value=0.15; src.start();
     }
 
     // === CANVAS ===
@@ -202,15 +211,25 @@
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('game-container');
     const narrationEl = document.getElementById('narration');
-    let W = 192, H = 48;
+    let W = 240, H = 60;
 
     function setAspect(ratio) {
         const maxW = Math.min(window.innerWidth * 0.9, 760);
         const maxH = window.innerHeight * 0.85;
         let w, h;
-        if (ratio === '16:4') { w = maxW; h = w * (4/16); W = 240; H = 60; }
-        else if (ratio === '3:4') { h = maxH; w = h * (3/4); W = 150; H = 200; }
-        else { const s = Math.min(maxW, maxH); w = s; h = s; W = 160; H = 160; }
+        if (ratio === '16:4') {
+            w = maxW; h = w * (4/16);
+            W = 240; H = 60;
+        } else if (ratio === '4:3') {
+            // 가로로 긴 4:3
+            w = maxW; h = w * (3/4);
+            if (h > maxH) { h = maxH; w = h * (4/3); }
+            W = 200; H = 150;
+        } else {
+            const s = Math.min(maxW, maxH);
+            w = s; h = s;
+            W = 160; H = 160;
+        }
         container.style.width = w + 'px';
         container.style.height = h + 'px';
         canvas.width = W; canvas.height = H;
@@ -218,561 +237,540 @@
 
     function px(x, y, w, h, c) {
         ctx.fillStyle = c || '#fff';
-        ctx.fillRect(Math.floor(x), Math.floor(y), w || 1, h || 1);
+        ctx.fillRect(Math.floor(x), Math.floor(y), w||1, h||1);
     }
 
     function txt(str, x, y, sz, c) {
         ctx.fillStyle = c || '#fff';
-        ctx.font = (sz || 5) + 'px monospace';
+        ctx.font = 'bold ' + (sz||6) + 'px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(str, x, y);
     }
 
-    // === DETAILED PIXEL ELEMENTS ===
+    // === COLORS ===
+    const C = {
+        skin: '#ffcc88',
+        hair: '#4a3322',
+        shirt: '#4488cc',
+        pants: '#334466',
+        sky: '#1a2a44',
+        skyLight: '#2a4466',
+        grass: '#2a5a2a',
+        grassLight: '#3a7a3a',
+        flower1: '#ff6688',
+        flower2: '#ffaa44',
+        flower3: '#aa66ff',
+        sun: '#ffdd44',
+        cloud: '#aabbcc',
+        building: '#2a2a3a',
+        window: '#ffeeaa',
+        blood: '#cc2222',
+        siren1: '#cc0000',
+        siren2: '#0000aa',
+    };
 
-    function drawTree(x, y, h) {
-        // 나무 줄기
-        px(x, y - h, 2, h, '#fff');
-        // 잎 (원형 블록)
-        for (let dy = -3; dy <= 3; dy++) {
-            const w = (3 - Math.abs(dy)) * 2 + 2;
-            px(x - w/2, y - h - 5 + dy, w, 1, '#fff');
-        }
-    }
-
-    function drawDetailedCloud(x, y, size) {
-        const s = size || 1;
-        px(x, y, 8*s, 2*s, '#fff');
-        px(x+2*s, y-2*s, 5*s, 2*s, '#fff');
-        px(x+1*s, y+2*s, 6*s, 1*s, '#fff');
-    }
-
-    function drawGrassRow(y, density) {
-        for (let i = 0; i < W; i += (density || 3)) {
-            const h = 1 + Math.floor(Math.random() * 3);
-            px(i, y - h, 1, h, '#fff');
-        }
-    }
-
-    function drawDetailedFlower(x, y) {
-        px(x, y, 1, 4, '#fff'); // 줄기
-        px(x-1, y-1, 3, 1, '#fff'); // 꽃잎 가로
-        px(x, y-2, 1, 1, '#fff'); // 꽃잎 위
-        px(x, y+0, 1, 1, '#fff'); // 꽃잎 아래
-    }
-
-    function drawButterfly(x, y, t) {
-        const wing = Math.floor(t / 6) % 2;
-        px(x, y, 1, 1, '#fff');
-        if (wing) {
-            px(x-2, y-1, 2, 1, '#fff');
-            px(x+1, y-1, 2, 1, '#fff');
-        } else {
-            px(x-1, y, 1, 1, '#fff');
-            px(x+1, y, 1, 1, '#fff');
-        }
-    }
-
-    function drawBird(x, y, t) {
-        px(x, y, 2, 1, '#fff');
-        const wing = Math.floor(t / 5) % 2;
-        px(x-1, y + (wing ? -1 : 1), 1, 1, '#fff');
-        px(x+2, y + (wing ? -1 : 1), 1, 1, '#fff');
-    }
-
-    function drawSun(x, y, t) {
-        // 원
-        for (let a = 0; a < 12; a++) {
-            const angle = a * (Math.PI * 2 / 12);
-            const r = 5;
-            px(x + Math.cos(angle) * r, y + Math.sin(angle) * r, 1, 1, '#fff');
-        }
-        px(x-1, y-1, 3, 3, '#fff');
-        // 빛줄기
-        for (let a = 0; a < 8; a++) {
-            const angle = a * (Math.PI * 2 / 8) + t * 0.01;
-            px(x + Math.cos(angle) * 8, y + Math.sin(angle) * 8, 1, 1, '#fff');
-        }
-    }
-
+    // === PIXEL ELEMENTS ===
     function drawMan(x, y, opts = {}) {
         const { lying, arms, big } = opts;
         if (lying) {
-            px(x-6, y, 12, 2, '#fff');
-            px(x+7, y-1, 3, 3, '#fff');
-            return;
-        }
-        if (big) {
-            // 큰 버전 (클로즈업용)
-            px(x-4, y-14, 8, 10, '#fff'); // 머리
-            px(x-2, y-16, 4, 3, '#fff');  // 머리카락 상단
-            px(x-1, y-4, 2, 8, '#fff');  // 몸
-            px(x-4, y-2, 2, 5, '#fff');  // 왼팔
-            px(x+2, y-2, 2, 5, '#fff');  // 오른팔
-            px(x-2, y+4, 2, 4, '#fff');  // 왼다리
-            px(x+1, y+4, 2, 4, '#fff');  // 오른다리
+            px(x-6, y, 12, 2, C.shirt);
+            px(x+7, y-1, 3, 3, C.skin);
+            px(x+7, y-3, 3, 2, C.hair);
             return;
         }
         // 머리
-        px(x-1, y-8, 3, 3, '#fff');
+        px(x-1, y-9, 3, 2, C.hair);
+        px(x-1, y-7, 3, 3, C.skin);
         // 몸
-        px(x, y-5, 1, 5, '#fff');
+        px(x-1, y-4, 3, 4, C.shirt);
         // 팔
         if (arms === 'up') {
-            px(x-2, y-7, 1, 4, '#fff');
-            px(x+2, y-7, 1, 4, '#fff');
+            px(x-3, y-7, 1, 4, C.skin);
+            px(x+3, y-7, 1, 4, C.skin);
         } else if (arms === 'spread') {
-            px(x-3, y-4, 3, 1, '#fff');
-            px(x+1, y-4, 3, 1, '#fff');
+            px(x-4, y-3, 3, 1, C.skin);
+            px(x+2, y-3, 3, 1, C.skin);
         } else {
-            px(x-2, y-4, 1, 3, '#fff');
-            px(x+2, y-4, 1, 3, '#fff');
+            px(x-2, y-3, 1, 3, C.skin);
+            px(x+2, y-3, 1, 3, C.skin);
         }
         // 다리
-        px(x-1, y, 1, 3, '#fff');
-        px(x+1, y, 1, 3, '#fff');
+        px(x-1, y, 1, 3, C.pants);
+        px(x+1, y, 1, 3, C.pants);
+    }
+
+    function drawBird(x, y, t, color) {
+        const c = color || '#ddd';
+        px(x, y, 2, 1, c);
+        const w = Math.floor(t/5)%2;
+        px(x-1, y+(w?-1:1), 1, 1, c);
+        px(x+2, y+(w?-1:1), 1, 1, c);
+    }
+
+    function drawButterfly(x, y, t, color) {
+        const c = color || C.flower1;
+        px(x, y, 1, 1, c);
+        const w = Math.floor(t/6)%2;
+        if(w){px(x-2,y-1,2,1,c);px(x+1,y-1,2,1,c);}
+        else{px(x-1,y,1,1,c);px(x+1,y,1,1,c);}
+    }
+
+    function drawCloud(x, y, s) {
+        px(x, y, 8*s, 2*s, C.cloud);
+        px(x+2*s, y-2*s, 5*s, 2*s, C.cloud);
+        px(x+1*s, y+2*s, 6*s, 1*s, C.cloud);
+    }
+
+    function drawTree(x, y, h) {
+        px(x, y-h, 2, h, '#5a3a22');
+        for(let dy=-4;dy<=3;dy++){
+            const w = (4-Math.abs(dy))*2;
+            px(x-w/2, y-h-5+dy, w, 1, '#3a8a3a');
+        }
+    }
+
+    function drawFlower(x, y, color) {
+        px(x, y, 1, 4, '#3a6a3a');
+        px(x-1, y-1, 3, 1, color||C.flower1);
+        px(x, y-2, 1, 1, C.sun);
+    }
+
+    function drawSun(x, y, t) {
+        px(x-2, y-2, 5, 5, C.sun);
+        for(let a=0;a<8;a++){
+            const angle = a*(Math.PI*2/8)+t*0.008;
+            px(x+Math.cos(angle)*6, y+Math.sin(angle)*6, 1, 1, C.sun);
+        }
+    }
+
+    function drawGrassRow(y) {
+        for(let i=0;i<W;i+=2){
+            const h = 1+Math.floor(Math.random()*3);
+            px(i, y-h, 1, h, Math.random()>0.5?C.grass:C.grassLight);
+        }
     }
 
     // === SHOTS ===
     let currentShot = 0, animTime = 0;
 
     const shots = [
-        // PART 1 — 일상 (16:4)
-        { a: '16:4', draw: s1_wake, nar: null },
-        { a: '16:4', draw: s2_alarm, nar: null, snd: 'alarm' },
-        { a: '16:4', draw: s3_ohno, nar: '"조졌네…"' },
-        { a: '16:4', draw: s4_late, nar: '남자는 지각을 했습니다' },
-        { a: '16:4', draw: s5_run, nar: null },
-        { a: '16:4', draw: s6_hall, nar: null },
-        { a: '16:4', draw: s7_eyes, nar: null },
-        { a: '16:4', draw: s_trans1, nar: null, auto: true },
-        // PART 2 — 비상 (3:4) — 평화로운 장면들
-        { a: '3:4', draw: s9_window, nar: null },
-        { a: '3:4', draw: s10_sky, nar: null },
-        { a: '3:4', draw: s11_neighbors, nar: null },
-        { a: '3:4', draw: s12_ground, nar: null },
-        { a: '3:4', draw: s_trans2, nar: null, snd: 'siren', auto: true },
-        // PART 3 — 착지 (1:1)
-        { a: '1:1', draw: s13_fallen, nar: null },
-        { a: '1:1', draw: s14_crowd, nar: null },
-        { a: '1:1', draw: s15_smile, nar: null },
-        { a: '1:1', draw: s16_iris, nar: null, auto: true },
-        { a: '1:1', draw: s17_credits, nar: null },
-        { a: '1:1', draw: s18_audience, nar: null, snd: 'clap' },
+        // PART 1 — 16:4
+        { a:'16:4', draw:s1_wake },
+        { a:'16:4', draw:s2_alarm, snd:'alarm' },
+        { a:'16:4', draw:s3_ohno, nar:'"조졌네…"' },
+        { a:'16:4', draw:s4_late, nar:'남자는 지각을 했습니다' },
+        { a:'16:4', draw:s5_run },
+        { a:'16:4', draw:s6_hall },
+        { a:'16:4', draw:s7_eyes },
+        { a:'16:4', draw:s_trans1, auto:true },
+        // PART 2 — 4:3 (가로로 긴)
+        { a:'4:3', draw:s9_window },
+        { a:'4:3', draw:s10_sky },
+        { a:'4:3', draw:s11_neighbors },
+        { a:'4:3', draw:s12_ground },
+        { a:'4:3', draw:s_trans2, snd:'siren', auto:true },
+        // PART 3 — 1:1
+        { a:'1:1', draw:s13_fallen },
+        { a:'1:1', draw:s14_crowd },
+        { a:'1:1', draw:s15_smile },
+        { a:'1:1', draw:s16_iris, auto:true },
+        { a:'1:1', draw:s17_credits },
+        { a:'1:1', draw:s18_audience, snd:'clap' },
     ];
 
-    // ===== PART 1 =====
+    // === PART 1 ===
     function s1_wake(t) {
-        // 1인칭 눈뜨기
-        ctx.fillStyle = '#0a0a12';
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#0a0a18';
+        ctx.fillRect(0,0,W,H);
         // 천장 디테일
-        px(0, H*0.3, W, 1, '#1a1a1a');
-        // 이불 텍스처
-        for (let i = 0; i < W; i += 6) { px(i, H*0.7, 4, 1, '#1a1a22'); }
-        // 눈 뜨기 바
-        const open = Math.min(t / 50, 1);
-        const bar = Math.floor(H * 0.45 * (1 - open));
-        px(0, 0, W, bar, '#000');
-        px(0, H - bar, W, bar, '#000');
+        px(0, H*0.3, W, 1, '#1a1a2a');
+        for(let i=0;i<W;i+=12) px(i, H*0.7, 8, 1, '#1a1a2a');
+        // 눈뜨기
+        const open = Math.min(t/50, 1);
+        const bar = Math.floor(H*0.45*(1-open));
+        px(0,0,W,bar,'#000');
+        px(0,H-bar,W,bar,'#000');
     }
 
     function s2_alarm(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 폰
-        const cx = W/2, cy = H/2;
-        px(cx-10, cy-14, 20, 28, '#1a1a1a');
-        px(cx-8, cy-12, 16, 24, '#0a0a0a');
-        // 시간 (깜빡)
-        const blink = Math.floor(t / 8) % 2;
-        txt('8:47', cx, cy + 2, 7, blink ? '#fff' : '#555');
-        // 진동
-        if (Math.floor(t/3) % 2) ctx.translate(0.5, 0);
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
+        const cx=W/2, cy=H/2;
+        px(cx-10, cy-14, 20, 28, '#222');
+        px(cx-8, cy-12, 16, 24, '#111');
+        const blink = Math.floor(t/8)%2;
+        txt('8:47', cx, cy+3, 8, blink?'#ff4444':'#661111');
+        if(Math.floor(t/3)%2) ctx.translate(0.5,0);
     }
 
     function s3_ohno(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        drawMan(W/2, H/2 + 5);
-        // 땀
-        if (t > 8) { px(W/2 + 4, H/2 - 6, 1, 2, '#fff'); }
-        if (t > 16) { px(W/2 - 4, H/2 - 5, 1, 1, '#fff'); }
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
+        drawMan(W/2, H/2+5);
+        if(t>8) px(W/2+5, H/2-6, 1, 2, '#88ccff');
     }
 
     function s4_late(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 빈 화면 + 나레이션만
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
     }
 
     function s5_run(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 도시 스카이라인
-        const buildings = [15, 22, 12, 28, 18, 25, 10, 20, 30, 16, 24, 14];
-        buildings.forEach((h, i) => {
-            px(i * 20, H - 8 - h, 14, h, '#0d0d0d');
-            // 창문
-            for (let r = 0; r < Math.floor(h/5); r++) {
-                px(i*20 + 3, H - 8 - h + 2 + r*5, 2, 2, Math.random() > 0.5 ? '#222' : '#000');
-                px(i*20 + 8, H - 8 - h + 2 + r*5, 2, 2, Math.random() > 0.4 ? '#222' : '#000');
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
+        // 스카이라인
+        const bColors = ['#1a1a2e','#1e1e32','#222238','#1a1a2e','#202030'];
+        for(let i=0;i<8;i++){
+            const bh = 12+(i*9)%20;
+            px(i*30, H-8-bh, 22, bh, bColors[i%5]);
+            for(let r=0;r<Math.floor(bh/6);r++){
+                px(i*30+3, H-8-bh+3+r*6, 2, 2, Math.random()>0.4?C.window:'#111');
+                px(i*30+10, H-8-bh+3+r*6, 2, 2, Math.random()>0.5?C.window:'#111');
             }
-        });
-        // 바닥
-        px(0, H - 8, W, 1, '#333');
-        px(0, H - 7, W, 7, '#0a0a0a');
-        // 달리는 남자
-        const rx = 40 + (t * 0.4) % 30;
-        const bob = Math.floor(t / 3) % 2;
-        drawMan(rx, H - 10 - bob, { arms: t % 6 < 3 ? 'spread' : undefined });
-        // 빵
-        px(rx + 2, H - 10 - bob - 7, 2, 1, '#fff');
+        }
+        px(0,H-8,W,1,'#333');
+        // 달리는 캐릭터
+        const rx = 40+(t*0.4)%30;
+        const bob = Math.floor(t/3)%2;
+        drawMan(rx, H-10-bob, {arms:t%6<3?'spread':undefined});
+        px(rx+3, H-10-bob-7, 3, 2, '#dda044'); // 빵
     }
 
     function s6_hall(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 복도 원근
-        px(0, H*0.25, W, 1, '#222');
-        px(0, H*0.75, W, 1, '#222');
-        // 기둥들
-        for (let i = 0; i < 15; i++) {
-            px(i * 16 + 5, H*0.25, 1, H*0.5, '#1a1a1a');
-        }
-        // 난간
-        px(0, H*0.6, W, 1, '#222');
-        // 캐릭터
-        const wx = 20 + (t * 0.4) % (W - 40);
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
+        px(0,H*0.25,W,1,'#2a2a3a');
+        px(0,H*0.75,W,1,'#2a2a3a');
+        for(let i=0;i<15;i++) px(i*16+5, H*0.25, 1, H*0.5, '#1a1a2a');
+        px(0,H*0.6,W,1,'#2a2a3a');
+        const wx = 20+(t*0.4)%(W-40);
         drawMan(wx, H*0.55);
     }
 
     function s7_eyes(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#0a0a14';
+        ctx.fillRect(0,0,W,H);
+        const cx=W/2, cy=H/2;
         // 큰 얼굴
-        const cx = W/2, cy = H/2;
-        px(cx-8, cy-8, 16, 14, '#fff');
-        // 눈 — 크고 반짝이는
-        px(cx-5, cy-4, 3, 3, '#000');
-        px(cx+2, cy-4, 3, 3, '#000');
-        // 하이라이트 (깜빡)
-        if (Math.floor(t/6) % 3 !== 0) {
-            px(cx-4, cy-4, 1, 1, '#fff');
-            px(cx+3, cy-4, 1, 1, '#fff');
+        px(cx-7, cy-8, 14, 12, C.skin);
+        px(cx-7, cy-10, 14, 4, C.hair);
+        // 큰 눈
+        px(cx-4, cy-3, 3, 3, '#fff');
+        px(cx+2, cy-3, 3, 3, '#fff');
+        px(cx-3, cy-2, 2, 2, '#226');
+        px(cx+3, cy-2, 2, 2, '#226');
+        // 하이라이트
+        if(Math.floor(t/6)%3!==0){
+            px(cx-3, cy-3, 1, 1, '#fff');
+            px(cx+3, cy-3, 1, 1, '#fff');
         }
-        // 주변 반짝이
-        const sparkles = [[-14,-6],[12,-8],[-10,6],[14,4]];
-        sparkles.forEach(([sx, sy], i) => {
-            if ((t + i * 5) % 20 < 10) {
-                px(cx+sx, cy+sy, 1, 1, '#fff');
-                px(cx+sx-1, cy+sy, 3, 1, '#fff');
-                px(cx+sx, cy+sy-1, 1, 3, '#fff');
+        // 반짝이
+        const sp = [[-12,-5],[10,-7],[-9,5],[11,3]];
+        sp.forEach(([sx,sy],i)=>{
+            if((t+i*5)%18<9){
+                px(cx+sx,cy+sy,1,1,C.sun);
+                px(cx+sx-1,cy+sy,3,1,C.sun);
+                px(cx+sx,cy+sy-1,1,3,C.sun);
             }
         });
     }
 
     function s_trans1(t) {
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        if (t > 40) nextShot();
+        ctx.fillRect(0,0,W,H);
+        if(t>40) nextShot();
     }
 
-    // ===== PART 2 — 평화롭고 아름다운 씬 =====
+    // === PART 2 — 평화롭고 아름다운 (4:3 가로) ===
     function s9_window(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 아름다운 창밖 — 디테일한 풍경
-        // 하늘 그라데이션 (밝은 → 어두운)
-        for (let i = 0; i < H * 0.7; i++) {
-            const brightness = Math.floor(40 - i * 0.15);
-            px(12, 10 + i, W - 24, 1, `rgb(${brightness},${brightness},${brightness+10})`);
+        // 하늘 배경
+        ctx.fillStyle = C.sky;
+        ctx.fillRect(0,0,W,H);
+        // 하늘 그라데이션
+        for(let i=0;i<H*0.6;i++){
+            const r=26+i*0.1, g=42+i*0.15, b=68+i*0.2;
+            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
         }
         // 태양
-        drawSun(W - 40, 30, t);
+        drawSun(W-35, 25, t);
         // 구름
-        drawDetailedCloud(20 + (t * 0.1) % 60, 25, 1);
-        drawDetailedCloud(70 + (t * 0.08) % 50, 35, 0.8);
+        drawCloud(15+(t*0.1)%80, 18, 1.2);
+        drawCloud(80+(t*0.07)%70, 30, 1);
+        drawCloud(140+(t*0.09)%60, 22, 0.8);
         // 먼 산
-        for (let i = 0; i < W; i++) {
-            const mh = 20 + Math.sin(i * 0.03) * 8 + Math.sin(i * 0.07) * 4;
-            px(i, H * 0.6 - mh + 80, 1, mh, '#1a1a1a');
+        for(let i=0;i<W;i++){
+            const mh = 15+Math.sin(i*0.02)*8+Math.sin(i*0.05)*5;
+            px(i, H*0.55-mh+60, 1, mh, '#2a4a3a');
         }
         // 나무들
-        drawTree(30, H * 0.75, 20);
-        drawTree(55, H * 0.75, 15);
-        drawTree(100, H * 0.75, 22);
+        drawTree(25, H*0.72, 18);
+        drawTree(60, H*0.72, 14);
+        drawTree(110, H*0.72, 20);
+        drawTree(155, H*0.72, 16);
+        // 풀밭
+        px(0, H*0.72, W, H*0.28, C.grass);
+        drawGrassRow(H*0.72);
         // 새
-        for (let i = 0; i < 4; i++) {
-            const bx = 25 + i * 28 + Math.sin(t * 0.03 + i) * 8;
-            const by = 40 + Math.sin(t * 0.025 + i * 1.5) * 10;
-            drawBird(bx, by, t + i * 3);
+        for(let i=0;i<5;i++){
+            const bx=20+i*35+Math.sin(t*0.025+i)*10;
+            const by=35+Math.sin(t*0.02+i*1.5)*12;
+            drawBird(bx, by, t+i*3, '#ddd');
         }
-        // 창틀 (두꺼운 프레임)
-        px(0, 0, W, 10, '#000');
-        px(0, H-10, W, 10, '#000');
-        px(0, 0, 12, H, '#000');
-        px(W-12, 0, 12, H, '#000');
-        px(W/2-1, 0, 2, H, '#222');
-        px(0, H/2-1, W, 2, '#222');
+        // 창틀
+        px(0,0,W,6,'#3a2a1a'); px(0,H-6,W,6,'#3a2a1a');
+        px(0,0,6,H,'#3a2a1a'); px(W-6,0,6,H,'#3a2a1a');
+        px(W/2-1,0,2,H,'#3a2a1a'); px(0,H/2-1,W,2,'#3a2a1a');
     }
 
     function s10_sky(t) {
         // 하늘에서 새들과 춤 — 매우 평화로운
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 넓은 하늘
-        for (let i = 0; i < H; i++) {
-            const b = Math.max(0, 30 - Math.abs(i - H*0.3) * 0.2);
-            if (b > 0) px(0, i, W, 1, `rgb(${Math.floor(b)},${Math.floor(b)},${Math.floor(b+5)})`);
+        // 하늘 그라데이션
+        for(let i=0;i<H;i++){
+            const r=20+i*0.08, g=35+i*0.12, b=55+i*0.18;
+            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
         }
         // 구름 여러겹
-        drawDetailedCloud(10 + (t*0.15) % (W+20) - 10, 20, 1.2);
-        drawDetailedCloud(50 + (t*0.1) % (W+20) - 10, 40, 1);
-        drawDetailedCloud(90 + (t*0.12) % (W+20) - 10, 55, 0.8);
-        // 캐릭터 — 양 팔 벌리고 평화롭게 부유
-        const fy = H * 0.45 + Math.sin(t * 0.025) * 12;
-        drawMan(W/2, fy, { arms: 'spread' });
-        // 새들이 주위를 빙빙 — 많고 느리게
-        for (let i = 0; i < 8; i++) {
-            const a = t * 0.015 + i * (Math.PI * 2 / 8);
-            const r = 25 + Math.sin(t * 0.01 + i) * 8;
-            const bx = W/2 + Math.cos(a) * r;
-            const by = fy - 5 + Math.sin(a) * (r * 0.5);
-            drawBird(bx, by, t + i * 4);
+        drawCloud(5+(t*0.12)%(W+20), 20, 1.5);
+        drawCloud(60+(t*0.08)%(W+20), 45, 1.2);
+        drawCloud(120+(t*0.1)%(W+20), 65, 1);
+        drawCloud(-10+(t*0.06)%(W+30), 85, 0.8);
+        // 캐릭터 — 평화롭게 부유
+        const fy = H*0.4+Math.sin(t*0.02)*15;
+        drawMan(W/2, fy, {arms:'spread'});
+        // 새들 — 원형으로 빙빙
+        for(let i=0;i<8;i++){
+            const a = t*0.012+i*(Math.PI*2/8);
+            const r = 30+Math.sin(t*0.008+i)*8;
+            const bx = W/2+Math.cos(a)*r;
+            const by = fy-5+Math.sin(a)*(r*0.4);
+            drawBird(bx, by, t+i*4);
         }
         // 나비
-        for (let i = 0; i < 3; i++) {
-            const bfx = W * 0.2 + i * W * 0.3 + Math.sin(t * 0.02 + i * 2) * 10;
-            const bfy = H * 0.6 + Math.cos(t * 0.03 + i) * 8;
-            drawButterfly(bfx, bfy, t + i * 7);
+        for(let i=0;i<4;i++){
+            const colors = [C.flower1, C.flower2, C.flower3, '#88ddff'];
+            const bx = W*0.15+i*W*0.22+Math.sin(t*0.018+i*2)*12;
+            const by = H*0.65+Math.cos(t*0.022+i)*10;
+            drawButterfly(bx, by, t+i*7, colors[i]);
         }
     }
 
     function s11_neighbors(t) {
-        // 중간층 — 아래집 주민들이 웃으며 인사
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 아파트 외벽 — 디테일
-        for (let i = 0; i < W; i += 8) {
-            px(i, 0, 1, H, '#0a0a0a');
-        }
-        // 창문 — 따뜻한 빛
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 3; col++) {
-                const wx = 20 + col * 45;
-                const wy = 12 + row * 36;
-                px(wx, wy, 24, 20, '#1a1a1a');
-                px(wx+2, wy+2, 20, 16, '#111');
-                // 주민 (손 흔드는 사람들)
-                if ((row * 3 + col) % 2 === 0) {
-                    px(wx+8, wy+8, 3, 3, '#fff'); // 머리
-                    px(wx+9, wy+11, 1, 4, '#fff'); // 몸
+        // 아파트 외벽
+        ctx.fillStyle = '#2a2832';
+        ctx.fillRect(0,0,W,H);
+        // 벽 텍스처
+        for(let i=0;i<W;i+=10) px(i,0,1,H,'#252330');
+        for(let i=0;i<H;i+=8) px(0,i,W,1,'#252330');
+        // 창문들 — 따뜻한 빛
+        for(let row=0;row<4;row++){
+            for(let col=0;col<4;col++){
+                const wx=15+col*46, wy=10+row*35;
+                px(wx, wy, 28, 22, '#1a1820');
+                px(wx+2, wy+2, 24, 18, '#2a2520');
+                // 따뜻한 빛
+                px(wx+3, wy+3, 22, 16, '#332a1a');
+                // 주민
+                if((row*4+col)%2===0){
+                    px(wx+10, wy+8, 3, 3, C.skin);
+                    px(wx+10, wy+6, 3, 2, C.hair);
+                    px(wx+10, wy+11, 3, 4, C.shirt);
                     // 손 흔들기
-                    const wave = Math.floor(t / 10 + row + col) % 2;
-                    px(wx+11, wy+9 - wave, 2, 1, '#fff');
+                    const wave = Math.floor(t/10+row+col)%2;
+                    px(wx+14, wy+7-wave*2, 2, 1, C.skin);
                 }
             }
         }
-        // 떨어지는 캐릭터 (하지만 평화롭게 — 천천히 내려가며 손 흔듦)
-        const fy = 15 + (t * 0.4) % (H * 0.5);
-        drawMan(W/2 + 20, fy, { arms: 'spread' });
+        // 캐릭터 (옆에서 팔 벌리고 지나감 — 평화로운 느낌)
+        const fy = 12+(t*0.6)%(H*0.6);
+        drawMan(W/2+30, fy, {arms:'spread'});
     }
 
     function s12_ground(t) {
-        // 바닥 근처 — 꽃과 풀과 벌레와 함께
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 하늘 (위쪽 약간)
-        for (let i = 0; i < H * 0.25; i++) {
-            const b = 20 - i * 0.3;
-            if (b > 0) px(0, i, W, 1, `rgb(${Math.floor(b)},${Math.floor(b)},${Math.floor(b+3)})`);
+        // 바닥 — 꽃밭
+        // 하늘
+        for(let i=0;i<H*0.35;i++){
+            const r=22+i*0.12, g=38+i*0.15, b=60+i*0.2;
+            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
         }
-        // 잔디밭 — 풍성하게
-        px(0, H * 0.5, W, H * 0.5, '#0a0a0a');
-        drawGrassRow(H * 0.5, 2);
-        drawGrassRow(H * 0.55, 4);
-        drawGrassRow(H * 0.6, 3);
+        // 풀밭
+        px(0, H*0.35, W, H*0.65, C.grass);
+        drawGrassRow(H*0.35);
+        drawGrassRow(H*0.4);
+        drawGrassRow(H*0.45);
         // 꽃들 — 가득
-        for (let i = 0; i < 12; i++) {
-            drawDetailedFlower(10 + i * 12, H * 0.55 + (i % 3) * 10);
+        const flowerColors = [C.flower1, C.flower2, C.flower3, '#ffaacc', '#aaddff'];
+        for(let i=0;i<16;i++){
+            drawFlower(8+i*12, H*0.42+(i%4)*12, flowerColors[i%5]);
         }
-        // 나비들
-        for (let i = 0; i < 5; i++) {
-            const bx = 15 + i * 28 + Math.sin(t * 0.03 + i * 1.3) * 6;
-            const by = H * 0.35 + Math.cos(t * 0.025 + i * 0.8) * 10;
-            drawButterfly(bx, by, t + i * 5);
+        // 나무
+        drawTree(10, H*0.38, 22);
+        drawTree(W-15, H*0.38, 18);
+        drawTree(W/2, H*0.36, 25);
+        // 나비 많이
+        for(let i=0;i<6;i++){
+            const bx=15+i*30+Math.sin(t*0.02+i*1.2)*8;
+            const by=H*0.25+Math.cos(t*0.018+i*0.7)*12;
+            drawButterfly(bx, by, t+i*5, flowerColors[i%5]);
         }
-        // 나무 (배경)
-        drawTree(15, H * 0.5, 25);
-        drawTree(W - 20, H * 0.5, 20);
-        // 캐릭터 — 꽃밭 사이에서 팔 벌리고 즐김
-        const bobY = Math.sin(t * 0.03) * 3;
-        drawMan(W/2, H * 0.42 + bobY, { arms: 'spread' });
+        // 캐릭터 — 꽃밭에서 양팔 벌림
+        const bobY = Math.sin(t*0.025)*4;
+        drawMan(W/2, H*0.3+bobY, {arms:'spread'});
     }
 
     function s_trans2(t) {
-        // 경찰차 사이렌 — 빨/파 교차
-        const flash = Math.floor(t / 5) % 2;
-        ctx.fillStyle = flash ? '#1a0000' : '#00001a';
-        ctx.fillRect(0, 0, W, H);
-        // 점점 밝아짐
-        const intensity = Math.min(t / 40, 1);
-        ctx.fillStyle = flash ? `rgba(80,0,0,${intensity})` : `rgba(0,0,80,${intensity})`;
-        ctx.fillRect(0, 0, W, H);
-        if (t > 55) nextShot();
+        const flash = Math.floor(t/5)%2;
+        ctx.fillStyle = flash?C.siren1:C.siren2;
+        ctx.fillRect(0,0,W,H);
+        const intensity = Math.min(t/30, 1);
+        ctx.globalAlpha = intensity;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0,0,W,H);
+        ctx.globalAlpha = 1;
+        if(t>55) nextShot();
     }
 
-    // ===== PART 3 =====
+    // === PART 3 ===
     function s13_fallen(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 아스팔트 질감
-        for (let i = 0; i < 30; i++) {
-            px(Math.random() * W, H * 0.65 + Math.random() * (H * 0.35), 1, 1, '#0a0a0a');
-        }
-        // 바닥 라인
-        px(0, H * 0.65, W, 1, '#222');
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0,0,W,H);
+        // 아스팔트
+        px(0, H*0.65, W, H*0.35, '#1a1a1a');
+        px(0, H*0.65, W, 1, '#333');
         // 누워있는 캐릭터
-        drawMan(W/2, H * 0.7, { lying: true });
-        // 피 — 천천히 퍼짐
-        const spread = Math.min(t * 0.1, 8);
-        px(W/2 + 8, H * 0.71, spread, 2, '#fff');
-        px(W/2 + 6, H * 0.73, spread + 2, 1, '#fff');
-        // 주위 서있는 사람들 (멀리서 바라봄)
-        for (let i = 0; i < 7; i++) {
-            drawMan(15 + i * 20, H * 0.52);
-        }
+        drawMan(W/2, H*0.7, {lying:true});
+        // 피
+        const spread = Math.min(t*0.15, 12);
+        px(W/2+8, H*0.71, spread, 2, C.blood);
+        px(W/2+6, H*0.73, spread+3, 1, '#880011');
+        // 서있는 사람들
+        for(let i=0;i<7;i++) drawMan(15+i*20, H*0.5);
     }
 
     function s14_crowd(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 왼쪽: 어른이 아이 눈 가림
-        drawMan(40, H * 0.55);
-        px(44, H * 0.55 - 5, 6, 1, '#fff'); // 손 뻗음
-        // 아이 (작게)
-        px(51, H * 0.55 - 4, 2, 2, '#fff');
-        px(51, H * 0.55 - 2, 1, 3, '#fff');
-        px(50, H * 0.55 + 1, 1, 2, '#fff');
-        px(52, H * 0.55 + 1, 1, 2, '#fff');
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0,0,W,H);
+        // 어른 + 아이 (눈 가림)
+        drawMan(45, H*0.55);
+        px(50, H*0.55-5, 7, 1, C.skin); // 손
+        // 아이
+        px(58, H*0.55-3, 2, 2, C.skin);
+        px(58, H*0.55-1, 2, 3, '#88aacc');
+        px(57, H*0.55+2, 1, 2, C.pants);
+        px(60, H*0.55+2, 1, 2, C.pants);
 
-        // 오른쪽: 소리치는 어른
-        drawMan(105, H * 0.55, { arms: 'up' });
-        // 말풍선 — 심플
-        px(88, H * 0.25, 50, 14, '#fff');
-        px(105, H * 0.39, 2, 3, '#fff');
-        txt('집값 떨어진다!', 113, H * 0.25 + 9, 4, '#000');
+        // 소리치는 어른
+        drawMan(115, H*0.55, {arms:'up'});
+        // 말풍선
+        px(92, H*0.2, 56, 18, '#fff');
+        px(115, H*0.38, 2, 4, '#fff');
+        txt('집값 떨어진다!', 120, H*0.2+12, 7, '#000');
     }
 
     function s15_smile(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        // 큰 얼굴 — 웃고 있음
-        const cx = W/2, cy = H/2;
-        px(cx-12, cy-14, 24, 26, '#fff');
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0,0,W,H);
+        const cx=W/2, cy=H/2;
+        // 큰 얼굴
+        px(cx-14, cy-16, 28, 30, C.skin);
+        px(cx-14, cy-20, 28, 6, C.hair);
         // 눈
-        px(cx-6, cy-6, 4, 4, '#000');
-        px(cx+3, cy-6, 4, 4, '#000');
+        px(cx-7, cy-7, 5, 5, '#fff');
+        px(cx+3, cy-7, 5, 5, '#fff');
+        px(cx-5, cy-5, 3, 3, '#226');
+        px(cx+5, cy-5, 3, 3, '#226');
         // 웃는 입
-        px(cx-5, cy+5, 10, 2, '#000');
-        px(cx-6, cy+4, 1, 1, '#000');
-        px(cx+5, cy+4, 1, 1, '#000');
-        // 피 (아래쪽에 살짝)
-        px(cx-8, cy+14, 16, 2, '#fff');
+        px(cx-6, cy+6, 12, 2, '#c44');
+        px(cx-7, cy+5, 1, 1, '#c44');
+        px(cx+6, cy+5, 1, 1, '#c44');
     }
 
     function s16_iris(t) {
-        // 아이리스 아웃 — 원이 줄어듦
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        const cx = W/2, cy = H/2;
-        const progress = Math.min(t / 90, 1);
-        const maxR = Math.max(W, H);
-        const r = maxR * 0.5 * (1 - progress);
-
-        if (r > 1) {
+        ctx.fillRect(0,0,W,H);
+        const cx=W/2, cy=H/2;
+        const progress = Math.min(t/90, 1);
+        const maxR = Math.max(W,H)*0.5;
+        const r = maxR*(1-progress);
+        if(r>1){
             ctx.save();
             ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.arc(cx, cy, r, 0, Math.PI*2);
             ctx.clip();
-            // 얼굴
-            px(cx-12, cy-14, 24, 26, '#fff');
-            px(cx-6, cy-6, 4, 4, '#000');
-            px(cx+3, cy-6, 4, 4, '#000');
-            px(cx-5, cy+5, 10, 2, '#000');
-            px(cx-6, cy+4, 1, 1, '#000');
-            px(cx+5, cy+4, 1, 1, '#000');
+            px(cx-14, cy-16, 28, 30, C.skin);
+            px(cx-14, cy-20, 28, 6, C.hair);
+            px(cx-7, cy-7, 5, 5, '#fff');
+            px(cx+3, cy-7, 5, 5, '#fff');
+            px(cx-5, cy-5, 3, 3, '#226');
+            px(cx+5, cy-5, 3, 3, '#226');
+            px(cx-6, cy+6, 12, 2, '#c44');
             ctx.restore();
         }
-
-        if (progress >= 1) setTimeout(() => nextShot(), 600);
+        if(progress>=1) setTimeout(()=>nextShot(), 600);
     }
 
     function s17_credits(t) {
         ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        const lines = ['감독 · 기획', '', 'hwanginkeom', '', '바이브코딩 Lab', '', '2026', '', '', 'FIN'];
-        const sy = H - t * 0.25;
-        lines.forEach((l, i) => {
-            const ly = sy + i * 16;
-            if (ly > -6 && ly < H + 6) txt(l, W/2, ly, 5, '#fff');
+        ctx.fillRect(0,0,W,H);
+        const lines = ['감독 · 기획','','hwanginkeom','','바이브코딩 Lab','','2026','','','FIN'];
+        const sy = H-t*0.2;
+        lines.forEach((l,i)=>{
+            const ly = sy+i*16;
+            if(ly>-8&&ly<H+8) txt(l, W/2, ly, 6, '#fff');
         });
     }
 
     function s18_audience(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0,0,W,H);
         // 스크린
-        px(W*0.2, 5, W*0.6, H*0.25, '#0a0a0a');
-        txt('FIN', W/2, H*0.12+3, 6, '#222');
-        // 좌석/관객
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 8; col++) {
-                const hx = 8 + col * 18;
-                const hy = H*0.45 + row * 16;
-                px(hx, hy, 5, 5, '#fff');
-                // 박수
-                if (Math.floor(t/4 + col + row) % 2 === 0) {
-                    px(hx-1, hy+5, 2, 1, '#fff');
-                    px(hx+4, hy+5, 2, 1, '#fff');
+        px(W*0.2, 5, W*0.6, H*0.25, '#111');
+        txt('FIN', W/2, H*0.13+5, 10, '#fff');
+        // 관객
+        for(let row=0;row<4;row++){
+            for(let col=0;col<8;col++){
+                const hx=8+col*18, hy=H*0.45+row*16;
+                px(hx, hy, 5, 5, C.skin);
+                px(hx, hy-2, 5, 2, C.hair);
+                if(Math.floor(t/4+col+row)%2===0){
+                    px(hx-1,hy+5,2,1,C.skin);
+                    px(hx+4,hy+5,2,1,C.skin);
                 }
             }
         }
-        if (t % 20 === 0 && t > 0 && t < 160) playClap();
-        if (t > 80) document.getElementById('ending-btns').classList.add('show');
+        if(t%20===0&&t>0&&t<160) playClap();
+        if(t>80) document.getElementById('ending-btns').classList.add('show');
     }
 
-    // === GAME LOGIC ===
+    // === LOGIC ===
     function nextShot() {
-        if (currentShot < shots.length - 1) {
-            currentShot++; animTime = 0;
+        if(currentShot<shots.length-1){
+            currentShot++; animTime=0;
             const s = shots[currentShot];
             setAspect(s.a);
-            if (s.snd === 'alarm') playAlarm();
-            if (s.snd === 'siren') playSiren();
-            if (s.snd === 'clap') playClap();
-            if (s.nar) { narrationEl.textContent = s.nar; narrationEl.classList.add('show'); }
-            else { narrationEl.classList.remove('show'); }
+            if(s.snd==='alarm') playAlarm();
+            if(s.snd==='siren') playSiren();
+            if(s.snd==='clap') playClap();
+            if(s.nar){narrationEl.textContent=s.nar;narrationEl.classList.add('show');}
+            else{narrationEl.classList.remove('show');}
         }
     }
 
     function startGame() {
-        currentShot = 0; animTime = 0;
+        currentShot=0; animTime=0;
         document.getElementById('ending-btns').classList.remove('show');
         document.getElementById('fullscreen-replay').classList.remove('show');
         narrationEl.classList.remove('show');
         setAspect(shots[0].a);
     }
 
-    container.addEventListener('click', function(e) {
-        if (e.target.tagName === 'BUTTON') return;
+    container.addEventListener('click', function(e){
+        if(e.target.tagName==='BUTTON') return;
         initAudio();
-        if (!shots[currentShot].auto) nextShot();
+        if(!shots[currentShot].auto) nextShot();
     });
 
-    document.getElementById('btn-replay').addEventListener('click', function(e) { e.stopPropagation(); startGame(); });
-    document.getElementById('btn-exit').addEventListener('click', function(e) {
+    document.getElementById('btn-replay').addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
+    document.getElementById('btn-exit').addEventListener('click', function(e){
         e.stopPropagation();
         document.getElementById('ending-btns').classList.remove('show');
         document.getElementById('fullscreen-replay').classList.add('show');
@@ -780,11 +778,13 @@
     document.getElementById('fullscreen-replay').addEventListener('click', startGame);
 
     // === RENDER ===
-    function render() {
+    function render(){
         requestAnimationFrame(render);
-        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.clearRect(0,0,W,H);
         const s = shots[currentShot];
-        if (s && s.draw) s.draw(animTime);
+        if(s&&s.draw) s.draw(animTime);
+        ctx.restore();
         animTime++;
     }
 
