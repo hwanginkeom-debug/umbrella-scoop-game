@@ -235,7 +235,7 @@ function s10_sky(t){
             const octx=oc.getContext('2d');
             octx.drawImage(window._birdRef.img,0,0);
             const raw=octx.getImageData(0,0,iw,ih);
-            const bCols=Math.floor(W/3), bRows=Math.floor(H/3);
+            const bCols=Math.floor(W/2), bRows=Math.floor(H/2);
             const bw=iw/bCols, bh=ih/bRows;
             const pal=[[26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],[68,136,204],[102,136,170],[136,85,68],[119,136,153],[255,255,255],[40,40,60]];
             const blocks=new Array(bRows*bCols);
@@ -277,7 +277,7 @@ function s10_sky(t){
                 const ci=blocks[by*bCols+bx];
                 const c=pal[ci];
                 ctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
-                ctx.fillRect(Math.floor(bx*3+rowOffset),by*3,3,3);
+                ctx.fillRect(Math.floor(bx*2+rowOffset),by*2,2,2);
             }
         }
     }else{
