@@ -573,9 +573,7 @@ document.getElementById('btn-credits').addEventListener('click',e=>{
   lines+='<span style="font-size:24px;color:#fff">Thank you</span>\n<span style="font-size:18px;color:#ccc">by 크에파</span>\n\n\n\n\n';
   el.innerHTML='<div class="credits-roll">'+lines+'</div>';
   // 애니메이션 끝나면 버튼 화면으로 복귀
-  el.querySelector('.credits-roll').addEventListener('animationend',()=>{
-    setTimeout(()=>{el.classList.remove('show');document.getElementById('ending-btns').classList.add('show');},2000);
-  });
+  // 끝나면 멈춤 — 클릭으로만 나감
   el.addEventListener('click',()=>{el.classList.remove('show');document.getElementById('ending-btns').classList.add('show');});
 });
 
