@@ -225,15 +225,35 @@ function s9_window(t){
     drawCameraOverlay(t);
 }
 function s10_sky(t){
-    // 배경 이미지 그리기 (원본 그대로)
-    if(!window._sceneBirdsImg){
-        window._sceneBirdsImg=new Image();
-        window._sceneBirdsImg.src='./scene_birds.jpg';
-        window._sceneBirdsLoaded=false;
-        window._sceneBirdsImg.onload=()=>{window._sceneBirdsLoaded=true;};
+    // 이미지를 숨긴 캔버스에 올려서 픽셀 색상 읽기 → 4x4 블록으로 다시 찍기
+    if(!window._birdRef){
+        window._birdRef={img:new Image(),loaded:false,pixelData:null};
+        window._birdRef.img.crossOrigin='anonymous';
+        window._birdRef.img.src='./scene_birds.jpg';
+        window._birdRef.img.onload=()=>{
+            // 숨긴 캔버스에 이미지를 그려서 픽셀 데이터 추출
+            const oc=document.createElement('canvas');
+            // 4x4 블록 기준으로 샘플링할 해상도 (64x48 → 256/4, 192/4)
+            oc.width=64;oc.height=36; // 16:9 비율에 맞춤 (원본이 16:9 느낌)
+            const octx=oc.getContext('2d');
+            octx.drawImage(window._birdRef.img,0,0,64,36);
+            window._birdRef.pixelData=octx.getImageData(0,0,64,36);
+            window._birdRef.loaded=true;
+        };
     }
-    if(window._sceneBirdsLoaded){
-        ctx.drawImage(window._sceneBirdsImg,0,0,W,H);
+    if(window._birdRef.loaded&&window._birdRef.pixelData){
+        const pd=window._birdRef.pixelData;
+        const pw=pd.width,ph=pd.height;
+        const bw=W/pw,bh=H/ph; // 각 블록 크기 (4x~5.3px)
+        for(let y=0;y<ph;y++){
+            for(let x=0;x<pw;x++){
+                const idx=(y*pw+x)*4;
+                const r=pd.data[idx],g=pd.data[idx+1],b=pd.data[idx+2],a=pd.data[idx+3];
+                if(a<10) continue;
+                ctx.fillStyle=`rgb(${r},${g},${b})`;
+                ctx.fillRect(Math.floor(x*bw),Math.floor(y*bh),Math.ceil(bw),Math.ceil(bh));
+            }
+        }
     }else{
         ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
     }
