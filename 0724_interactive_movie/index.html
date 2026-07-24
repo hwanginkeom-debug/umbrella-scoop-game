@@ -70,14 +70,14 @@ const SCENES=[
 {id:'s01',img:'assets/s01_room_wake.png.jpeg',bgm:'calm',beats:[
   {t:''},
   {t:'- 인생은 삶의 반복이다'},
-  {t:'- 아침은 지겨울 정도로 허기지고'},
-  {t:'- 점심은 정신을 차리지 못할 정도로 숨가쁘며'},
-  {t:'- 새벽은 언제 어두워질지도 모를 정도로 각박하고 길다'}
+  {t:'- 아침은 지겨울 정도로<br>허기지고'},
+  {t:'- 점심은 정신을 차리지 못할 정도로<br>숨가쁘며'},
+  {t:'- 새벽은 언제 어두워질지도 모를 정도로<br>각박하고 길다'}
 ],auto:5200},
 {id:'s02',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[{t:''}],auto:3900},
 {id:'s03',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
-  {t:'- 탄생의 빛을 보면 설탕물과 소금물 정도의 밀도 차이를 느낀다'},
-  {t:'- 혈류는 이럴 때만 야속하게 힘 있게 뛰지 않는다'}
+  {t:'- 탄생의 빛을 보면<br>설탕물과 소금물 정도의 밀도 차이를 느낀다'},
+  {t:'- 혈류는 이럴 때만<br>야속하게 힘 있게 뛰지 않는다'}
 ],auto:5200},
 {id:'s04',img:'assets/s04_hall_exit.png',bgm:'footsteps',beats:[{t:''}],auto:3900},
 {id:'s05',img:'assets/s05_hall_title.jpeg',beats:[{t:'- 비상'}],auto:3900},
@@ -86,10 +86,10 @@ const SCENES=[
   {t:'- 하늘을 보며 눈망울을 치켜올린다'}
 ],auto:4550},
 {id:'s08',img:'assets/s08_city_view.jpg',beats:[
-  {t:'- 개미집을 멀리서 보면 광활한 우주가 보인다'}
+  {t:'- 개미집을 멀리서 보면<br>광활한 우주가 보인다'}
 ],auto:5200},
 {id:'s09',img:'assets/s09_birds_float.jpeg',bgm:'classic',fx:'glitch',beats:[
-  {t:'- 몸을 던지면 모이를 쪼러 온갖 새들이 나에게 몰려온다'}
+  {t:'- 몸을 던지면 모이를 쪼러<br>온갖 새들이 나에게 몰려온다'}
 ],auto:6500},
 {id:'s10',img:'assets/s10_crowd_sunset.jpeg',fx:'glitch',beats:[
   {t:'- 오늘은 사람들에게 인사를 했다'},
@@ -118,13 +118,13 @@ const SCENES=[
 ],auto:2800},
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[
   {t:'- 물이 먹고 싶다고 생각했다'},
-  {t:'- 왜냐하면 그것은 없었기 때문이다'},
-  {t:'- 생각해 보면 당연한 일이었다'},
-  {t:'- 하지만 또 달리 생각해 보면 당연한 게 아니었다'}
+  {t:'- 왜냐하면<br>그것은 없었기 때문이다'},
+  {t:'- 생각해 보면<br>당연한 일이었다'},
+  {t:'- 하지만 또 달리 생각해 보면<br>당연한 게 아니었다'}
 ],auto:2800},
 {id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[
   {t:'- 지겹다고 생각했다'},
-  {t:'- 하지만 지겹지 않은 것 같기도 하다'}
+  {t:'- 하지만<br>지겹지 않은 것 같기도 하다'}
 ],auto:2800},
 {id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:5500},
 {id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',sfx:'applause',fx:'pan_down',beats:[{t:''}],auto:5200},
@@ -175,14 +175,7 @@ function playBgm(type){
       a1.volume=v1;a2.volume=v2;
       if(v1>=mx1&&v2>=mx2)clearInterval(fi);
     },50);
-    bgmN.push({stop:()=>{
-      let vv1=a1.volume,vv2=a2.volume;
-      const fo=setInterval(()=>{
-        vv1-=.03;vv2-=.03;
-        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
-        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
-      },50);
-    }});
+    bgmN.push({stop:()=>{a1.pause();a1.currentTime=0;a2.pause();a2.currentTime=0;}});
     return;
   }
   // 파일 기반 재생 시도
@@ -300,14 +293,7 @@ function _synthBgm(type){
       a1.volume=v1;a2.volume=v2;
       if(v1>=mx1&&v2>=mx2)clearInterval(fi);
     },50);
-    bgmN.push({stop:()=>{
-      let vv1=a1.volume,vv2=a2.volume;
-      const fo=setInterval(()=>{
-        vv1-=.03;vv2-=.03;
-        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
-        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
-      },50);
-    }});
+    bgmN.push({stop:()=>{a1.pause();a1.currentTime=0;a2.pause();a2.currentTime=0;}});
     return;
   }else if(type==='melancholy'){
     bgmG.gain.value=.025;
@@ -541,7 +527,7 @@ function updateBar(){
 }
 function showNar(txt){
   if(!txt){narEl.classList.remove('show');return;}
-  narEl.textContent=txt;narEl.classList.add('show');
+  narEl.innerHTML=txt;narEl.classList.add('show');
 }
 
 // ===== CONTROL =====
