@@ -99,25 +99,24 @@ const SCENES=[
 {id:'s15',img:'assets/s15_dark_rest.jpg',bgm:'quiet',beats:[
   {t:'- 꿈을 꿨다.'},
   {t:'- 아주 짧았다.'}
-],auto:3500},
+],auto:2800},
 {id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature_mel',fx:'natural',beats:[
   {t:'- 짧은 가방'},
   {t:'- 아름다운 공간'},
   {t:'- 맑은 피'},
   {t:'- 똑똑한 사람들'}
-],auto:3200},
+],auto:2800},
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[
   {t:'- 물이 먹고 싶다고 생각했다.'},
   {t:'- 왜냐하면 그것은 없었기 때문이다.'},
   {t:'- 생각해 보면 당연한 일이었다.'},
   {t:'- 하지만 또 달리 생각해 보면 당연한 게 아니었다.'}
-],auto:3200},
+],auto:2800},
 {id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[
   {t:'- 지겹다고 싶었다.'},
   {t:'- 하지만 또 달리 보이기도 한다.'}
-],auto:3500},
+],auto:2800},
 {id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:5500},
-{id:'credits',img:null,fx:'natural',beats:[{t:''}],auto:8000},
 {id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',fx:'pan_down',beats:[{t:''}],auto:5200},
 {id:'s22',img:null,fx:'iris',beats:[{t:''}],auto:0}
 ];
@@ -414,21 +413,8 @@ function render(){
   if(cur>=SCENES.length)return;
   const sc=SCENES[cur];
 
-  if(sc.id==='credits'){
-    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
-    ctx.fillStyle='#888';ctx.font='7px monospace';ctx.textAlign='center';
-    const credits=['','飛翔','','기획 · 연출','hwanginkeom','','바이브코딩 Lab','','픽셀아트 시네마틱','2026','','',''];
-    const startY=H-animT*0.5;
-    credits.forEach((line,i)=>{
-      const ly=startY+i*14;
-      if(ly>-10&&ly<H+10) ctx.fillText(line,W/2,ly);
-    });
-    ctx.fillStyle='#000';ctx.fillRect(0,0,MASK,H);ctx.fillRect(W-MASK,0,MASK,H);
-    animT++;return;
-  }
   if(sc.id==='s22'){
     if(trans){
-      // iris 트랜지션 진행 중 — 이전 씬에서 원 닫힘
       const t=transP;
       if(blocks) drawBlocks(blocks,wave);
       const maxR=Math.sqrt(W*W+H*H)/2;
@@ -442,7 +428,18 @@ function render(){
       if(transP>=1){trans=false;blocks=null;}
       animT++;return;
     }
-    document.getElementById('ending-btns').classList.add('show');return;
+    // 크레딧 스크롤 + 버튼
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#666';ctx.font='7px monospace';ctx.textAlign='center';
+    const creds=['','飛翔','','기획 · 연출','hwanginkeom','','바이브코딩 Lab','','픽셀아트 시네마틱','2026'];
+    const startY=H-animT*0.4;
+    creds.forEach((line,i)=>{
+      const ly=startY+i*14;
+      if(ly>-10&&ly<H+10) ctx.fillText(line,W/2,ly);
+    });
+    ctx.fillStyle='#000';ctx.fillRect(0,0,MASK,H);ctx.fillRect(W-MASK,0,MASK,H);
+    document.getElementById('ending-btns').classList.add('show');
+    animT++;return;
   }
 
   if(trans&&nextBlocks){
