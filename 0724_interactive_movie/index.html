@@ -436,7 +436,7 @@ function restart(){
 }
 
 // ===== EVENTS =====
-container.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')return;initA();advance();});
+container.addEventListener('click',e=>{if(e.target.tagName==='BUTTON')return;initA();document.getElementById('notice').style.display='none';advance();});
 document.getElementById('btn-replay').addEventListener('click',e=>{e.stopPropagation();restart();});
 document.getElementById('btn-exit').addEventListener('click',e=>{
   e.stopPropagation();
