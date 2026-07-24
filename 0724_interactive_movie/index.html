@@ -90,10 +90,10 @@ const SCENES=[
 ],auto:4550},
 {id:'s11',img:'assets/s11_meadow_fall.jpeg',fx:'glitch',beats:[
   {t:'- 어 세상이 $!@%!#!@아@'}
-],auto:2500},
-{id:'s12',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[{t:''}],auto:2000},
+],auto:1800},
+{id:'s12',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[{t:''}],auto:1500},
 {id:'s13',img:'assets/s13_ground_body.jpeg',bgm:'rain',beats:[{t:''}],auto:5200},
-{id:'s14',img:'assets/s14_rain_crowd.jpeg',sfx:'crowd',beats:[
+{id:'s14',img:'assets/s14_rain_crowd.jpeg',sfx:'murmur',beats:[
   {t:'- 집값 떨어지게 어!'},
   {t:'- 에휴 말세다 말세'},
   {t:'- 저런 거 보면 안 돼!'}
@@ -103,8 +103,8 @@ const SCENES=[
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[{t:''}],auto:3900},
 {id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[{t:''}],auto:3900},
 {id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'melancholy',fx:'natural',beats:[{t:''}],auto:5200},
-{id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',fx:'white',beats:[{t:''}],auto:5200},
-{id:'s22',img:null,beats:[{t:''}],auto:0}
+{id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',fx:'pan_down',beats:[{t:''}],auto:5200},
+{id:'s22',img:null,fx:'iris',beats:[{t:''}],auto:0}
 ];
 
 // ===== STATE =====
@@ -248,6 +248,15 @@ function playSfx(type){
     for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.2*(1+Math.sin(i/200)*.5);
     const s=actx.createBufferSource(),g=actx.createGain();s.buffer=b;g.gain.value=.08;
     s.connect(g);g.connect(actx.destination);s.start();
+  }else if(type==='murmur'){
+    // 웅웅거리는 군중 소리
+    const o=actx.createOscillator(),g=actx.createGain();
+    o.type='sawtooth';o.frequency.value=90;g.gain.value=.06;
+    const lfo=actx.createOscillator(),lg=actx.createGain();
+    lfo.frequency.value=2.5;lg.gain.value=.03;
+    lfo.connect(lg);lg.connect(g.gain);
+    o.connect(g);g.connect(actx.destination);o.start();lfo.start();
+    setTimeout(()=>{g.gain.linearRampToValueAtTime(0,actx.currentTime+1);setTimeout(()=>{o.stop();lfo.stop();},1100);},2000);
   }
 }
 
@@ -329,7 +338,7 @@ function render(){
       if(blocks){ctx.globalAlpha=1-t;drawBlocks(blocks,wave);ctx.globalAlpha=1;}
       ctx.globalAlpha=t;drawBlocks(nextBlocks,wave);ctx.globalAlpha=1;
     }else{drawBlocks(nextBlocks,wave);}
-    transP+=.02;
+    transP+=(SCENES[cur]&&SCENES[cur].fx==='pan_down')?.008:.02;
     if(transP>=1){trans=false;blocks=nextBlocks;nextBlocks=null;}
   }else{
     drawBlocks(blocks,wave);
