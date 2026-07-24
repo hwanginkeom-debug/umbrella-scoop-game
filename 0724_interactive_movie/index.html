@@ -6,7 +6,6 @@
     <title>비상</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             background: #111;
             overflow: hidden;
@@ -16,7 +15,6 @@
             min-height: 100vh;
             cursor: pointer;
         }
-
         #game-container {
             position: relative;
             background: #0a0a14;
@@ -24,7 +22,6 @@
             transition: width 1.2s ease, height 1.2s ease;
             border: 1px solid #222;
         }
-
         canvas {
             display: block;
             width: 100%;
@@ -32,27 +29,21 @@
             image-rendering: pixelated;
             image-rendering: crisp-edges;
         }
-
         #narration {
             position: absolute;
-            bottom: 14px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
             color: #eee;
-            font-size: 11px;
+            font-size: 12px;
             font-family: monospace;
-            line-height: 1.8;
             text-align: center;
             max-width: 85%;
             display: none;
             z-index: 100;
             letter-spacing: 0.5px;
         }
-
         #narration.show { display: block; }
-
-
-
         #ending-btns {
             position: absolute;
             bottom: 25%;
@@ -62,9 +53,7 @@
             gap: 20px;
             z-index: 300;
         }
-
         #ending-btns.show { display: flex; }
-
         #ending-btns button {
             font-family: monospace;
             font-size: 11px;
@@ -73,12 +62,8 @@
             color: #fff;
             border: 1px solid #555;
             cursor: pointer;
-            letter-spacing: 1px;
         }
-
         #ending-btns button:hover { background: #fff; color: #000; }
-
-        /* 나가기 → 공포 다시보기 */
         #fullscreen-replay {
             position: fixed;
             inset: 0;
@@ -90,9 +75,7 @@
             z-index: 9999;
             cursor: pointer;
         }
-
         #fullscreen-replay.show { display: flex; }
-
         #fullscreen-replay .horror-text {
             font-family: monospace;
             font-size: 32px;
@@ -101,14 +84,12 @@
             animation: horror-pulse 0.8s infinite;
             text-shadow: 0 0 10px #f00, 0 0 20px #900;
         }
-
         @keyframes horror-pulse {
-            0%,100% { opacity: 1; transform: scale(1); }
-            25% { opacity: 0.7; transform: scale(1.02) skewX(-1deg); }
-            50% { opacity: 1; transform: scale(0.98); }
-            75% { opacity: 0.8; transform: scale(1.01) skewX(1deg); }
+            0%,100%{opacity:1;transform:scale(1)}
+            25%{opacity:0.7;transform:scale(1.02) skewX(-1deg)}
+            50%{opacity:1;transform:scale(0.98)}
+            75%{opacity:0.8;transform:scale(1.01) skewX(1deg)}
         }
-
         #fullscreen-replay .sub-text {
             font-family: monospace;
             font-size: 10px;
@@ -116,30 +97,17 @@
             margin-top: 20px;
             animation: flicker 3s infinite;
         }
-
-        @keyframes flicker {
-            0%,100%{opacity:0.6} 50%{opacity:0.2} 52%{opacity:0.8} 54%{opacity:0.3}
-        }
-
+        @keyframes flicker {0%,100%{opacity:0.6}50%{opacity:0.2}52%{opacity:0.8}54%{opacity:0.3}}
         .back-btn {
-            position: fixed;
-            top: 8px;
-            left: 8px;
-            z-index: 10000;
-            padding: 4px 10px;
-            background: transparent;
-            color: #444;
-            font-size: 9px;
-            font-family: monospace;
-            text-decoration: none;
+            position: fixed; top: 8px; left: 8px; z-index: 10000;
+            padding: 4px 10px; background: transparent;
+            color: #444; font-size: 9px; font-family: monospace; text-decoration: none;
         }
-
         .back-btn:hover { color: #aaa; }
     </style>
 </head>
 <body>
     <a href="../bridge.html" class="back-btn">← BACK</a>
-
     <div id="game-container">
         <canvas id="canvas"></canvas>
         <div id="narration"></div>
@@ -148,728 +116,599 @@
             <button id="btn-exit">나가기</button>
         </div>
     </div>
-
     <div id="fullscreen-replay">
         <div class="horror-text">다시보기</div>
         <div class="sub-text">나갈 수 없습니다</div>
     </div>
+<script>
+// === AUDIO ===
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function initAudio(){if(!audioCtx)audioCtx=new AudioCtx();}
+function playAlarm(){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='square';g.gain.value=0.06;o.start();let c=0;const iv=setInterval(()=>{o.frequency.value=c%2?550:440;c++;if(c>8){clearInterval(iv);g.gain.value=0;o.stop();}},120);}
+function playSiren(){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='sawtooth';g.gain.value=0.05;o.start();let t=0;const iv=setInterval(()=>{o.frequency.value=280+Math.sin(t*3)*180;t+=0.04;},25);setTimeout(()=>{clearInterval(iv);g.gain.value=0;o.stop();},2200);}
+function playClap(){initAudio();const b=audioCtx.createBuffer(1,audioCtx.sampleRate*0.06,audioCtx.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=b;s.connect(g);g.connect(audioCtx.destination);g.gain.value=0.15;s.start();}
 
-    <script>
-    // === AUDIO ===
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    let audioCtx;
-    function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const container = document.getElementById('game-container');
+const narrationEl = document.getElementById('narration');
+let W=320, H=80;
 
-    function playAlarm() {
-        initAudio();
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.connect(g); g.connect(audioCtx.destination);
-        osc.type = 'square'; g.gain.value = 0.06;
-        osc.start();
-        let c = 0;
-        const iv = setInterval(() => { osc.frequency.value = c%2 ? 550 : 440; c++; if(c>8){clearInterval(iv);g.gain.value=0;osc.stop();}}, 120);
-    }
+function setAspect(ratio){
+    const maxW=Math.min(window.innerWidth*0.92,820);
+    const maxH=window.innerHeight*0.88;
+    let w,h;
+    if(ratio==='16:4'){w=maxW;h=w*(4/16);W=320;H=80;}
+    else if(ratio==='4:3'){w=maxW;h=w*(3/4);if(h>maxH){h=maxH;w=h*(4/3);}W=256;H=192;}
+    else{const s=Math.min(maxW,maxH);w=s;h=s;W=200;H=200;}
+    container.style.width=w+'px';container.style.height=h+'px';
+    canvas.width=W;canvas.height=H;
+}
 
-    function playSiren() {
-        initAudio();
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.connect(g); g.connect(audioCtx.destination);
-        osc.type = 'sawtooth'; g.gain.value = 0.05;
-        osc.start();
-        let t = 0;
-        const iv = setInterval(() => { osc.frequency.value = 280+Math.sin(t*3)*180; t+=0.04; }, 25);
-        setTimeout(() => { clearInterval(iv); g.gain.value=0; osc.stop(); }, 2200);
-    }
+function px(x,y,w,h,c){ctx.fillStyle=c||'#fff';ctx.fillRect(Math.floor(x),Math.floor(y),w||1,h||1);}
+function txt(str,x,y,sz,c){ctx.fillStyle=c||'#fff';ctx.font='bold '+(sz||8)+'px monospace';ctx.textAlign='center';ctx.fillText(str,x,y);}
 
-    function playClap() {
-        initAudio();
-        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.06, audioCtx.sampleRate);
-        const d = buf.getChannelData(0);
-        for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);
-        const src = audioCtx.createBufferSource();
-        const g = audioCtx.createGain();
-        src.buffer=buf; src.connect(g); g.connect(audioCtx.destination);
-        g.gain.value=0.15; src.start();
-    }
+// === COLORS ===
+const C={
+    skin:'#e8b87a',skinDark:'#c89058',
+    hair:'#3a2211',hairLight:'#5a3a22',
+    shirt:'#3377cc',shirtLight:'#5599ee',shirtDark:'#225588',
+    pants:'#2a3355',pantsDark:'#1a2244',
+    sky:'#0a1628',skyMid:'#162844',skyLight:'#224466',
+    grass:'#1a5522',grassLight:'#2a7733',grassDark:'#0d3a15',
+    tree:'#5a3a1a',treeLight:'#7a5a2a',leaf:'#1a8822',leafLight:'#33aa44',leafDark:'#0d6618',
+    flower1:'#ee5588',flower2:'#ffaa33',flower3:'#aa55ee',flower4:'#55ccff',
+    sun:'#ffdd44',sunGlow:'#ffee88',
+    cloud:'#667788',cloudLight:'#8899aa',
+    building:'#1a1a2e',windowLit:'#ffeeaa',windowDark:'#111122',
+    blood:'#aa1122',bloodDark:'#661111',
+    wood:'#6a4422',woodDark:'#4a2a11',
+};
 
-    // === CANVAS ===
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const container = document.getElementById('game-container');
-    const narrationEl = document.getElementById('narration');
-    let W = 240, H = 60;
+// === DETAILED SPRITES ===
 
-    function setAspect(ratio) {
-        const maxW = Math.min(window.innerWidth * 0.9, 760);
-        const maxH = window.innerHeight * 0.85;
-        let w, h;
-        if (ratio === '16:4') {
-            w = maxW; h = w * (4/16);
-            W = 240; H = 60;
-        } else if (ratio === '4:3') {
-            // 가로로 긴 4:3
-            w = maxW; h = w * (3/4);
-            if (h > maxH) { h = maxH; w = h * (4/3); }
-            W = 200; H = 150;
-        } else {
-            const s = Math.min(maxW, maxH);
-            w = s; h = s;
-            W = 160; H = 160;
+// 나무 (FAITH 스타일 — 약 15-20px 높이)
+function drawTreeDetailed(x, y, size){
+    const s = size||1;
+    // 줄기
+    const tw = Math.ceil(3*s), th = Math.ceil(16*s);
+    px(x-1*s, y-th, tw, th, C.tree);
+    px(x-0*s, y-th, 1*s, th, C.treeLight);
+    // 가지들
+    // 아래 가지
+    px(x-6*s, y-8*s, 5*s, 1*s, C.tree);
+    px(x+2*s, y-10*s, 5*s, 1*s, C.tree);
+    // 잎 뭉치들 (삼각 층)
+    for(let layer=0;layer<3;layer++){
+        const ly = y - th + 2*s + layer*4*s;
+        const lw = (7-layer*1.5)*s;
+        for(let dy=0;dy<4*s;dy++){
+            const rowW = lw*(1-dy/(4*s))*1.2;
+            px(x-rowW/2, ly+dy, rowW, 1, dy%2?C.leaf:C.leafLight);
         }
-        container.style.width = w + 'px';
-        container.style.height = h + 'px';
-        canvas.width = W; canvas.height = H;
     }
+    // 디테일 잎 가닥
+    px(x-5*s, y-12*s, 2*s, 1*s, C.leafLight);
+    px(x+3*s, y-14*s, 2*s, 1*s, C.leaf);
+    px(x-3*s, y-6*s, 3*s, 1*s, C.leafDark);
+}
 
-    function px(x, y, w, h, c) {
-        ctx.fillStyle = c || '#fff';
-        ctx.fillRect(Math.floor(x), Math.floor(y), w||1, h||1);
-    }
-
-    function txt(str, x, y, sz, c) {
-        ctx.fillStyle = c || '#fff';
-        ctx.font = 'bold ' + (sz||6) + 'px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(str, x, y);
-    }
-
-    // === COLORS ===
-    const C = {
-        skin: '#ffcc88',
-        hair: '#4a3322',
-        shirt: '#4488cc',
-        pants: '#334466',
-        sky: '#1a2a44',
-        skyLight: '#2a4466',
-        grass: '#2a5a2a',
-        grassLight: '#3a7a3a',
-        flower1: '#ff6688',
-        flower2: '#ffaa44',
-        flower3: '#aa66ff',
-        sun: '#ffdd44',
-        cloud: '#aabbcc',
-        building: '#2a2a3a',
-        window: '#ffeeaa',
-        blood: '#cc2222',
-        siren1: '#cc0000',
-        siren2: '#0000aa',
-    };
-
-    // === PIXEL ELEMENTS ===
-    function drawMan(x, y, opts = {}) {
-        const { lying, arms, big } = opts;
-        if (lying) {
-            px(x-6, y, 12, 2, C.shirt);
-            px(x+7, y-1, 3, 3, C.skin);
-            px(x+7, y-3, 3, 2, C.hair);
-            return;
-        }
-        // 머리
-        px(x-1, y-9, 3, 2, C.hair);
-        px(x-1, y-7, 3, 3, C.skin);
-        // 몸
-        px(x-1, y-4, 3, 4, C.shirt);
-        // 팔
-        if (arms === 'up') {
-            px(x-3, y-7, 1, 4, C.skin);
-            px(x+3, y-7, 1, 4, C.skin);
-        } else if (arms === 'spread') {
-            px(x-4, y-3, 3, 1, C.skin);
-            px(x+2, y-3, 3, 1, C.skin);
-        } else {
-            px(x-2, y-3, 1, 3, C.skin);
-            px(x+2, y-3, 1, 3, C.skin);
-        }
+// 캐릭터 (멀리서 보는 뷰 — 약 18-20px 높이)
+function drawManDetailed(x, y, opts={}){
+    const {lying, arms, running, bread} = opts;
+    if(lying){
+        // 누워있는 — 가로로 긴
+        px(x-10, y, 20, 3, C.shirt);
+        px(x-10, y+3, 20, 2, C.shirtDark);
+        px(x+10, y-2, 5, 5, C.skin);
+        px(x+10, y-4, 5, 3, C.hair);
         // 다리
-        px(x-1, y, 1, 3, C.pants);
-        px(x+1, y, 1, 3, C.pants);
+        px(x-12, y+2, 4, 2, C.pants);
+        return;
     }
-
-    function drawBird(x, y, t, color) {
-        const c = color || '#ddd';
-        px(x, y, 2, 1, c);
-        const w = Math.floor(t/5)%2;
-        px(x-1, y+(w?-1:1), 1, 1, c);
-        px(x+2, y+(w?-1:1), 1, 1, c);
+    // 머리카락 (5x4)
+    px(x-2, y-18, 5, 4, C.hair);
+    px(x-3, y-16, 1, 2, C.hair);
+    px(x+3, y-16, 1, 2, C.hair);
+    // 얼굴 (5x5)
+    px(x-2, y-14, 5, 5, C.skin);
+    px(x-2, y-13, 1, 1, C.skinDark); // 그림자
+    // 눈 (작은 점)
+    px(x-1, y-12, 1, 1, '#222');
+    px(x+1, y-12, 1, 1, '#222');
+    // 몸통 (5x7)
+    px(x-2, y-9, 5, 7, C.shirt);
+    px(x-2, y-9, 5, 1, C.shirtLight);
+    px(x-2, y-3, 5, 1, C.shirtDark);
+    // 팔
+    if(arms==='spread'){
+        px(x-5, y-8, 3, 2, C.shirt);
+        px(x+3, y-8, 3, 2, C.shirt);
+        px(x-6, y-8, 1, 2, C.skin);
+        px(x+5, y-8, 1, 2, C.skin);
+    } else if(arms==='up'){
+        px(x-3, y-14, 1, 6, C.shirt);
+        px(x+3, y-14, 1, 6, C.shirt);
+        px(x-3, y-15, 1, 1, C.skin);
+        px(x+3, y-15, 1, 1, C.skin);
+    } else {
+        px(x-3, y-8, 1, 5, C.shirt);
+        px(x+3, y-8, 1, 5, C.shirt);
+        px(x-3, y-3, 1, 2, C.skin);
+        px(x+3, y-3, 1, 2, C.skin);
     }
-
-    function drawButterfly(x, y, t, color) {
-        const c = color || C.flower1;
-        px(x, y, 1, 1, c);
-        const w = Math.floor(t/6)%2;
-        if(w){px(x-2,y-1,2,1,c);px(x+1,y-1,2,1,c);}
-        else{px(x-1,y,1,1,c);px(x+1,y,1,1,c);}
+    // 다리 (2x5 각각)
+    px(x-2, y-2, 2, 5, C.pants);
+    px(x+1, y-2, 2, 5, C.pants);
+    px(x-2, y+3, 2, 1, C.pantsDark);
+    px(x+1, y+3, 2, 1, C.pantsDark);
+    // 빵
+    if(bread){
+        px(x+3, y-12, 4, 3, '#dda044');
+        px(x+4, y-12, 3, 1, '#eebb55');
     }
-
-    function drawCloud(x, y, s) {
-        px(x, y, 8*s, 2*s, C.cloud);
-        px(x+2*s, y-2*s, 5*s, 2*s, C.cloud);
-        px(x+1*s, y+2*s, 6*s, 1*s, C.cloud);
+    // 달리기 포즈
+    if(running){
+        px(x-3, y, 2, 2, C.pants);
+        px(x+2, y-1, 2, 2, C.pants);
     }
+}
 
-    function drawTree(x, y, h) {
-        px(x, y-h, 2, h, '#5a3a22');
-        for(let dy=-4;dy<=3;dy++){
-            const w = (4-Math.abs(dy))*2;
-            px(x-w/2, y-h-5+dy, w, 1, '#3a8a3a');
-        }
+// 큰 얼굴 클로즈업 (화면의 60% 차지)
+function drawFaceCloseup(cx, cy, opts={}){
+    const {smile, sparkle, t} = opts;
+    const s = Math.min(W,H)*0.25;
+    // 얼굴 윤곽 (둥글게)
+    for(let dy=-s;dy<=s;dy++){
+        const rowW = Math.sqrt(s*s - dy*dy)*1.1;
+        px(cx-rowW, cy+dy, rowW*2, 1, C.skin);
     }
-
-    function drawFlower(x, y, color) {
-        px(x, y, 1, 4, '#3a6a3a');
-        px(x-1, y-1, 3, 1, color||C.flower1);
-        px(x, y-2, 1, 1, C.sun);
+    // 머리카락 (위쪽)
+    for(let dy=-s;dy<-s*0.4;dy++){
+        const rowW = Math.sqrt(s*s - dy*dy)*1.15;
+        px(cx-rowW, cy+dy, rowW*2, 1, C.hair);
     }
-
-    function drawSun(x, y, t) {
-        px(x-2, y-2, 5, 5, C.sun);
-        for(let a=0;a<8;a++){
-            const angle = a*(Math.PI*2/8)+t*0.008;
-            px(x+Math.cos(angle)*6, y+Math.sin(angle)*6, 1, 1, C.sun);
-        }
+    px(cx-s*0.8, cy-s*0.3, s*0.2, s*0.4, C.hair); // 옆머리
+    px(cx+s*0.6, cy-s*0.3, s*0.2, s*0.4, C.hair);
+    // 눈 (큰)
+    const eyeS = s*0.18;
+    // 흰자
+    px(cx-s*0.3-eyeS, cy-s*0.1, eyeS*2, eyeS*1.6, '#fff');
+    px(cx+s*0.3-eyeS, cy-s*0.1, eyeS*2, eyeS*1.6, '#fff');
+    // 동공
+    px(cx-s*0.3-eyeS*0.4, cy-s*0.05, eyeS*0.8, eyeS*1, '#224');
+    px(cx+s*0.3-eyeS*0.4, cy-s*0.05, eyeS*0.8, eyeS*1, '#224');
+    // 하이라이트
+    px(cx-s*0.3-eyeS*0.2, cy-s*0.1, eyeS*0.3, eyeS*0.3, '#fff');
+    px(cx+s*0.3-eyeS*0.2, cy-s*0.1, eyeS*0.3, eyeS*0.3, '#fff');
+    // 입
+    if(smile){
+        const mw = s*0.4;
+        px(cx-mw/2, cy+s*0.4, mw, s*0.08, '#c44');
+        px(cx-mw/2-1, cy+s*0.38, 2, 2, '#c44');
+        px(cx+mw/2-1, cy+s*0.38, 2, 2, '#c44');
     }
-
-    function drawGrassRow(y) {
-        for(let i=0;i<W;i+=2){
-            const h = 1+Math.floor(Math.random()*3);
-            px(i, y-h, 1, h, Math.random()>0.5?C.grass:C.grassLight);
-        }
-    }
-
-    // === SHOTS ===
-    let currentShot = 0, animTime = 0;
-
-    const shots = [
-        // PART 1 — 16:4
-        { a:'16:4', draw:s1_wake },
-        { a:'16:4', draw:s2_alarm, snd:'alarm' },
-        { a:'16:4', draw:s3_ohno, nar:'"조졌네…"' },
-        { a:'16:4', draw:s4_late, nar:'남자는 지각을 했습니다' },
-        { a:'16:4', draw:s5_run },
-        { a:'16:4', draw:s6_hall },
-        { a:'16:4', draw:s7_eyes },
-        { a:'16:4', draw:s_trans1, auto:true },
-        // PART 2 — 4:3 (가로로 긴)
-        { a:'4:3', draw:s9_window },
-        { a:'4:3', draw:s10_sky },
-        { a:'4:3', draw:s11_neighbors },
-        { a:'4:3', draw:s12_ground },
-        { a:'4:3', draw:s_trans2, snd:'siren', auto:true },
-        // PART 3 — 1:1
-        { a:'1:1', draw:s13_fallen },
-        { a:'1:1', draw:s14_crowd },
-        { a:'1:1', draw:s15_smile },
-        { a:'1:1', draw:s16_iris, auto:true },
-        { a:'1:1', draw:s17_credits },
-        { a:'1:1', draw:s18_audience, snd:'clap' },
-    ];
-
-    // === PART 1 ===
-    function s1_wake(t) {
-        ctx.fillStyle = '#0a0a18';
-        ctx.fillRect(0,0,W,H);
-        // 천장 디테일
-        px(0, H*0.3, W, 1, '#1a1a2a');
-        for(let i=0;i<W;i+=12) px(i, H*0.7, 8, 1, '#1a1a2a');
-        // 눈뜨기
-        const open = Math.min(t/50, 1);
-        const bar = Math.floor(H*0.45*(1-open));
-        px(0,0,W,bar,'#000');
-        px(0,H-bar,W,bar,'#000');
-    }
-
-    function s2_alarm(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-        const cx=W/2, cy=H/2;
-        px(cx-10, cy-14, 20, 28, '#222');
-        px(cx-8, cy-12, 16, 24, '#111');
-        const blink = Math.floor(t/8)%2;
-        txt('8:47', cx, cy+3, 8, blink?'#ff4444':'#661111');
-        if(Math.floor(t/3)%2) ctx.translate(0.5,0);
-    }
-
-    function s3_ohno(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-        drawMan(W/2, H/2+5);
-        if(t>8) px(W/2+5, H/2-6, 1, 2, '#88ccff');
-    }
-
-    function s4_late(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-    }
-
-    function s5_run(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-        // 스카이라인
-        const bColors = ['#1a1a2e','#1e1e32','#222238','#1a1a2e','#202030'];
-        for(let i=0;i<8;i++){
-            const bh = 12+(i*9)%20;
-            px(i*30, H-8-bh, 22, bh, bColors[i%5]);
-            for(let r=0;r<Math.floor(bh/6);r++){
-                px(i*30+3, H-8-bh+3+r*6, 2, 2, Math.random()>0.4?C.window:'#111');
-                px(i*30+10, H-8-bh+3+r*6, 2, 2, Math.random()>0.5?C.window:'#111');
-            }
-        }
-        px(0,H-8,W,1,'#333');
-        // 달리는 캐릭터
-        const rx = 40+(t*0.4)%30;
-        const bob = Math.floor(t/3)%2;
-        drawMan(rx, H-10-bob, {arms:t%6<3?'spread':undefined});
-        px(rx+3, H-10-bob-7, 3, 2, '#dda044'); // 빵
-    }
-
-    function s6_hall(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-        px(0,H*0.25,W,1,'#2a2a3a');
-        px(0,H*0.75,W,1,'#2a2a3a');
-        for(let i=0;i<15;i++) px(i*16+5, H*0.25, 1, H*0.5, '#1a1a2a');
-        px(0,H*0.6,W,1,'#2a2a3a');
-        const wx = 20+(t*0.4)%(W-40);
-        drawMan(wx, H*0.55);
-    }
-
-    function s7_eyes(t) {
-        ctx.fillStyle = '#0a0a14';
-        ctx.fillRect(0,0,W,H);
-        const cx=W/2, cy=H/2;
-        // 큰 얼굴
-        px(cx-7, cy-8, 14, 12, C.skin);
-        px(cx-7, cy-10, 14, 4, C.hair);
-        // 큰 눈
-        px(cx-4, cy-3, 3, 3, '#fff');
-        px(cx+2, cy-3, 3, 3, '#fff');
-        px(cx-3, cy-2, 2, 2, '#226');
-        px(cx+3, cy-2, 2, 2, '#226');
-        // 하이라이트
-        if(Math.floor(t/6)%3!==0){
-            px(cx-3, cy-3, 1, 1, '#fff');
-            px(cx+3, cy-3, 1, 1, '#fff');
-        }
-        // 반짝이
-        const sp = [[-12,-5],[10,-7],[-9,5],[11,3]];
-        sp.forEach(([sx,sy],i)=>{
-            if((t+i*5)%18<9){
-                px(cx+sx,cy+sy,1,1,C.sun);
-                px(cx+sx-1,cy+sy,3,1,C.sun);
-                px(cx+sx,cy+sy-1,1,3,C.sun);
+    // 반짝이
+    if(sparkle && t){
+        const sps = [[-s*0.8,-s*0.5],[s*0.7,-s*0.7],[-s*0.6,s*0.3],[s*0.8,s*0.2]];
+        sps.forEach(([sx,sy],i)=>{
+            if((t+i*8)%24<12){
+                px(cx+sx,cy+sy,2,2,C.sun);
+                px(cx+sx-2,cy+sy,6,1,C.sun);
+                px(cx+sx,cy+sy-2,1,6,C.sun);
             }
         });
     }
+}
 
-    function s_trans1(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0,0,W,H);
-        if(t>40) nextShot();
+// 새 (디테일)
+function drawBirdDetailed(x, y, t, c){
+    const color = c||'#ccd';
+    const wing = Math.floor(t/6)%2;
+    px(x, y, 3, 2, color);
+    px(x+3, y, 1, 1, '#444'); // 부리
+    if(wing){
+        px(x-2, y-2, 3, 2, color);
+        px(x+1, y-2, 3, 2, color);
+    } else {
+        px(x-1, y+1, 2, 1, color);
+        px(x+2, y+1, 2, 1, color);
     }
+}
 
-    // === PART 2 — 평화롭고 아름다운 (4:3 가로) ===
-    function s9_window(t) {
-        // 하늘 배경
-        ctx.fillStyle = C.sky;
-        ctx.fillRect(0,0,W,H);
-        // 하늘 그라데이션
-        for(let i=0;i<H*0.6;i++){
-            const r=26+i*0.1, g=42+i*0.15, b=68+i*0.2;
-            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
-        }
-        // 태양
-        drawSun(W-35, 25, t);
-        // 구름
-        drawCloud(15+(t*0.1)%80, 18, 1.2);
-        drawCloud(80+(t*0.07)%70, 30, 1);
-        drawCloud(140+(t*0.09)%60, 22, 0.8);
-        // 먼 산
-        for(let i=0;i<W;i++){
-            const mh = 15+Math.sin(i*0.02)*8+Math.sin(i*0.05)*5;
-            px(i, H*0.55-mh+60, 1, mh, '#2a4a3a');
-        }
-        // 나무들
-        drawTree(25, H*0.72, 18);
-        drawTree(60, H*0.72, 14);
-        drawTree(110, H*0.72, 20);
-        drawTree(155, H*0.72, 16);
-        // 풀밭
-        px(0, H*0.72, W, H*0.28, C.grass);
-        drawGrassRow(H*0.72);
-        // 새
-        for(let i=0;i<5;i++){
-            const bx=20+i*35+Math.sin(t*0.025+i)*10;
-            const by=35+Math.sin(t*0.02+i*1.5)*12;
-            drawBird(bx, by, t+i*3, '#ddd');
-        }
-        // 창틀
-        px(0,0,W,6,'#3a2a1a'); px(0,H-6,W,6,'#3a2a1a');
-        px(0,0,6,H,'#3a2a1a'); px(W-6,0,6,H,'#3a2a1a');
-        px(W/2-1,0,2,H,'#3a2a1a'); px(0,H/2-1,W,2,'#3a2a1a');
+// 나비 (디테일)
+function drawButterflyDetailed(x, y, t, c){
+    const color = c||C.flower1;
+    px(x, y, 1, 2, '#333');
+    const wing = Math.floor(t/5)%2;
+    if(wing){
+        px(x-3, y-1, 3, 2, color);
+        px(x+1, y-1, 3, 2, color);
+        px(x-2, y+1, 2, 1, color);
+        px(x+1, y+1, 2, 1, color);
+    } else {
+        px(x-2, y, 2, 1, color);
+        px(x+1, y, 2, 1, color);
     }
+}
 
-    function s10_sky(t) {
-        // 하늘에서 새들과 춤 — 매우 평화로운
-        // 하늘 그라데이션
-        for(let i=0;i<H;i++){
-            const r=20+i*0.08, g=35+i*0.12, b=55+i*0.18;
-            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
-        }
-        // 구름 여러겹
-        drawCloud(5+(t*0.12)%(W+20), 20, 1.5);
-        drawCloud(60+(t*0.08)%(W+20), 45, 1.2);
-        drawCloud(120+(t*0.1)%(W+20), 65, 1);
-        drawCloud(-10+(t*0.06)%(W+30), 85, 0.8);
-        // 캐릭터 — 평화롭게 부유
-        const fy = H*0.4+Math.sin(t*0.02)*15;
-        drawMan(W/2, fy, {arms:'spread'});
-        // 새들 — 원형으로 빙빙
-        for(let i=0;i<8;i++){
-            const a = t*0.012+i*(Math.PI*2/8);
-            const r = 30+Math.sin(t*0.008+i)*8;
-            const bx = W/2+Math.cos(a)*r;
-            const by = fy-5+Math.sin(a)*(r*0.4);
-            drawBird(bx, by, t+i*4);
-        }
-        // 나비
-        for(let i=0;i<4;i++){
-            const colors = [C.flower1, C.flower2, C.flower3, '#88ddff'];
-            const bx = W*0.15+i*W*0.22+Math.sin(t*0.018+i*2)*12;
-            const by = H*0.65+Math.cos(t*0.022+i)*10;
-            drawButterfly(bx, by, t+i*7, colors[i]);
+// 꽃 (디테일)
+function drawFlowerDetailed(x, y, color){
+    const c = color||C.flower1;
+    px(x, y, 1, 6, '#2a6622');
+    px(x-1, y+3, 1, 1, '#3a8833'); // 잎
+    px(x+1, y+2, 1, 1, '#3a8833');
+    // 꽃잎
+    px(x-1, y-2, 3, 1, c);
+    px(x, y-3, 1, 1, c);
+    px(x-2, y-1, 1, 1, c);
+    px(x+2, y-1, 1, 1, c);
+    px(x, y, 1, 1, C.sun); // 꽃술
+}
+
+// 구름 (디테일)
+function drawCloudDetailed(x, y, s){
+    const sz = s||1;
+    // 여러 원 합성
+    for(let i=0;i<3;i++){
+        const cx = x+i*5*sz, cy=y+Math.sin(i)*2*sz;
+        const r = (3+i%2)*sz;
+        for(let dy=-r;dy<=r;dy++){
+            const w = Math.sqrt(r*r-dy*dy)*2;
+            px(cx-w/2, cy+dy, w, 1, i%2?C.cloud:C.cloudLight);
         }
     }
+}
 
-    function s11_neighbors(t) {
-        // 아파트 외벽
-        ctx.fillStyle = '#2a2832';
-        ctx.fillRect(0,0,W,H);
-        // 벽 텍스처
-        for(let i=0;i<W;i+=10) px(i,0,1,H,'#252330');
-        for(let i=0;i<H;i+=8) px(0,i,W,1,'#252330');
-        // 창문들 — 따뜻한 빛
-        for(let row=0;row<4;row++){
-            for(let col=0;col<4;col++){
-                const wx=15+col*46, wy=10+row*35;
-                px(wx, wy, 28, 22, '#1a1820');
-                px(wx+2, wy+2, 24, 18, '#2a2520');
-                // 따뜻한 빛
-                px(wx+3, wy+3, 22, 16, '#332a1a');
-                // 주민
-                if((row*4+col)%2===0){
-                    px(wx+10, wy+8, 3, 3, C.skin);
-                    px(wx+10, wy+6, 3, 2, C.hair);
-                    px(wx+10, wy+11, 3, 4, C.shirt);
-                    // 손 흔들기
-                    const wave = Math.floor(t/10+row+col)%2;
-                    px(wx+14, wy+7-wave*2, 2, 1, C.skin);
-                }
+// 태양 (디테일)
+function drawSunDetailed(x, y, t){
+    // 원
+    const r = 8;
+    for(let dy=-r;dy<=r;dy++){
+        const w = Math.sqrt(r*r-dy*dy)*2;
+        px(x-w/2, y+dy, w, 1, C.sun);
+    }
+    px(x-r+2, y-r+2, 3, 3, C.sunGlow);
+    // 광선
+    for(let a=0;a<8;a++){
+        const angle = a*(Math.PI*2/8)+t*0.006;
+        for(let d=r+2;d<r+5;d++){
+            px(x+Math.cos(angle)*d, y+Math.sin(angle)*d, 1, 1, C.sun);
+        }
+    }
+}
+
+// === CAMERA OVERLAY ===
+function drawCameraOverlay(t){
+    const m=6,l=14;
+    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.globalAlpha=0.5;
+    ctx.beginPath();ctx.moveTo(m,m+l);ctx.lineTo(m,m);ctx.lineTo(m+l,m);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W-m-l,m);ctx.lineTo(W-m,m);ctx.lineTo(W-m,m+l);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(m,H-m-l);ctx.lineTo(m,H-m);ctx.lineTo(m+l,H-m);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W-m-l,H-m);ctx.lineTo(W-m,H-m);ctx.lineTo(W-m,H-m-l);ctx.stroke();
+    // 크로스헤어
+    const cx=W/2,cy=H/2;
+    px(cx-4,cy,3,1,'#fff');px(cx+2,cy,3,1,'#fff');
+    px(cx,cy-4,1,3,'#fff');px(cx,cy+2,1,3,'#fff');
+    // REC
+    if(Math.floor(t/20)%2){px(W-28,10,4,4,'#cc0000');txt('REC',W-14,14,5,'#cc0000');}
+    ctx.globalAlpha=1;
+}
+
+// === SHOTS ===
+let currentShot=0, animTime=0, lastClickTime=Date.now(), easterEggShown=false;
+
+const shots=[
+    {a:'16:4',draw:s1_wake},
+    {a:'16:4',draw:s2_alarm,snd:'alarm'},
+    {a:'16:4',draw:s3_ohno,nar:'"조졌네…"'},
+    {a:'16:4',draw:s4_late,nar:'남자는 지각을 했습니다'},
+    {a:'16:4',draw:s5_run},
+    {a:'16:4',draw:s6_hall},
+    {a:'16:4',draw:s7_eyes},
+    {a:'16:4',draw:s_trans1,auto:true},
+    {a:'4:3',draw:s9_window},
+    {a:'4:3',draw:s10_sky},
+    {a:'4:3',draw:s11_neighbors},
+    {a:'4:3',draw:s12_ground},
+    {a:'4:3',draw:s_trans2,snd:'siren',auto:true},
+    {a:'1:1',draw:s13_fallen},
+    {a:'1:1',draw:s14_crowd},
+    {a:'1:1',draw:s15_smile},
+    {a:'1:1',draw:s16_iris,auto:true},
+    {a:'1:1',draw:s17_credits},
+    {a:'1:1',draw:s18_audience,snd:'clap'},
+];
+
+// === PART 1 ===
+function s1_wake(t){
+    ctx.fillStyle='#0a0a18';ctx.fillRect(0,0,W,H);
+    px(0,H*0.4,W,1,'#1a1a2a');
+    for(let i=0;i<W;i+=8)px(i,H*0.7,5,1,'#1a1a2a');
+    // 이불
+    px(0,H*0.65,W,H*0.35,'#2a3355');
+    px(0,H*0.65,W,2,'#3a4466');
+    const open=Math.min(t/50,1);
+    const bar=Math.floor(H*0.45*(1-open));
+    px(0,0,W,bar,'#000');px(0,H-bar,W,bar,'#000');
+}
+
+function s2_alarm(t){
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2;
+    px(cx-14,cy-18,28,36,'#1a1a1a');
+    px(cx-12,cy-16,24,32,'#111');
+    px(cx-11,cy-15,22,30,'#0a0a0a');
+    const blink=Math.floor(t/8)%2;
+    txt('8:47',cx,cy+4,12,blink?'#ff4444':'#661111');
+    txt('ALARM',cx,cy+14,6,'#aa3333');
+    if(Math.floor(t/3)%2)ctx.translate(0.5,0);
+}
+
+function s3_ohno(t){
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    drawManDetailed(W/2, H/2+8);
+    if(t>8){px(W/2+6,H/2-8,2,3,'#88ccff');px(W/2+6,H/2-5,1,1,'#88ccff');}
+}
+
+function s4_late(t){ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);}
+
+function s5_run(t){
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    // 스카이라인
+    for(let i=0;i<10;i++){
+        const bh=20+(i*11)%30;
+        px(i*32,H-10-bh,24,bh,'#1a1a2e');
+        px(i*32+1,H-10-bh,1,bh,'#222238');
+        for(let r=0;r<Math.floor(bh/6);r++){
+            for(let c=0;c<2;c++){
+                px(i*32+4+c*10,H-10-bh+4+r*6,3,3,Math.random()>0.4?C.windowLit:'#111');
             }
         }
-        // 캐릭터 (옆에서 팔 벌리고 지나감 — 평화로운 느낌)
-        const fy = 12+(t*0.6)%(H*0.6);
-        drawMan(W/2+30, fy, {arms:'spread'});
     }
+    px(0,H-10,W,10,'#111');px(0,H-10,W,1,'#333');
+    const rx=50+(t*0.5)%40;
+    const bob=Math.floor(t/3)%2;
+    drawManDetailed(rx,H-12-bob,{running:true,bread:true});
+}
 
-    function s12_ground(t) {
-        // 바닥 — 꽃밭
-        // 하늘
-        for(let i=0;i<H*0.35;i++){
-            const r=22+i*0.12, g=38+i*0.15, b=60+i*0.2;
-            px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
-        }
-        // 풀밭
-        px(0, H*0.35, W, H*0.65, C.grass);
-        drawGrassRow(H*0.35);
-        drawGrassRow(H*0.4);
-        drawGrassRow(H*0.45);
-        // 꽃들 — 가득
-        const flowerColors = [C.flower1, C.flower2, C.flower3, '#ffaacc', '#aaddff'];
-        for(let i=0;i<16;i++){
-            drawFlower(8+i*12, H*0.42+(i%4)*12, flowerColors[i%5]);
-        }
-        // 나무
-        drawTree(10, H*0.38, 22);
-        drawTree(W-15, H*0.38, 18);
-        drawTree(W/2, H*0.36, 25);
-        // 나비 많이
-        for(let i=0;i<6;i++){
-            const bx=15+i*30+Math.sin(t*0.02+i*1.2)*8;
-            const by=H*0.25+Math.cos(t*0.018+i*0.7)*12;
-            drawButterfly(bx, by, t+i*5, flowerColors[i%5]);
-        }
-        // 캐릭터 — 꽃밭에서 양팔 벌림
-        const bobY = Math.sin(t*0.025)*4;
-        drawMan(W/2, H*0.3+bobY, {arms:'spread'});
+function s6_hall(t){
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    // 복도
+    px(0,H*0.2,W,2,'#2a2a3a');px(0,H*0.8,W,2,'#2a2a3a');
+    for(let i=0;i<20;i++)px(i*16+8,H*0.2,2,H*0.6,'#151520');
+    px(0,H*0.65,W,2,'#333');
+    const wx=30+(t*0.5)%(W-60);
+    drawManDetailed(wx,H*0.6);
+}
+
+function s7_eyes(t){
+    ctx.fillStyle='#0a0a14';ctx.fillRect(0,0,W,H);
+    drawFaceCloseup(W/2, H/2, {sparkle:true, t:t});
+}
+
+function s_trans1(t){ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);if(t>40)nextShot();}
+
+// === PART 2 ===
+function s9_window(t){
+    // 하늘
+    for(let i=0;i<H;i++){
+        const r=10+i*0.08,g=22+i*0.12,b=40+i*0.18;
+        px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);
     }
+    drawSunDetailed(W-50,35,t);
+    drawCloudDetailed(20+(t*0.08)%100,25,2);
+    drawCloudDetailed(100+(t*0.06)%80,40,1.5);
+    drawCloudDetailed(180+(t*0.07)%70,30,1.8);
+    // 산
+    for(let i=0;i<W;i++){const mh=20+Math.sin(i*0.015)*12+Math.sin(i*0.04)*6;px(i,H*0.55-mh+80,1,mh,'#1a3a2a');}
+    // 나무들
+    drawTreeDetailed(35,H*0.72,1.2);
+    drawTreeDetailed(80,H*0.74,1);
+    drawTreeDetailed(140,H*0.71,1.3);
+    drawTreeDetailed(200,H*0.73,1.1);
+    // 풀밭
+    px(0,H*0.74,W,H*0.26,C.grass);
+    for(let i=0;i<W;i+=2){const h=1+Math.floor(Math.random()*4);px(i,H*0.74-h,1,h,Math.random()>0.5?C.grassLight:C.grass);}
+    // 새
+    for(let i=0;i<6;i++){drawBirdDetailed(25+i*40+Math.sin(t*0.02+i)*12,40+Math.sin(t*0.015+i*1.5)*15,t+i*4);}
+    // 창틀
+    px(0,0,W,8,C.wood);px(0,H-8,W,8,C.wood);px(0,0,8,H,C.wood);px(W-8,0,8,H,C.wood);
+    px(W/2-2,0,4,H,C.wood);px(0,H/2-2,W,4,C.wood);
+    px(0,0,W,8,C.woodDark);
+}
 
-    function s_trans2(t) {
-        const flash = Math.floor(t/5)%2;
-        ctx.fillStyle = flash?C.siren1:C.siren2;
-        ctx.fillRect(0,0,W,H);
-        const intensity = Math.min(t/30, 1);
-        ctx.globalAlpha = intensity;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0,0,W,H);
-        ctx.globalAlpha = 1;
-        if(t>55) nextShot();
+function s10_sky(t){
+    for(let i=0;i<H;i++){const r=14+i*0.06,g=28+i*0.1,b=48+i*0.15;px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);}
+    drawCloudDetailed(10+(t*0.1)%(W+30),25,2.5);
+    drawCloudDetailed(80+(t*0.07)%(W+30),55,2);
+    drawCloudDetailed(160+(t*0.08)%(W+30),80,1.8);
+    drawCloudDetailed(-20+(t*0.05)%(W+40),110,1.5);
+    const fy=H*0.4+Math.sin(t*0.015)*18;
+    drawManDetailed(W/2,fy,{arms:'spread'});
+    for(let i=0;i<10;i++){
+        const a=t*0.01+i*(Math.PI*2/10);
+        const r=40+Math.sin(t*0.006+i)*10;
+        drawBirdDetailed(W/2+Math.cos(a)*r,fy-8+Math.sin(a)*(r*0.4),t+i*4);
     }
-
-    // === PART 3 === (카메라 오버레이 포함)
-    function drawCameraOverlay(t) {
-        // 모서리 괄호
-        const m = 4; // 마진
-        const l = 10; // 길이
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 0.8;
-        ctx.globalAlpha = 0.6;
-        // 좌상
-        ctx.beginPath(); ctx.moveTo(m, m+l); ctx.lineTo(m, m); ctx.lineTo(m+l, m); ctx.stroke();
-        // 우상
-        ctx.beginPath(); ctx.moveTo(W-m-l, m); ctx.lineTo(W-m, m); ctx.lineTo(W-m, m+l); ctx.stroke();
-        // 좌하
-        ctx.beginPath(); ctx.moveTo(m, H-m-l); ctx.lineTo(m, H-m); ctx.lineTo(m+l, H-m); ctx.stroke();
-        // 우하
-        ctx.beginPath(); ctx.moveTo(W-m-l, H-m); ctx.lineTo(W-m, H-m); ctx.lineTo(W-m, H-m-l); ctx.stroke();
-        // 중앙 크로스헤어 (작게)
-        const cx = W/2, cy = H/2;
-        px(cx-3, cy, 2, 1, '#fff');
-        px(cx+2, cy, 2, 1, '#fff');
-        px(cx, cy-3, 1, 2, '#fff');
-        px(cx, cy+2, 1, 2, '#fff');
-        // REC 표시
-        const blink = Math.floor(t/20)%2;
-        if(blink) {
-            px(W-22, 8, 3, 3, '#cc0000'); // 빨간 점
-            txt('REC', W-12, 11, 4, '#cc0000');
-        }
-        ctx.globalAlpha = 1;
+    const bfColors=[C.flower1,C.flower2,C.flower3,C.flower4,'#ffaacc'];
+    for(let i=0;i<5;i++){
+        drawButterflyDetailed(W*0.1+i*W*0.2+Math.sin(t*0.014+i*1.8)*15,H*0.7+Math.cos(t*0.018+i)*12,t+i*6,bfColors[i]);
     }
+}
 
-    function s13_fallen(t) {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0,0,W,H);
-        // 아스팔트
-        px(0, H*0.65, W, H*0.35, '#1a1a1a');
-        px(0, H*0.65, W, 1, '#333');
-        // 누워있는 캐릭터
-        drawMan(W/2, H*0.7, {lying:true});
-        // 피
-        const spread = Math.min(t*0.15, 12);
-        px(W/2+8, H*0.71, spread, 2, C.blood);
-        px(W/2+6, H*0.73, spread+3, 1, '#880011');
-        // 서있는 사람들
-        for(let i=0;i<7;i++) drawMan(15+i*20, H*0.5);
-        drawCameraOverlay(t);
-    }
-
-    function s14_crowd(t) {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0,0,W,H);
-        // 어른 + 아이 (눈 가림)
-        drawMan(45, H*0.55);
-        px(50, H*0.55-5, 7, 1, C.skin); // 손
-        // 아이
-        px(58, H*0.55-3, 2, 2, C.skin);
-        px(58, H*0.55-1, 2, 3, '#88aacc');
-        px(57, H*0.55+2, 1, 2, C.pants);
-        px(60, H*0.55+2, 1, 2, C.pants);
-
-        // 소리치는 어른
-        drawMan(115, H*0.55, {arms:'up'});
-        // 말풍선
-        px(92, H*0.2, 56, 18, '#fff');
-        px(115, H*0.38, 2, 4, '#fff');
-        txt('집값 떨어진다!', 120, H*0.2+12, 7, '#000');
-        drawCameraOverlay(t);
-    }
-
-    function s15_smile(t) {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0,0,W,H);
-        const cx=W/2, cy=H/2;
-        // 큰 얼굴
-        px(cx-14, cy-16, 28, 30, C.skin);
-        px(cx-14, cy-20, 28, 6, C.hair);
-        // 눈
-        px(cx-7, cy-7, 5, 5, '#fff');
-        px(cx+3, cy-7, 5, 5, '#fff');
-        px(cx-5, cy-5, 3, 3, '#226');
-        px(cx+5, cy-5, 3, 3, '#226');
-        // 웃는 입
-        px(cx-6, cy+6, 12, 2, '#c44');
-        px(cx-7, cy+5, 1, 1, '#c44');
-        px(cx+6, cy+5, 1, 1, '#c44');
-        drawCameraOverlay(t);
-    }
-
-    function s16_iris(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0,0,W,H);
-        const cx=W/2, cy=H/2;
-        const progress = Math.min(t/90, 1);
-        const maxR = Math.max(W,H)*0.5;
-        const r = maxR*(1-progress);
-        if(r>1){
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(cx, cy, r, 0, Math.PI*2);
-            ctx.clip();
-            px(cx-14, cy-16, 28, 30, C.skin);
-            px(cx-14, cy-20, 28, 6, C.hair);
-            px(cx-7, cy-7, 5, 5, '#fff');
-            px(cx+3, cy-7, 5, 5, '#fff');
-            px(cx-5, cy-5, 3, 3, '#226');
-            px(cx+5, cy-5, 3, 3, '#226');
-            px(cx-6, cy+6, 12, 2, '#c44');
-            ctx.restore();
-        }
-        if(progress>=1) setTimeout(()=>nextShot(), 600);
-    }
-
-    function s17_credits(t) {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0,0,W,H);
-        const lines = ['감독 · 기획','','hwanginkeom','','바이브코딩 Lab','','2026','','','FIN'];
-        const sy = H-t*0.2;
-        lines.forEach((l,i)=>{
-            const ly = sy+i*16;
-            if(ly>-8&&ly<H+8) txt(l, W/2, ly, 6, '#fff');
-        });
-    }
-
-    function s18_audience(t) {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.fillRect(0,0,W,H);
-        // 스크린
-        px(W*0.2, 5, W*0.6, H*0.25, '#111');
-        txt('FIN', W/2, H*0.13+5, 10, '#fff');
-        // 관객
-        for(let row=0;row<4;row++){
-            for(let col=0;col<8;col++){
-                const hx=8+col*18, hy=H*0.45+row*16;
-                px(hx, hy, 5, 5, C.skin);
-                px(hx, hy-2, 5, 2, C.hair);
-                if(Math.floor(t/4+col+row)%2===0){
-                    px(hx-1,hy+5,2,1,C.skin);
-                    px(hx+4,hy+5,2,1,C.skin);
-                }
+function s11_neighbors(t){
+    ctx.fillStyle='#2a2832';ctx.fillRect(0,0,W,H);
+    for(let i=0;i<W;i+=12)px(i,0,1,H,'#252330');
+    for(let i=0;i<H;i+=10)px(0,i,W,1,'#252330');
+    for(let row=0;row<4;row++){
+        for(let col=0;col<4;col++){
+            const wx=18+col*58,wy=12+row*44;
+            px(wx,wy,36,30,'#1a1820');
+            px(wx+2,wy+2,32,26,'#332a1a');
+            if((row*4+col)%2===0){
+                drawManDetailed(wx+18,wy+22);
+                const wave=Math.floor(t/10+row+col)%2;
+                px(wx+24,wy+8-wave*3,3,2,C.skin);
             }
         }
-        if(t%20===0&&t>0&&t<160) playClap();
-        if(t>80) document.getElementById('ending-btns').classList.add('show');
     }
+    const fy=15+(t*0.5)%(H*0.6);
+    drawManDetailed(W/2+40,fy,{arms:'spread'});
+}
 
-    // === LOGIC ===
-    function nextShot() {
-        if(currentShot<shots.length-1){
-            currentShot++; animTime=0;
-            const s = shots[currentShot];
-            setAspect(s.a);
-            if(s.snd==='alarm') playAlarm();
-            if(s.snd==='siren') playSiren();
-            if(s.snd==='clap') playClap();
-            if(s.nar){narrationEl.textContent=s.nar;narrationEl.classList.add('show');}
-            else{narrationEl.classList.remove('show');}
+function s12_ground(t){
+    for(let i=0;i<H*0.3;i++){const r=14+i*0.1,g=28+i*0.13,b=48+i*0.18;px(0,i,W,1,`rgb(${Math.floor(r)},${Math.floor(g)},${Math.floor(b)})`);}
+    px(0,H*0.3,W,H*0.7,C.grass);
+    for(let i=0;i<W;i+=2){const h=2+Math.floor(Math.random()*5);px(i,H*0.3-h,1,h,Math.random()>0.5?C.grassLight:C.grass);}
+    for(let i=0;i<W;i+=2){px(i,H*0.35+Math.random()*5,1,1+Math.random()*2,C.grassDark);}
+    const fc=[C.flower1,C.flower2,C.flower3,C.flower4,'#ffaacc'];
+    for(let i=0;i<20;i++)drawFlowerDetailed(10+i*12,H*0.36+(i%5)*14,fc[i%5]);
+    drawTreeDetailed(15,H*0.32,1.5);
+    drawTreeDetailed(W-20,H*0.33,1.3);
+    drawTreeDetailed(W/2-10,H*0.3,1.7);
+    for(let i=0;i<7;i++){drawButterflyDetailed(20+i*35+Math.sin(t*0.016+i)*10,H*0.2+Math.cos(t*0.014+i*0.6)*14,t+i*5,fc[i%5]);}
+    const bobY=Math.sin(t*0.02)*5;
+    drawManDetailed(W/2,H*0.25+bobY,{arms:'spread'});
+}
+
+function s_trans2(t){
+    const flash=Math.floor(t/5)%2;
+    ctx.fillStyle=flash?'#2a0000':'#00002a';ctx.fillRect(0,0,W,H);
+    if(t>55)nextShot();
+}
+
+// === PART 3 ===
+function s13_fallen(t){
+    ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
+    px(0,H*0.65,W,H*0.35,'#1a1a1a');px(0,H*0.65,W,1,'#333');
+    drawManDetailed(W/2,H*0.68,{lying:true});
+    const sp=Math.min(t*0.2,16);
+    px(W/2+12,H*0.69,sp,3,C.blood);
+    px(W/2+10,H*0.72,sp+4,2,C.bloodDark);
+    for(let i=0;i<8;i++)drawManDetailed(20+i*22,H*0.48);
+    drawCameraOverlay(t);
+}
+
+function s14_crowd(t){
+    ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
+    drawManDetailed(55,H*0.55);
+    px(62,H*0.55-8,10,2,C.skin);
+    // 아이 (작게)
+    px(73,H*0.55-6,3,3,C.skin);px(73,H*0.55-8,3,2,C.hair);
+    px(73,H*0.55-3,3,4,'#88aacc');
+    px(73,H*0.55+1,1,3,C.pants);px(75,H*0.55+1,1,3,C.pants);
+    drawManDetailed(145,H*0.55,{arms:'up'});
+    px(115,H*0.2,60,20,'#fff');px(145,H*0.4,3,5,'#fff');
+    txt('집값 떨어진다!',145,H*0.2+14,8,'#000');
+    drawCameraOverlay(t);
+}
+
+function s15_smile(t){
+    ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
+    drawFaceCloseup(W/2,H/2,{smile:true,t:t});
+    drawCameraOverlay(t);
+}
+
+function s16_iris(t){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    const cx=W/2,cy=H/2;
+    const progress=Math.min(t/90,1);
+    const maxR=Math.max(W,H)*0.5;
+    const r=maxR*(1-progress);
+    if(r>1){ctx.save();ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.clip();drawFaceCloseup(cx,cy,{smile:true});drawCameraOverlay(t);ctx.restore();}
+    if(progress>=1)setTimeout(()=>nextShot(),600);
+}
+
+function s17_credits(t){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    const lines=['감독 · 기획','','hwanginkeom','','바이브코딩 Lab','','2026','','','FIN'];
+    const sy=H-t*0.25;
+    lines.forEach((l,i)=>{const ly=sy+i*20;if(ly>-10&&ly<H+10)txt(l,W/2,ly,8,'#fff');});
+}
+
+function s18_audience(t){
+    ctx.fillStyle='#0a0a0a';ctx.fillRect(0,0,W,H);
+    px(W*0.15,8,W*0.7,H*0.28,'#111');
+    txt('FIN',W/2,H*0.16+5,14,'#fff');
+    for(let row=0;row<4;row++){
+        for(let col=0;col<9;col++){
+            const hx=10+col*21,hy=H*0.48+row*18;
+            px(hx,hy,6,6,C.skin);px(hx,hy-3,6,3,C.hair);
+            if(Math.floor(t/4+col+row)%2===0){px(hx-2,hy+6,3,2,C.skin);px(hx+5,hy+6,3,2,C.skin);}
         }
     }
+    if(t%20===0&&t>0&&t<160)playClap();
+    if(t>80)document.getElementById('ending-btns').classList.add('show');
+}
 
-    function startGame() {
-        currentShot=0; animTime=0;
-        document.getElementById('ending-btns').classList.remove('show');
-        document.getElementById('fullscreen-replay').classList.remove('show');
-        narrationEl.classList.remove('show');
-        setAspect(shots[0].a);
+// === CLICK UI + EASTER EGG ===
+function drawClickUI(){
+    if(shots[currentShot].auto)return;
+    const pulse=(Math.sin(Date.now()*0.003)+1)/2;
+    ctx.globalAlpha=0.3+pulse*0.5;
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.moveTo(W-14,H-12);ctx.lineTo(W-14,H-5);ctx.lineTo(W-8,H-8.5);ctx.closePath();ctx.fill();
+    ctx.globalAlpha=1;
+}
+
+function drawEasterEgg(){
+    const idle=Date.now()-lastClickTime;
+    if(idle<10000||shots[currentShot].auto)return;
+    const ghostY=H*0.15+Math.sin(Date.now()*0.002)*6;
+    const ghostX=W-28+Math.sin(Date.now()*0.001)*4;
+    const ghostAlpha=Math.min((idle-10000)/3000,0.7);
+    ctx.globalAlpha=ghostAlpha;
+    px(ghostX-3,ghostY-4,7,8,'#aaccff');
+    px(ghostX-1,ghostY-2,1,1,'#000');px(ghostX+1,ghostY-2,1,1,'#000');
+    px(ghostX-3,ghostY+4,1,2,'#aaccff');px(ghostX-1,ghostY+4,1,2,'#aaccff');
+    px(ghostX+1,ghostY+4,1,2,'#aaccff');px(ghostX+3,ghostY+4,1,2,'#aaccff');
+    ctx.globalAlpha=1;
+    if(idle>15000){ctx.globalAlpha=Math.min((idle-15000)/2000,0.6);txt('...보고 있어',ghostX-2,ghostY+16,4,'#aaccff');ctx.globalAlpha=1;}
+}
+
+// === LOGIC ===
+function nextShot(){
+    if(currentShot<shots.length-1){
+        currentShot++;animTime=0;
+        const s=shots[currentShot];setAspect(s.a);
+        if(s.snd==='alarm')playAlarm();if(s.snd==='siren')playSiren();if(s.snd==='clap')playClap();
+        if(s.nar){narrationEl.textContent=s.nar;narrationEl.classList.add('show');}
+        else narrationEl.classList.remove('show');
     }
+}
+function startGame(){
+    currentShot=0;animTime=0;
+    document.getElementById('ending-btns').classList.remove('show');
+    document.getElementById('fullscreen-replay').classList.remove('show');
+    narrationEl.classList.remove('show');setAspect(shots[0].a);
+}
 
-    container.addEventListener('click', function(e){
-        if(e.target.tagName==='BUTTON') return;
-        initAudio();
-        if(!shots[currentShot].auto) {
-            nextShot();
-            lastClickTime = Date.now();
-            easterEggShown = false;
-        }
-    });
+container.addEventListener('click',function(e){
+    if(e.target.tagName==='BUTTON')return;
+    initAudio();
+    if(!shots[currentShot].auto){nextShot();lastClickTime=Date.now();easterEggShown=false;}
+});
+document.getElementById('btn-replay').addEventListener('click',function(e){e.stopPropagation();startGame();});
+document.getElementById('btn-exit').addEventListener('click',function(e){
+    e.stopPropagation();
+    document.getElementById('ending-btns').classList.remove('show');
+    document.getElementById('fullscreen-replay').classList.add('show');
+});
+document.getElementById('fullscreen-replay').addEventListener('click',startGame);
 
-    // === 클릭 UI (캔버스 위에 깜빡이는 삼각형) ===
-    let lastClickTime = Date.now();
-    let easterEggShown = false;
-
-    function drawClickUI() {
-        const s = shots[currentShot];
-        if (s.auto) return;
-        // 깜빡이는 ▶ 아이콘
-        const pulse = (Math.sin(Date.now() * 0.004) + 1) / 2;
-        ctx.globalAlpha = 0.3 + pulse * 0.4;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.moveTo(W - 10, H - 8);
-        ctx.lineTo(W - 10, H - 3);
-        ctx.lineTo(W - 6, H - 5.5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-
-    // === 이스터에그: 10초 이상 클릭 안 하면 ===
-    function drawEasterEgg() {
-        const idle = Date.now() - lastClickTime;
-        if (idle < 10000 || shots[currentShot].auto) return;
-
-        if (!easterEggShown) easterEggShown = true;
-
-        // 화면 위에 작은 유령이 나타남
-        const ghostY = H * 0.2 + Math.sin(Date.now() * 0.002) * 5;
-        const ghostX = W - 20 + Math.sin(Date.now() * 0.001) * 3;
-        const ghostAlpha = Math.min((idle - 10000) / 3000, 0.7);
-
-        ctx.globalAlpha = ghostAlpha;
-        // 유령 몸
-        px(ghostX - 2, ghostY - 3, 5, 6, '#aaccff');
-        // 유령 눈
-        px(ghostX - 1, ghostY - 1, 1, 1, '#000');
-        px(ghostX + 1, ghostY - 1, 1, 1, '#000');
-        // 물결 아래
-        px(ghostX - 2, ghostY + 3, 1, 1, '#aaccff');
-        px(ghostX, ghostY + 3, 1, 1, '#aaccff');
-        px(ghostX + 2, ghostY + 3, 1, 1, '#aaccff');
-        ctx.globalAlpha = 1;
-
-        // 15초 이상이면 메시지
-        if (idle > 15000) {
-            const msgAlpha = Math.min((idle - 15000) / 2000, 0.6);
-            ctx.globalAlpha = msgAlpha;
-            txt('...보고 있어', W - 22, ghostY + 12, 4, '#aaccff');
-            ctx.globalAlpha = 1;
-        }
-    }
-
-    document.getElementById('btn-replay').addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
-    document.getElementById('btn-exit').addEventListener('click', function(e){
-        e.stopPropagation();
-        document.getElementById('ending-btns').classList.remove('show');
-        document.getElementById('fullscreen-replay').classList.add('show');
-    });
-    document.getElementById('fullscreen-replay').addEventListener('click', startGame);
-
-    // === RENDER ===
-    function render(){
-        requestAnimationFrame(render);
-        ctx.save();
-        ctx.clearRect(0,0,W,H);
-        const s = shots[currentShot];
-        if(s&&s.draw) s.draw(animTime);
-        drawClickUI();
-        drawEasterEgg();
-        ctx.restore();
-        animTime++;
-    }
-
-    setAspect('16:4');
-    render();
-    </script>
+// === RENDER ===
+function render(){
+    requestAnimationFrame(render);
+    ctx.save();ctx.clearRect(0,0,W,H);
+    const s=shots[currentShot];
+    if(s&&s.draw)s.draw(animTime);
+    drawClickUI();drawEasterEgg();
+    ctx.restore();animTime++;
+}
+setAspect('16:4');render();
+</script>
 </body>
 </html>
