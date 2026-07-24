@@ -51,18 +51,7 @@
 
         #narration.show { display: block; }
 
-        #click-hint {
-            position: absolute;
-            bottom: 4px;
-            right: 8px;
-            color: rgba(255,255,255,0.2);
-            font-size: 8px;
-            font-family: monospace;
-            z-index: 100;
-            animation: blink 2s infinite;
-        }
 
-        @keyframes blink { 0%,100%{opacity:0.2} 50%{opacity:0.6} }
 
         #ending-btns {
             position: absolute;
@@ -154,7 +143,6 @@
     <div id="game-container">
         <canvas id="canvas"></canvas>
         <div id="narration"></div>
-        <div id="click-hint">▶</div>
         <div id="ending-btns">
             <button id="btn-replay">다시보기</button>
             <button id="btn-exit">나가기</button>
@@ -766,8 +754,65 @@
     container.addEventListener('click', function(e){
         if(e.target.tagName==='BUTTON') return;
         initAudio();
-        if(!shots[currentShot].auto) nextShot();
+        if(!shots[currentShot].auto) {
+            nextShot();
+            lastClickTime = Date.now();
+            easterEggShown = false;
+        }
     });
+
+    // === 클릭 UI (캔버스 위에 깜빡이는 삼각형) ===
+    let lastClickTime = Date.now();
+    let easterEggShown = false;
+
+    function drawClickUI() {
+        const s = shots[currentShot];
+        if (s.auto) return;
+        // 깜빡이는 ▶ 아이콘
+        const pulse = (Math.sin(Date.now() * 0.004) + 1) / 2;
+        ctx.globalAlpha = 0.3 + pulse * 0.4;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.moveTo(W - 10, H - 8);
+        ctx.lineTo(W - 10, H - 3);
+        ctx.lineTo(W - 6, H - 5.5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+
+    // === 이스터에그: 10초 이상 클릭 안 하면 ===
+    function drawEasterEgg() {
+        const idle = Date.now() - lastClickTime;
+        if (idle < 10000 || shots[currentShot].auto) return;
+
+        if (!easterEggShown) easterEggShown = true;
+
+        // 화면 위에 작은 유령이 나타남
+        const ghostY = H * 0.2 + Math.sin(Date.now() * 0.002) * 5;
+        const ghostX = W - 20 + Math.sin(Date.now() * 0.001) * 3;
+        const ghostAlpha = Math.min((idle - 10000) / 3000, 0.7);
+
+        ctx.globalAlpha = ghostAlpha;
+        // 유령 몸
+        px(ghostX - 2, ghostY - 3, 5, 6, '#aaccff');
+        // 유령 눈
+        px(ghostX - 1, ghostY - 1, 1, 1, '#000');
+        px(ghostX + 1, ghostY - 1, 1, 1, '#000');
+        // 물결 아래
+        px(ghostX - 2, ghostY + 3, 1, 1, '#aaccff');
+        px(ghostX, ghostY + 3, 1, 1, '#aaccff');
+        px(ghostX + 2, ghostY + 3, 1, 1, '#aaccff');
+        ctx.globalAlpha = 1;
+
+        // 15초 이상이면 메시지
+        if (idle > 15000) {
+            const msgAlpha = Math.min((idle - 15000) / 2000, 0.6);
+            ctx.globalAlpha = msgAlpha;
+            txt('...보고 있어', W - 22, ghostY + 12, 4, '#aaccff');
+            ctx.globalAlpha = 1;
+        }
+    }
 
     document.getElementById('btn-replay').addEventListener('click', function(e){ e.stopPropagation(); startGame(); });
     document.getElementById('btn-exit').addEventListener('click', function(e){
@@ -784,6 +829,8 @@
         ctx.clearRect(0,0,W,H);
         const s = shots[currentShot];
         if(s&&s.draw) s.draw(animTime);
+        drawClickUI();
+        drawEasterEgg();
         ctx.restore();
         animTime++;
     }
