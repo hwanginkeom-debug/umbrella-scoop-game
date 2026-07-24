@@ -447,6 +447,10 @@ function render(){
     }else{
         renderBlocks(pixelBlocks,defaultOffset);
     }
+    // 양쪽 20px 마스크
+    ctx.fillStyle='#000';
+    ctx.fillRect(0,0,10,H);
+    ctx.fillRect(W-10,0,10,H);
     animTime++;
 }
 
