@@ -411,21 +411,53 @@ function render(){
     drawBlocks(blocks,wave);
   }
 
-  // s01~s03: 공 튀기기 모션
-  if(cur<=2&&blocks){
-    const ballX=W/2;
-    const period=60; // 프레임 주기
-    const phase=animT%period;
-    // 바운스: sin 기반으로 위아래
-    const bounceY=Math.abs(Math.sin(phase/period*Math.PI))*40;
-    const ballY=H*0.7-bounceY;
-    const ballSize=4;
-    // 공 그리기 (밝은 흰색 작은 사각형 — 픽셀 느낌)
-    ctx.fillStyle='#ddd';
-    ctx.fillRect(Math.floor(ballX-ballSize/2),Math.floor(ballY-ballSize/2),ballSize,ballSize);
-    // 그림자
-    ctx.fillStyle='rgba(255,255,255,0.15)';
-    ctx.fillRect(Math.floor(ballX-ballSize/2-1),Math.floor(H*0.72),ballSize+2,2);
+  // s01 only: 공 자연스럽게 튀다가 왼쪽으로 구름
+  if(cur===0&&blocks){
+    const t2=animT;
+    const ballSize=6;
+    // 물리: 중력 바운스 + 감쇠 → 이후 왼쪽으로 구름
+    const gravity=0.4,damping=0.65,groundY=H*0.72;
+    // 시뮬레이션 (매 프레임 계산 대신 수식으로)
+    // 3번 바운스 후 구르기 시작
+    let bx=W*0.52,by=groundY;
+    const bouncePhases=[0,35,55,68]; // 각 바운스 시작 프레임
+    const bounceHeights=[25,12,5,0]; // 각 바운스 높이
+    if(t2<bouncePhases[1]){
+      // 1차 바운스
+      const p=(t2-bouncePhases[0])/(bouncePhases[1]-bouncePhases[0]);
+      by=groundY-bounceHeights[0]*Math.sin(p*Math.PI);
+    }else if(t2<bouncePhases[2]){
+      // 2차 바운스 (작아짐)
+      const p=(t2-bouncePhases[1])/(bouncePhases[2]-bouncePhases[1]);
+      by=groundY-bounceHeights[1]*Math.sin(p*Math.PI);
+      bx-=(t2-bouncePhases[1])*0.15;
+    }else if(t2<bouncePhases[3]){
+      // 3차 바운스 (아주 작음)
+      const p=(t2-bouncePhases[2])/(bouncePhases[3]-bouncePhases[2]);
+      by=groundY-bounceHeights[2]*Math.sin(p*Math.PI);
+      bx-=(t2-bouncePhases[1])*0.15;
+    }else{
+      // 구르기 (왼쪽으로 감속)
+      const rollT=t2-bouncePhases[3];
+      const speed=Math.max(0,1.2-rollT*0.012);
+      bx=W*0.52-(bouncePhases[3]-bouncePhases[1])*0.15-rollT*speed;
+      by=groundY;
+    }
+    if(bx>-ballSize){
+      ctx.fillStyle='#ccc';
+      ctx.fillRect(Math.floor(bx-ballSize/2),Math.floor(by-ballSize/2),ballSize,ballSize);
+      // 작은 그림자
+      ctx.fillStyle='rgba(200,200,200,0.1)';
+      ctx.fillRect(Math.floor(bx-ballSize/2),Math.floor(groundY+1),ballSize,2);
+    }
+  }
+
+  // s05(타이틀): 서서히 나타남
+  if(cur===4&&!trans){
+    const fadeAlpha=Math.min(animT/80,1);
+    ctx.globalAlpha=1-fadeAlpha;
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=1;
   }
 
   // 양쪽 마스크
