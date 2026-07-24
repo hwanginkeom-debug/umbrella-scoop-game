@@ -9,7 +9,7 @@
 body{background:#000;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;cursor:pointer}
 #game-container{position:relative;background:#000;overflow:hidden}
 canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
-#narration{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#eee;font-size:14px;font-family:monospace;text-align:center;max-width:85%;opacity:0;transition:opacity .6s;z-index:100;letter-spacing:.5px;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7)}
+#narration{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#eee;font-size:14px;font-family:monospace;text-align:center;max-width:85%;opacity:0;transition:opacity .6s;z-index:100;letter-spacing:.5px;text-shadow:0 2px 6px rgba(0,0,0,.9),0 0 10px rgba(0,0,0,.7);background:none;border:none;padding:0}
 #narration.show{opacity:1}
 #progress-wrap{width:100%;height:6px;background:#000;position:relative;overflow:hidden}
 #progress-fill{height:100%;background:#fff;transition:width .3s;min-width:2px;margin-left:3.125%;max-width:93.75%}
@@ -165,7 +165,7 @@ function playBgm(type){
   testAudio.addEventListener('canplaythrough',()=>{
     testAudio.loop=true;testAudio.volume=0;testAudio.play();
     // Fade in (2초)
-    const maxVol=(type==='classic')?0.17:0.5;
+    const maxVol=(type==='classic')?0.12:0.5;
     let vol=0;
     const fadeIn=setInterval(()=>{vol+=maxVol/40;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
     bgmN.push({stop:()=>{
