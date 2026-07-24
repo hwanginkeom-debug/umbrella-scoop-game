@@ -296,6 +296,17 @@ function s10_sky(t){
             for(let i=0;i<bRows*bCols;i++){
                 if(blocks[i]===1&&!maxSet.has(i)) blocks[i]=0;
             }
+            // 특정 영역 피부색 돌출부 제거 (배경색으로)
+            for(let by=50;by<70;by++){
+                for(let bx=25;bx<44;bx++){
+                    if(blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
+                }
+            }
+            for(let by=36;by<54;by++){
+                for(let bx=70;bx<84;bx++){
+                    if(blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
+                }
+            }
             window._birdRef.loaded=true;
         };
     }
