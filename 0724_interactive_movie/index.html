@@ -297,14 +297,17 @@ function s10_sky(t){
                 if(blocks[i]===1&&!maxSet.has(i)) blocks[i]=0;
             }
             // 특정 영역 피부색 돌출부 제거 (배경색으로)
-            for(let by=50;by<70;by++){
-                for(let bx=25;bx<44;bx++){
+            // 왼쪽 아래 돌출 (넓게)
+            for(let by=46;by<74;by++){
+                for(let bx=18;bx<46;bx++){
                     if(blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
                 }
             }
-            for(let by=36;by<54;by++){
-                for(let bx=70;bx<84;bx++){
-                    if(blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
+            // 오른쪽 중간 돌출 (사선으로 자르기 — 위에서 아래로 갈수록 왼쪽으로)
+            for(let by=36;by<56;by++){
+                const cutX=84-(by-36)*0.7; // 사선: 위쪽은 84, 아래로 갈수록 왼쪽으로
+                for(let bx=Math.floor(cutX);bx<90;bx++){
+                    if(bx<bCols&&blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
                 }
             }
             window._birdRef.loaded=true;
