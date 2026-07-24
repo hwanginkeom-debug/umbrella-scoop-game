@@ -5,26 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>인터랙티브 무비</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            background: #111;
+            background: #000;
             overflow: hidden;
-            font-family: 'Press Start 2P', monospace;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
+            cursor: pointer;
         }
 
         #game-container {
             position: relative;
             background: #000;
             overflow: hidden;
-            transition: width 1.5s cubic-bezier(0.4,0,0.2,1), height 1.5s cubic-bezier(0.4,0,0.2,1);
+            transition: width 1.2s ease, height 1.2s ease;
         }
 
         canvas {
@@ -37,46 +34,38 @@
 
         #narration {
             position: absolute;
-            bottom: 20px;
+            bottom: 16px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.85);
             color: #fff;
-            padding: 12px 20px;
-            font-size: 9px;
-            line-height: 2;
-            border: 2px solid #fff;
-            border-radius: 4px;
-            max-width: 80%;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-family: monospace;
+            line-height: 1.6;
             text-align: center;
+            max-width: 85%;
             display: none;
             z-index: 100;
-            white-space: pre-line;
+            text-shadow: 0 0 4px #fff;
+            letter-spacing: 1px;
         }
 
         #narration.show { display: block; }
 
         #click-hint {
             position: absolute;
-            bottom: 8px;
-            right: 12px;
-            color: rgba(255,255,255,0.4);
-            font-size: 7px;
+            bottom: 4px;
+            right: 8px;
+            color: rgba(255,255,255,0.3);
+            font-size: 9px;
+            font-family: monospace;
             z-index: 100;
-            animation: blink 1.2s infinite;
+            animation: blink 1.5s infinite;
         }
 
         @keyframes blink {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 1; }
-        }
-
-        #iris-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 200;
-            display: none;
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.8; }
         }
 
         #ending-btns {
@@ -85,21 +74,21 @@
             left: 50%;
             transform: translateX(-50%);
             display: none;
-            gap: 16px;
+            gap: 20px;
             z-index: 300;
         }
 
         #ending-btns.show { display: flex; }
 
         #ending-btns button {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 9px;
-            padding: 12px 20px;
-            background: #222;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px 24px;
+            background: #000;
             color: #fff;
-            border: 2px solid #fff;
+            border: 1px solid #fff;
             cursor: pointer;
-            transition: all 0.2s;
+            letter-spacing: 1px;
         }
 
         #ending-btns button:hover {
@@ -121,32 +110,35 @@
         #fullscreen-replay.show { display: flex; }
 
         #fullscreen-replay span {
-            font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
+            font-family: monospace;
+            font-size: 14px;
             color: #fff;
-            border: 3px solid #fff;
-            padding: 20px 40px;
-            animation: pulse 1.5s infinite;
+            border: 1px solid #fff;
+            padding: 16px 32px;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .back-btn {
             position: fixed;
-            top: 12px;
-            left: 12px;
+            top: 8px;
+            left: 8px;
             z-index: 10000;
-            padding: 6px 12px;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            font-size: 7px;
-            font-family: 'Press Start 2P', monospace;
+            padding: 4px 10px;
+            background: #000;
+            color: #555;
+            font-size: 9px;
+            font-family: monospace;
             text-decoration: none;
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid #333;
         }
+
+        .back-btn:hover { color: #fff; border-color: #fff; }
     </style>
 </head>
 <body>
@@ -155,8 +147,7 @@
     <div id="game-container">
         <canvas id="canvas"></canvas>
         <div id="narration"></div>
-        <div id="click-hint">▶ CLICK</div>
-        <svg id="iris-overlay" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div id="click-hint">▶</div>
         <div id="ending-btns">
             <button id="btn-replay">다시보기</button>
             <button id="btn-exit">나가기</button>
@@ -171,575 +162,505 @@
     // ==================== AUDIO ====================
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
-
-    function initAudio() {
-        if (!audioCtx) audioCtx = new AudioCtx();
-    }
+    function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
 
     function playAlarm() {
         initAudio();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.frequency.value = 880;
-        osc.type = 'square';
-        gain.gain.value = 0.15;
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.frequency.value = 660; osc.type = 'square';
+        gain.gain.value = 0.08;
         osc.start();
-        setTimeout(() => { gain.gain.value = 0; osc.stop(); }, 400);
+        let count = 0;
+        const iv = setInterval(() => {
+            osc.frequency.value = count % 2 === 0 ? 660 : 440;
+            count++;
+            if (count > 6) { clearInterval(iv); gain.gain.value = 0; osc.stop(); }
+        }, 150);
     }
 
     function playSiren() {
         initAudio();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = 'sawtooth';
-        gain.gain.value = 0.12;
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.type = 'sawtooth'; gain.gain.value = 0.06;
         osc.start();
         let t = 0;
-        const interval = setInterval(() => {
-            osc.frequency.value = 400 + Math.sin(t * 4) * 200;
+        const iv = setInterval(() => {
+            osc.frequency.value = 300 + Math.sin(t * 3) * 200;
             t += 0.05;
-        }, 50);
-        setTimeout(() => { clearInterval(interval); gain.gain.value = 0; osc.stop(); }, 2000);
+        }, 30);
+        setTimeout(() => { clearInterval(iv); gain.gain.value = 0; osc.stop(); }, 2500);
     }
 
     function playClap() {
         initAudio();
-        const bufferSize = audioCtx.sampleRate * 0.15;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
-        }
-        const source = audioCtx.createBufferSource();
+        const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2);
+        const src = audioCtx.createBufferSource();
         const gain = audioCtx.createGain();
-        source.buffer = buffer;
-        source.connect(gain);
-        gain.connect(audioCtx.destination);
-        gain.gain.value = 0.3;
-        source.start();
+        src.buffer = buf; src.connect(gain); gain.connect(audioCtx.destination);
+        gain.gain.value = 0.2; src.start();
     }
 
-    // ==================== PIXEL DRAWING ====================
+    // ==================== CANVAS ====================
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const container = document.getElementById('game-container');
     const narrationEl = document.getElementById('narration');
 
-    let W = 320, H = 180; // 기본 16:9 비율의 픽셀 해상도
-    canvas.width = W;
-    canvas.height = H;
+    let W = 192, H = 48;
+    canvas.width = W; canvas.height = H;
 
     function setAspect(ratio) {
-        // ratio: '16:4', '3:4', '1:1'
-        const maxW = Math.min(window.innerWidth * 0.9, 800);
-        const maxH = window.innerHeight * 0.85;
+        const maxW = Math.min(window.innerWidth * 0.92, 800);
+        const maxH = window.innerHeight * 0.88;
         let w, h;
-
         if (ratio === '16:4') {
-            w = maxW;
-            h = w * (4/16);
-            W = 320; H = 80;
+            w = maxW; h = w * (4/16);
+            W = 192; H = 48;
         } else if (ratio === '3:4') {
-            h = maxH;
-            w = h * (3/4);
-            W = 240; H = 320;
-        } else { // 1:1
+            h = maxH; w = h * (3/4);
+            W = 120; H = 160;
+        } else {
             const s = Math.min(maxW, maxH);
             w = s; h = s;
-            W = 256; H = 256;
+            W = 128; H = 128;
         }
-
         container.style.width = w + 'px';
         container.style.height = h + 'px';
-        canvas.width = W;
-        canvas.height = H;
+        canvas.width = W; canvas.height = H;
     }
 
-    // 픽셀 그리기 유틸
-    function fillRect(x, y, w, h, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(Math.floor(x), Math.floor(y), Math.floor(w), Math.floor(h));
-    }
-
-    function drawPixelText(text, x, y, color, size) {
+    // FAITH 스타일 — 극도로 미니멀, 1-2색, 블록 픽셀
+    function px(x, y, w, h, color) {
         ctx.fillStyle = color || '#fff';
-        ctx.font = (size || 8) + 'px "Press Start 2P", monospace';
+        ctx.fillRect(Math.floor(x), Math.floor(y), w || 1, h || 1);
+    }
+
+    function text(str, x, y, size, color) {
+        ctx.fillStyle = color || '#fff';
+        ctx.font = (size || 5) + 'px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(text, x, y);
+        ctx.fillText(str, x, y);
     }
 
-    // 간단한 픽셀 캐릭터
-    function drawCharacter(x, y, scale, options = {}) {
-        const s = scale || 1;
-        const { sleeping, bread, closeup, smile } = options;
-
+    // FAITH 스타일 캐릭터 — 단색, 극도로 단순
+    function drawMan(x, y, opts = {}) {
+        const { lying, arms, sleeping } = opts;
+        if (lying) {
+            // 누워있는 모습
+            px(x - 6, y, 12, 3, '#fff'); // 몸
+            px(x + 7, y, 3, 3, '#fff');  // 머리
+            return;
+        }
         // 머리
-        fillRect(x - 4*s, y - 12*s, 8*s, 8*s, '#ffcc88'); // 피부
-        // 머리카락
-        fillRect(x - 4*s, y - 14*s, 8*s, 4*s, '#333');
-        // 눈
-        if (sleeping) {
-            fillRect(x - 3*s, y - 9*s, 2*s, 1*s, '#333');
-            fillRect(x + 1*s, y - 9*s, 2*s, 1*s, '#333');
-        } else if (closeup) {
-            // 초롱초롱한 눈
-            fillRect(x - 3*s, y - 10*s, 3*s, 3*s, '#333');
-            fillRect(x + 1*s, y - 10*s, 3*s, 3*s, '#333');
-            fillRect(x - 2*s, y - 9*s, 1*s, 1*s, '#fff');
-            fillRect(x + 2*s, y - 9*s, 1*s, 1*s, '#fff');
-        } else {
-            fillRect(x - 2*s, y - 9*s, 2*s, 2*s, '#333');
-            fillRect(x + 1*s, y - 9*s, 2*s, 2*s, '#333');
-        }
-        // 입
-        if (smile) {
-            fillRect(x - 1*s, y - 6*s, 3*s, 1*s, '#c44');
-        } else if (bread) {
-            fillRect(x + 2*s, y - 7*s, 4*s, 3*s, '#dda044'); // 빵
-        }
+        px(x - 1, y - 8, 3, 3, '#fff');
         // 몸
-        fillRect(x - 3*s, y - 4*s, 6*s, 8*s, '#4488cc'); // 상의
+        px(x, y - 5, 1, 5, '#fff');
+        // 팔
+        if (arms === 'up') {
+            px(x - 2, y - 7, 1, 3, '#fff');
+            px(x + 2, y - 7, 1, 3, '#fff');
+        } else if (arms === 'out') {
+            px(x - 3, y - 4, 3, 1, '#fff');
+            px(x + 1, y - 4, 3, 1, '#fff');
+        } else {
+            px(x - 2, y - 4, 1, 3, '#fff');
+            px(x + 2, y - 4, 1, 3, '#fff');
+        }
         // 다리
-        fillRect(x - 3*s, y + 4*s, 2*s, 4*s, '#334');
-        fillRect(x + 1*s, y + 4*s, 2*s, 4*s, '#334');
-    }
-
-    // 배경 그리기 함수들
-    function drawSky(yStart, yEnd, colors) {
-        const gradient = colors || ['#87CEEB', '#B0E0E6', '#E0F7FF'];
-        const h = yEnd - yStart;
-        gradient.forEach((c, i) => {
-            const segH = h / gradient.length;
-            fillRect(0, yStart + i * segH, W, segH + 1, c);
-        });
-    }
-
-    function drawClouds(y, time) {
-        const cloudColor = '#fff';
-        for (let i = 0; i < 4; i++) {
-            const cx = ((i * 80 + time * 0.2) % (W + 40)) - 20;
-            fillRect(cx, y + i * 5, 24, 6, cloudColor);
-            fillRect(cx + 4, y + i * 5 - 4, 16, 4, cloudColor);
+        px(x - 1, y, 1, 3, '#fff');
+        px(x + 1, y, 1, 3, '#fff');
+        // 눈 (닫힘)
+        if (sleeping) {
+            px(x - 1, y - 7, 1, 1, '#000');
+            px(x + 1, y - 7, 1, 1, '#000');
         }
     }
 
-    function drawGrass(y, h) {
-        fillRect(0, y, W, h, '#4a8c3f');
-        for (let i = 0; i < W; i += 4) {
-            fillRect(i, y, 2, 2 + Math.random() * 3, '#3a7c2f');
+    function drawBird(x, y, frame) {
+        px(x, y, 2, 1, '#fff');
+        if (frame % 2 === 0) {
+            px(x - 1, y - 1, 1, 1, '#fff');
+            px(x + 2, y - 1, 1, 1, '#fff');
+        } else {
+            px(x - 1, y + 1, 1, 1, '#fff');
+            px(x + 2, y + 1, 1, 1, '#fff');
         }
     }
 
-    function drawBuilding(x, y, w, h, color) {
-        fillRect(x, y - h, w, h, color);
-        // 창문
-        for (let row = 0; row < Math.floor(h/10); row++) {
-            for (let col = 0; col < Math.floor(w/8); col++) {
-                const lit = Math.random() > 0.3;
-                fillRect(x + 4 + col * 8, y - h + 4 + row * 10, 4, 5, lit ? '#ffee88' : '#334');
-            }
-        }
+    function drawFlower(x, y) {
+        px(x, y, 1, 3, '#fff');
+        px(x - 1, y - 1, 3, 1, '#fff');
+        px(x, y - 2, 1, 1, '#fff');
     }
 
-    // ==================== SCENES ====================
+    // ==================== SHOTS ====================
     let currentShot = 0;
     let animTime = 0;
-    let sceneStartTime = 0;
 
     const shots = [
         // PART 1 — 일상 (16:4)
-        { aspect: '16:4', draw: drawShot1, narration: null, sound: null },
-        { aspect: '16:4', draw: drawShot2, narration: null, sound: 'alarm' },
-        { aspect: '16:4', draw: drawShot3, narration: '"조졌네…"', sound: null },
-        { aspect: '16:4', draw: drawShot4, narration: '[나레이션] 남자는 지각을 했습니다', sound: null },
-        { aspect: '16:4', draw: drawShot5, narration: null, sound: null },
-        { aspect: '16:4', draw: drawShot6, narration: null, sound: null },
-        { aspect: '16:4', draw: drawShot7, narration: null, sound: null },
-        // 화면비 전환 표시
-        { aspect: '16:4', draw: drawTransition1, narration: null, sound: null, auto: true },
+        { aspect: '16:4', draw: shot_bed, narration: null, sound: null },
+        { aspect: '16:4', draw: shot_alarm, narration: null, sound: 'alarm' },
+        { aspect: '16:4', draw: shot_oh_no, narration: '"조졌네…"', sound: null },
+        { aspect: '16:4', draw: shot_narration, narration: '[나레이션] 남자는 지각을 했습니다', sound: null },
+        { aspect: '16:4', draw: shot_running, narration: null, sound: null },
+        { aspect: '16:4', draw: shot_hallway, narration: null, sound: null },
+        { aspect: '16:4', draw: shot_closeup, narration: null, sound: null },
+        { aspect: '16:4', draw: shot_transition1, narration: null, sound: null, auto: true },
         // PART 2 — 비상 (3:4)
-        { aspect: '3:4', draw: drawShot9, narration: null, sound: null },
-        { aspect: '3:4', draw: drawShot10, narration: null, sound: null },
-        { aspect: '3:4', draw: drawShot11, narration: null, sound: null },
-        { aspect: '3:4', draw: drawShot12, narration: null, sound: null },
-        // 화면비 전환 (사이렌)
-        { aspect: '3:4', draw: drawTransition2, narration: null, sound: 'siren', auto: true },
+        { aspect: '3:4', draw: shot_window, narration: null, sound: null },
+        { aspect: '3:4', draw: shot_sky_dance, narration: null, sound: null },
+        { aspect: '3:4', draw: shot_neighbors, narration: null, sound: null },
+        { aspect: '3:4', draw: shot_ground, narration: null, sound: null },
+        { aspect: '3:4', draw: shot_transition2, narration: null, sound: 'siren', auto: true },
         // PART 3 — 착지 (1:1)
-        { aspect: '1:1', draw: drawShot13, narration: null, sound: null },
-        { aspect: '1:1', draw: drawShot14, narration: null, sound: null },
-        { aspect: '1:1', draw: drawShot15, narration: null, sound: null },
-        { aspect: '1:1', draw: drawShot16_iris, narration: null, sound: null, auto: true },
-        { aspect: '1:1', draw: drawShot17_credits, narration: null, sound: null },
-        { aspect: '1:1', draw: drawShot18_audience, narration: null, sound: 'clap' },
+        { aspect: '1:1', draw: shot_fallen, narration: null, sound: null },
+        { aspect: '1:1', draw: shot_crowd, narration: null, sound: null },
+        { aspect: '1:1', draw: shot_smile, narration: null, sound: null },
+        { aspect: '1:1', draw: shot_iris, narration: null, sound: null, auto: true },
+        { aspect: '1:1', draw: shot_credits, narration: null, sound: null },
+        { aspect: '1:1', draw: shot_audience, narration: null, sound: 'clap' },
     ];
 
-    // --- PART 1 SHOTS ---
-    function drawShot1(t) {
-        // 침대에서 일어남 — 1인칭
-        fillRect(0, 0, W, H, '#1a1a2e');
+    // === PART 1 ===
+    function shot_bed(t) {
+        // 1인칭 — 눈을 뜸
+        const open = Math.min(t / 40, 1);
+        const barH = Math.floor(H * 0.5 * (1 - open));
         // 천장
-        fillRect(0, 0, W, H * 0.3, '#2a2a3e');
-        // 이불 시야 (아래쪽)
-        fillRect(0, H * 0.6, W, H * 0.4, '#6688bb');
-        fillRect(0, H * 0.7, W, H * 0.3, '#5577aa');
-        // 눈 뜨는 효과 — 위아래 검은 바
-        const openAmt = Math.min(t / 60, 1);
-        const barH = H * 0.4 * (1 - openAmt);
-        fillRect(0, 0, W, barH, '#000');
-        fillRect(0, H - barH, W, barH, '#000');
+        ctx.fillStyle = '#111';
+        ctx.fillRect(0, barH, W, H - barH * 2);
+        // 이불 라인
+        px(0, H - barH - 5, W, 1, '#333');
+        // 눈 뜨기 바
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, barH);
+        ctx.fillRect(0, H - barH, W, barH);
     }
 
-    function drawShot2(t) {
-        // 핸드폰 알람
-        fillRect(0, 0, W, H, '#1a1a2e');
-        // 손 + 폰
-        fillRect(W/2 - 15, H/2 - 20, 30, 40, '#222');
-        fillRect(W/2 - 13, H/2 - 18, 26, 36, '#115533');
-        // 알람 텍스트
-        drawPixelText('08:47', W/2, H/2 - 4, '#ff4444', 6);
-        drawPixelText('ALARM', W/2, H/2 + 8, '#ffaa00', 5);
-        // 진동 효과
-        if (Math.floor(t / 8) % 2 === 0) {
-            ctx.translate(1, 0);
+    function shot_alarm(t) {
+        // 핸드폰 화면
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 폰
+        const px0 = W/2 - 8, py0 = H/2 - 12;
+        px(px0, py0, 16, 24, '#222');
+        px(px0 + 1, py0 + 1, 14, 22, '#111');
+        // 시간
+        const blink = Math.floor(t / 10) % 2;
+        text('8:47', W/2, H/2 + 2, 6, blink ? '#f44' : '#800');
+        // 진동
+        if (Math.floor(t / 4) % 2) ctx.translate(0.5, 0);
+    }
+
+    function shot_oh_no(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        drawMan(W/2, H/2 + 4);
+        // 땀
+        if (t > 10) px(W/2 + 4, H/2 - 8, 1, 2, '#fff');
+    }
+
+    function shot_narration(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 시계
+        const cx = W/2, cy = H/2;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 12, 0, Math.PI * 2);
+        ctx.stroke();
+        // 바늘
+        px(cx, cy, 1, -8, '#fff');
+        px(cx, cy - 8, 1, 1, '#fff');
+        px(cx, cy, 6, 1, '#fff');
+        px(cx + 5, cy, 1, 1, '#fff');
+    }
+
+    function shot_running(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 바닥 라인
+        px(0, H - 6, W, 1, '#333');
+        // 달리는 캐릭터
+        const runX = 30 + (t * 0.3) % 20;
+        const bob = Math.floor(t / 4) % 2;
+        drawMan(runX, H - 8 - bob, { arms: t % 8 < 4 ? 'out' : undefined });
+        // 빵 (입 옆에 작은 점)
+        px(runX + 2, H - 8 - bob - 7, 2, 1, '#fff');
+        // 건물 실루엣
+        for (let i = 0; i < 6; i++) {
+            const bh = 10 + (i * 7) % 15;
+            px(i * 32, H - 6 - bh, 20, bh, '#111');
         }
     }
 
-    function drawShot3(t) {
-        // "조졌네" 반응 — 얼굴 클로즈업
-        fillRect(0, 0, W, H, '#1a1a2e');
-        drawCharacter(W/2, H/2 + 8, 3, { sleeping: false });
-        // 땀방울
-        fillRect(W/2 + 14, H/2 - 20, 2, 4, '#88ccff');
-    }
-
-    function drawShot4(t) {
-        // 나레이션 씬 — 시계
-        fillRect(0, 0, W, H, '#0d0d1a');
-        // 큰 시계
-        ctx.beginPath();
-        ctx.arc(W/2, H/2, 25, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(W/2, H/2, 23, 0, Math.PI * 2);
-        ctx.fillStyle = '#eee';
-        ctx.fill();
-        drawPixelText('8:47', W/2, H/2 + 3, '#c00', 6);
-    }
-
-    function drawShot5(t) {
-        // 빵을 물고 나섬
-        drawSky(0, H * 0.5);
-        drawGrass(H * 0.7, H * 0.3);
-        // 도로
-        fillRect(0, H * 0.65, W, H * 0.1, '#555');
-        // 캐릭터 달리기
-        const runX = 60 + Math.sin(t * 0.1) * 3;
-        const bobY = Math.abs(Math.sin(t * 0.3)) * 3;
-        drawCharacter(runX, H * 0.6 - bobY, 2, { bread: true });
-    }
-
-    function drawShot6(t) {
-        // 복도식 아파트
-        fillRect(0, 0, W, H, '#87CEEB');
-        drawClouds(5, t);
-        // 아파트
-        drawBuilding(20, H, 60, H * 0.8, '#887766');
-        drawBuilding(90, H, 50, H * 0.6, '#776655');
-        // 복도 난간
-        for (let i = 0; i < 6; i++) {
-            fillRect(22 + i * 10, H * 0.4, 8, 2, '#aaa');
+    function shot_hallway(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 복도 — 수평선
+        px(0, H * 0.3, W, 1, '#333');
+        px(0, H * 0.7, W, 1, '#333');
+        // 난간 기둥
+        for (let i = 0; i < 12; i++) {
+            px(i * 16 + 4, H * 0.3, 1, H * 0.4, '#222');
         }
         // 캐릭터 걷기
-        const walkX = 30 + (t % 100) * 0.5;
-        drawCharacter(walkX, H * 0.55, 1.5, { bread: true });
+        const walkX = 20 + (t * 0.5) % (W - 40);
+        drawMan(walkX, H * 0.65);
     }
 
-    function drawShot7(t) {
-        // 초롱초롱한 눈 클로즈업
-        fillRect(0, 0, W, H, '#ffeedd');
-        drawCharacter(W/2, H/2 + 5, 4, { closeup: true });
-        // 반짝이 효과
-        const sparkles = [[W/2-20, H/2-25], [W/2+18, H/2-20], [W/2-15, H/2+15]];
-        sparkles.forEach(([sx, sy], i) => {
-            if (Math.floor(t/10 + i) % 3 === 0) {
-                fillRect(sx, sy, 3, 3, '#ffdd00');
-                fillRect(sx+1, sy-1, 1, 5, '#ffdd00');
-                fillRect(sx-1, sy+1, 5, 1, '#ffdd00');
-            }
-        });
-    }
-
-    function drawTransition1(t) {
-        // 화면비 전환 연출
-        fillRect(0, 0, W, H, '#000');
-        if (t > 30) {
-            drawPixelText('· · ·', W/2, H/2, '#fff', 8);
-        }
-        if (t > 60) {
-            nextShot();
+    function shot_closeup(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 큰 얼굴 — FAITH 스타일
+        const cx = W/2, cy = H/2;
+        // 머리 윤곽
+        px(cx - 6, cy - 8, 12, 14, '#fff');
+        // 눈 (빛나는)
+        px(cx - 3, cy - 3, 2, 2, '#000');
+        px(cx + 2, cy - 3, 2, 2, '#000');
+        // 눈 하이라이트
+        if (Math.floor(t / 8) % 3 !== 0) {
+            px(cx - 3, cy - 3, 1, 1, '#fff');
+            px(cx + 2, cy - 3, 1, 1, '#fff');
         }
     }
 
-    // --- PART 2 SHOTS ---
-    function drawShot9(t) {
-        // 창밖 풍경
-        drawSky(0, H * 0.6, ['#88ccff', '#aaddff', '#ccf0ff']);
-        drawClouds(20, t);
-        // 산/나무
-        fillRect(0, H * 0.55, W, H * 0.1, '#5a9e4a');
-        drawGrass(H * 0.6, H * 0.4);
+    function shot_transition1(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        if (t > 20 && t < 50) {
+            text('...', W/2, H/2 + 2, 6, '#444');
+        }
+        if (t > 60) nextShot();
+    }
+
+    // === PART 2 ===
+    function shot_window(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
         // 창틀
-        fillRect(0, 0, W, 8, '#554433');
-        fillRect(0, H - 8, W, 8, '#554433');
-        fillRect(0, 0, 8, H, '#554433');
-        fillRect(W - 8, 0, 8, H, '#554433');
-        fillRect(W/2 - 2, 0, 4, H, '#554433');
+        px(10, 8, W - 20, H - 16, '#222');
+        px(12, 10, W - 24, H - 20, '#000');
+        // 십자 창살
+        px(W/2, 10, 1, H - 20, '#222');
+        px(12, H/2, W - 24, 1, '#222');
         // 새
         for (let i = 0; i < 3; i++) {
-            const bx = 50 + i * 40 + Math.sin(t * 0.05 + i) * 10;
-            const by = 40 + Math.sin(t * 0.08 + i * 2) * 15;
-            fillRect(bx, by, 4, 2, '#333');
-            fillRect(bx - 2, by - 1, 2, 1, '#333');
-            fillRect(bx + 4, by - 1, 2, 1, '#333');
+            const bx = 30 + i * 25 + Math.sin(t * 0.05 + i) * 5;
+            const by = 25 + Math.sin(t * 0.03 + i * 2) * 8;
+            drawBird(bx, by, Math.floor(t / 8 + i));
+        }
+        // 하늘 — 몇개의 점 (별처럼)
+        for (let i = 0; i < 8; i++) {
+            px(20 + i * 12, 15 + (i * 7) % 20, 1, 1, '#333');
         }
     }
 
-    function drawShot10(t) {
-        // 하늘의 새들과 춤 (높이 = 하늘)
-        drawSky(0, H, ['#4488dd', '#66aaee', '#88ccff']);
-        drawClouds(30, t);
-        drawClouds(100, t * 0.7);
-        // 캐릭터 — 하늘에 떠있음
-        const floatY = H * 0.4 + Math.sin(t * 0.04) * 20;
-        drawCharacter(W/2, floatY, 2, { smile: true });
-        // 새들 주위를 빙빙
-        for (let i = 0; i < 5; i++) {
-            const angle = t * 0.03 + i * (Math.PI * 2 / 5);
-            const bx = W/2 + Math.cos(angle) * 50;
-            const by = floatY + Math.sin(angle) * 30 - 10;
-            fillRect(bx, by, 4, 2, '#333');
-            fillRect(bx - 2, by - 1, 2, 1, '#333');
-            fillRect(bx + 4, by - 1, 2, 1, '#333');
+    function shot_sky_dance(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 캐릭터 (하늘에)
+        const floatY = H * 0.4 + Math.sin(t * 0.04) * 8;
+        drawMan(W/2, floatY, { arms: 'up' });
+        // 새들 원형
+        for (let i = 0; i < 6; i++) {
+            const a = t * 0.03 + i * (Math.PI * 2 / 6);
+            const bx = W/2 + Math.cos(a) * 30;
+            const by = floatY - 5 + Math.sin(a) * 15;
+            drawBird(bx, by, Math.floor(t / 6 + i));
+        }
+        // 구름 (점선)
+        for (let i = 0; i < 4; i++) {
+            px(10 + i * 30, 10 + i * 3, 8, 1, '#222');
         }
     }
 
-    function drawShot11(t) {
-        // 아랫집 주민들과 인사 (중간 층)
-        // 아파트 벽
-        fillRect(0, 0, W, H, '#ccbbaa');
-        // 창문들
-        for (let row = 0; row < 4; row++) {
+    function shot_neighbors(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 아파트 벽 — 격자
+        for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 3; col++) {
-                const wx = 30 + col * 70;
-                const wy = 20 + row * 75;
-                fillRect(wx, wy, 40, 50, '#88ccff');
-                fillRect(wx, wy + 50, 40, 3, '#665544');
-                // 주민 (일부 창문)
+                const wx = 15 + col * 35, wy = 8 + row * 30;
+                px(wx, wy, 20, 18, '#111');
+                // 창문 안 주민
                 if ((row + col) % 2 === 0) {
-                    fillRect(wx + 15, wy + 25, 8, 8, '#ffcc88');
-                    fillRect(wx + 15, wy + 20, 8, 6, '#333');
+                    drawMan(wx + 10, wy + 12);
                     // 손 흔들기
-                    if (Math.floor(t / 15) % 2 === 0) {
-                        fillRect(wx + 24, wy + 22, 4, 2, '#ffcc88');
-                    } else {
-                        fillRect(wx + 24, wy + 26, 4, 2, '#ffcc88');
+                    if (Math.floor(t / 12) % 2 === 0) {
+                        px(wx + 13, wy + 5, 1, 2, '#fff');
                     }
                 }
             }
         }
         // 떨어지는 캐릭터
-        const fallY = H * 0.3 + (t % 40) * 0.5;
-        drawCharacter(W/2, fallY, 1.5, { smile: true });
+        const fy = 10 + (t * 0.8) % (H - 20);
+        drawMan(W/2 + 5, fy, { arms: 'out' });
     }
 
-    function drawShot12(t) {
-        // 땅의 벌레·꽃과 춤 (땅에 도달)
-        fillRect(0, 0, W, H * 0.3, '#88ccff');
-        drawGrass(H * 0.3, H * 0.7);
-        // 꽃
-        const flowers = [[30, H*0.5], [80, H*0.6], [150, H*0.55], [200, H*0.65]];
-        flowers.forEach(([fx, fy]) => {
-            fillRect(fx, fy, 2, 8, '#3a6b2a');
-            fillRect(fx - 2, fy - 4, 6, 4, '#ff88aa');
-            fillRect(fx, fy - 6, 2, 2, '#ffdd00');
-        });
-        // 벌레
-        for (let i = 0; i < 3; i++) {
-            const bx = 50 + i * 60 + Math.sin(t * 0.1 + i) * 5;
-            const by = H * 0.7 + Math.cos(t * 0.08 + i) * 3;
-            fillRect(bx, by, 4, 3, '#4a2');
-            fillRect(bx + 4, by, 2, 1, '#4a2');
+    function shot_ground(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 바닥 라인
+        px(0, H - 10, W, 1, '#333');
+        // 풀/꽃
+        for (let i = 0; i < 8; i++) {
+            drawFlower(10 + i * 14, H - 12);
         }
-        // 캐릭터 (바닥에 도달 직전)
-        drawCharacter(W/2, H * 0.4 + Math.sin(t * 0.06) * 5, 2, { smile: true });
-    }
-
-    function drawTransition2(t) {
-        // 사이렌 전환
-        const flash = Math.floor(t / 8) % 2;
-        fillRect(0, 0, W, H, flash ? '#cc0000' : '#0000cc');
-        if (t > 60) {
-            nextShot();
-        }
-    }
-
-    // --- PART 3 SHOTS ---
-    function drawShot13(t) {
-        // 바닥에서 피를 흘리며 웃고 있음
-        fillRect(0, 0, W, H, '#333');
-        // 바닥
-        fillRect(0, H * 0.7, W, H * 0.3, '#555');
-        // 캐릭터 (누워있음)
-        fillRect(W/2 - 15, H * 0.65, 30, 8, '#4488cc'); // 몸
-        fillRect(W/2 + 12, H * 0.63, 8, 8, '#ffcc88'); // 머리
-        fillRect(W/2 + 12, H * 0.61, 8, 4, '#333'); // 머리카락
-        // 미소
-        fillRect(W/2 + 14, H * 0.67, 3, 1, '#c44');
-        // 피
-        fillRect(W/2 + 5, H * 0.7, 20, 3, '#880022');
-        fillRect(W/2 + 10, H * 0.72, 8, 2, '#660018');
-        // 주변 사람들
+        // 벌레 (작은 점)
         for (let i = 0; i < 5; i++) {
-            const px = 40 + i * 40;
-            fillRect(px, H * 0.45, 6, 12, '#777');
-            fillRect(px, H * 0.4, 6, 6, '#ddb088');
+            const bx = 20 + i * 20 + Math.sin(t * 0.08 + i) * 3;
+            px(bx, H - 8, 2, 1, '#fff');
+            px(bx + 2, H - 9, 1, 1, '#fff');
+        }
+        // 캐릭터 (바닥 근처)
+        drawMan(W/2, H - 14, { arms: 'out' });
+    }
+
+    function shot_transition2(t) {
+        // 빨/파 깜빡
+        const flash = Math.floor(t / 6) % 2;
+        ctx.fillStyle = flash ? '#300' : '#003';
+        ctx.fillRect(0, 0, W, H);
+        if (t > 50) nextShot();
+    }
+
+    // === PART 3 ===
+    function shot_fallen(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 바닥
+        px(0, H - 15, W, 1, '#333');
+        // 캐릭터 누워있음
+        drawMan(W/2, H - 18, { lying: true });
+        // 피 — 몇 픽셀
+        px(W/2 + 8, H - 16, 4, 2, '#800');
+        px(W/2 + 6, H - 14, 6, 1, '#600');
+        // 주변 사람들 (서있음)
+        for (let i = 0; i < 6; i++) {
+            drawMan(20 + i * 16, H - 30);
         }
     }
 
-    function drawShot14(t) {
-        // 아이 눈을 가리는 어른 / "집값 떨어진다"
-        fillRect(0, 0, W, H, '#333');
-        fillRect(0, H * 0.7, W, H * 0.3, '#555');
-        // 어른 + 아이
-        // 어른
-        fillRect(80, H * 0.35, 10, 20, '#666');
-        fillRect(80, H * 0.28, 10, 8, '#ddb088');
-        // 손 (아이 눈 가리기)
-        fillRect(100, H * 0.42, 8, 3, '#ddb088');
-        // 아이
-        fillRect(105, H * 0.4, 7, 12, '#88aadd');
-        fillRect(105, H * 0.35, 7, 6, '#ffcc88');
-        // 다른쪽 어른 - 말풍선
-        fillRect(160, H * 0.35, 10, 20, '#555');
-        fillRect(160, H * 0.28, 10, 8, '#ddb088');
+    function shot_crowd(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 어른 + 아이 (눈 가림)
+        drawMan(35, H * 0.5);
+        // 손을 뻗어 아이 눈 가리기
+        px(40, H * 0.5 - 5, 5, 1, '#fff');
+        // 아이 (작게)
+        px(46, H * 0.5 - 4, 2, 2, '#fff');
+        px(46, H * 0.5 - 2, 1, 3, '#fff');
+        px(45, H * 0.5 + 1, 1, 2, '#fff');
+        px(47, H * 0.5 + 1, 1, 2, '#fff');
+
         // 말풍선
-        fillRect(140, H * 0.15, 70, 16, '#fff');
-        drawPixelText('집값 떨어진다!', 175, H * 0.15 + 10, '#c00', 5);
+        px(70, H * 0.25, 45, 12, '#fff');
+        text('집값 떨어진다!', 92, H * 0.25 + 8, 5, '#000');
+        // 말하는 어른
+        drawMan(85, H * 0.5);
     }
 
-    function drawShot15(t) {
-        // 웃고 있는 남자 클로즈업
-        fillRect(0, 0, W, H, '#1a0a0a');
-        drawCharacter(W/2, H/2 + 10, 5, { smile: true });
-        // 피 얼룩 위쪽
-        fillRect(W/2 - 30, H * 0.75, 60, 6, '#660018');
+    function shot_smile(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 큰 얼굴 클로즈업 — 웃는
+        const cx = W/2, cy = H/2;
+        px(cx - 10, cy - 12, 20, 22, '#fff');
+        // 눈
+        px(cx - 5, cy - 5, 3, 3, '#000');
+        px(cx + 3, cy - 5, 3, 3, '#000');
+        // 웃는 입 — 곡선 대신 계단
+        px(cx - 4, cy + 4, 8, 1, '#000');
+        px(cx - 5, cy + 3, 1, 1, '#000');
+        px(cx + 4, cy + 3, 1, 1, '#000');
     }
 
-    function drawShot16_iris(t) {
-        // 아이리스 아웃
-        fillRect(0, 0, W, H, '#1a0a0a');
-        drawCharacter(W/2, H/2 + 10, 5, { smile: true });
+    function shot_iris(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 웃는 얼굴 (작아짐)
+        const cx = W/2, cy = H/2;
+        const progress = Math.min(t / 80, 1);
+        const r = Math.floor((1 - progress) * 60);
 
-        // 원형 마스크 축소
-        const maxR = Math.sqrt(W*W + H*H) / 2;
-        const progress = Math.min(t / 90, 1);
-        const r = maxR * (1 - progress);
-
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-in';
-        ctx.beginPath();
-        ctx.arc(W/2, H/2, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // 검은 바깥
-        ctx.save();
-        ctx.globalCompositeOperation = 'destination-over';
-        fillRect(0, 0, W, H, '#000');
-        ctx.restore();
-
-        if (progress >= 1) {
-            setTimeout(() => nextShot(), 500);
+        if (r > 0) {
+            // 얼굴 중앙
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.clip();
+            // 얼굴
+            px(cx - 10, cy - 12, 20, 22, '#fff');
+            px(cx - 5, cy - 5, 3, 3, '#000');
+            px(cx + 3, cy - 5, 3, 3, '#000');
+            px(cx - 4, cy + 4, 8, 1, '#000');
+            px(cx - 5, cy + 3, 1, 1, '#000');
+            px(cx + 4, cy + 3, 1, 1, '#000');
+            ctx.restore();
         }
+
+        if (progress >= 1) setTimeout(() => nextShot(), 800);
     }
 
-    function drawShot17_credits(t) {
-        // 엔딩 크레딧
-        fillRect(0, 0, W, H, '#000');
-        const scrollY = H - t * 0.5;
-        const credits = [
-            '감독 · 기획',
-            'hwanginkeom',
-            '',
-            '바이브코딩 Lab',
-            '',
-            '2026',
-            '',
-            '',
-            'FIN'
-        ];
-        credits.forEach((line, i) => {
-            const ly = scrollY + i * 24;
-            if (ly > -10 && ly < H + 10) {
-                drawPixelText(line, W/2, ly, '#fff', 6);
+    function shot_credits(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        const lines = ['감독 · 기획', '', 'hwanginkeom', '', '바이브코딩 Lab', '', '2026', '', '', 'FIN'];
+        const scrollY = H - t * 0.3;
+        lines.forEach((line, i) => {
+            const ly = scrollY + i * 14;
+            if (ly > -8 && ly < H + 8) {
+                text(line, W/2, ly, 5, '#fff');
             }
         });
     }
 
-    function drawShot18_audience(t) {
-        // 영화관 관객들 박수
-        fillRect(0, 0, W, H * 0.6, '#111');
-        // 스크린 (작게)
-        fillRect(W * 0.25, H * 0.05, W * 0.5, H * 0.3, '#222');
-        drawPixelText('FIN', W/2, H * 0.2, '#666', 8);
-        // 관객 좌석
-        fillRect(0, H * 0.6, W, H * 0.4, '#1a1a1a');
+    function shot_audience(t) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        // 스크린
+        px(W * 0.2, 5, W * 0.6, H * 0.3, '#111');
+        text('FIN', W/2, H * 0.15 + 3, 6, '#333');
         // 관객 머리들
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 8; col++) {
-                const px = 20 + col * 30;
-                const py = H * 0.62 + row * 25;
-                fillRect(px, py, 8, 8, '#333');
-                fillRect(px, py - 3, 8, 4, '#222');
+        for (let row = 0; row < 4; row++) {
+            for (let col = 0; col < 7; col++) {
+                const hx = 10 + col * 16;
+                const hy = H * 0.5 + row * 14;
+                px(hx, hy, 4, 4, '#fff');
                 // 박수 손
-                if (Math.floor(t / 6 + col + row) % 2 === 0) {
-                    fillRect(px - 2, py + 6, 3, 3, '#ddb088');
-                    fillRect(px + 8, py + 6, 3, 3, '#ddb088');
+                if (Math.floor(t / 5 + col + row) % 2 === 0) {
+                    px(hx - 1, hy + 4, 2, 1, '#fff');
+                    px(hx + 3, hy + 4, 2, 1, '#fff');
                 }
             }
         }
-
-        // 박수 소리 반복
-        if (t % 30 === 0 && t > 0) playClap();
-
+        // 박수 소리
+        if (t % 25 === 0 && t > 0 && t < 150) playClap();
         // 버튼 표시
-        if (t > 60) {
-            document.getElementById('ending-btns').classList.add('show');
-        }
+        if (t > 80) document.getElementById('ending-btns').classList.add('show');
     }
 
-    // ==================== GAME LOGIC ====================
+    // ==================== LOGIC ====================
     function nextShot() {
         if (currentShot < shots.length - 1) {
             currentShot++;
-            sceneStartTime = 0;
             animTime = 0;
             const shot = shots[currentShot];
-
-            // 화면비 변경
             setAspect(shot.aspect);
-
-            // 사운드
             if (shot.sound === 'alarm') playAlarm();
             if (shot.sound === 'siren') playSiren();
             if (shot.sound === 'clap') playClap();
-
-            // 나레이션
             if (shot.narration) {
                 narrationEl.textContent = shot.narration;
                 narrationEl.classList.add('show');
@@ -752,24 +673,18 @@
     function startGame() {
         currentShot = 0;
         animTime = 0;
-        sceneStartTime = 0;
         document.getElementById('ending-btns').classList.remove('show');
         document.getElementById('fullscreen-replay').classList.remove('show');
-        setAspect(shots[0].aspect);
         narrationEl.classList.remove('show');
+        setAspect(shots[0].aspect);
     }
 
-    // 클릭 진행
-    document.getElementById('game-container').addEventListener('click', function(e) {
+    container.addEventListener('click', function(e) {
         if (e.target.tagName === 'BUTTON') return;
         initAudio();
-        const shot = shots[currentShot];
-        if (!shot.auto) {
-            nextShot();
-        }
+        if (!shots[currentShot].auto) nextShot();
     });
 
-    // 엔딩 버튼
     document.getElementById('btn-replay').addEventListener('click', function(e) {
         e.stopPropagation();
         startGame();
@@ -781,24 +696,17 @@
         document.getElementById('fullscreen-replay').classList.add('show');
     });
 
-    document.getElementById('fullscreen-replay').addEventListener('click', function() {
-        startGame();
-    });
+    document.getElementById('fullscreen-replay').addEventListener('click', startGame);
 
-    // ==================== RENDER LOOP ====================
+    // ==================== RENDER ====================
     function render() {
         requestAnimationFrame(render);
         ctx.clearRect(0, 0, W, H);
-
         const shot = shots[currentShot];
-        if (shot && shot.draw) {
-            shot.draw(animTime);
-        }
-
+        if (shot && shot.draw) shot.draw(animTime);
         animTime++;
     }
 
-    // 시작
     setAspect('16:4');
     render();
     </script>
