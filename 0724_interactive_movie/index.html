@@ -470,7 +470,7 @@ function render(){
 
   // s05(타이틀): 서서히 나타남
   if(cur===4&&!trans){
-    const fadeAlpha=Math.min(animT/80,1);
+    const fadeAlpha=Math.min(animT/180,1);
     ctx.globalAlpha=1-fadeAlpha;
     ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
     ctx.globalAlpha=1;
