@@ -225,78 +225,18 @@ function s9_window(t){
     drawCameraOverlay(t);
 }
 function s10_sky(t){
-    ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
-    // 별
-    for(let i=0;i<50;i++){const sx=(i*47+13)%W,sy=(i*61+7)%H;px(sx,sy,1,1,'#556677');}
-    // 구름 — 흰색, 불투명, 가로 줄
-    const dC=(cx,cy)=>{px(cx+2,cy,6,2,'#fff');px(cx,cy+2,10,2,'#eee');px(cx-2,cy+4,14,2,'#ddd');px(cx-1,cy+6,12,2,'#ccc');};
-    dC(15,20);dC(200,28);dC(12,95);dC(195,108);dC(18,155);dC(205,162);
-    // ===== 사람 실루엣 =====
-    const oy=Math.sin(t*.011)*3;
-    const c='#c4956a';
-    // 기준: 사람 중심 x=128, 상단 y=16
-    const cx=128,ty=16+oy;
-    // 머리 (약간 오른쪽)
-    px(cx+4,ty,4,4,c);px(cx,ty+4,12,4,c);px(cx-2,ty+8,16,4,c);px(cx-2,ty+12,16,4,c);px(cx,ty+16,12,4,c);px(cx+2,ty+20,8,4,c);
-    // 목
-    px(cx+2,ty+24,8,4,c);
-    // 어깨~상체 (약간 오른쪽으로 넓어짐)
-    px(cx-8,ty+28,24,4,c);px(cx-12,ty+32,30,4,c);px(cx-14,ty+36,34,4,c);
-    // 몸통 (오른쪽으로 기울어짐)
-    px(cx-12,ty+40,36,4,c);px(cx-10,ty+44,36,4,c);px(cx-8,ty+48,34,4,c);px(cx-6,ty+52,32,4,c);
-    // 허리~골반
-    px(cx-4,ty+56,28,4,c);px(cx-2,ty+60,26,4,c);px(cx,ty+64,22,4,c);
-    // 왼팔 (앞으로, 왼쪽아래 방향) — 어깨에서 시작
-    px(cx-16,ty+32,6,4,c);px(cx-22,ty+34,6,4,c);px(cx-28,ty+36,6,4,c);px(cx-34,ty+38,6,4,c);px(cx-38,ty+40,6,4,c);px(cx-42,ty+42,5,4,c);
-    // 오른팔 (뒤로, 오른쪽 위 방향) — 어깨에서 시작, 구부러짐
-    px(cx+18,ty+30,6,4,c);px(cx+22,ty+28,6,4,c);px(cx+26,ty+26,6,4,c);px(cx+30,ty+28,5,4,c);px(cx+28,ty+32,5,4,c);
-    // 왼다리 (앞, 왼쪽아래로 길게 뻗음)
-    px(cx-4,ty+68,12,4,c);px(cx-8,ty+72,11,4,c);px(cx-12,ty+76,10,4,c);px(cx-16,ty+80,10,4,c);px(cx-20,ty+84,9,4,c);px(cx-24,ty+88,8,4,c);px(cx-28,ty+92,8,4,c);px(cx-32,ty+96,7,4,c);px(cx-36,ty+100,6,4,c);px(cx-38,ty+104,5,4,c);
-    // 오른다리 (뒤, 오른쪽으로 올라가다 무릎에서 꺾임)
-    px(cx+10,ty+68,12,4,c);px(cx+16,ty+64,10,4,c);px(cx+22,ty+60,9,4,c);px(cx+28,ty+56,8,4,c);
-    // 무릎에서 꺾여 발이 위를 향함
-    px(cx+32,ty+52,7,4,c);px(cx+30,ty+48,6,4,c);px(cx+28,ty+44,5,4,c);
-    // ===== 새 — 원본처럼 삼각형 몸통+큰 날개 =====
-    const drawBird=(bx,by,s,col,phase)=>{
-        const wUp=Math.sin(phase)>0;
-        // 몸통 (삼각형 느낌)
-        px(bx,by,s*2.5,s*1.5,col);px(bx+s*.5,by-s*.3,s*1.5,s,col);
-        // 꼬리
-        px(bx+s*2.2,by+s*.2,s*1.2,s*.8,col);
-        if(wUp){
-            // 날개 위로 — 큰 삼각형 블록
-            px(bx-s*.5,by-s*1.5,s*2,s*1.2,col);px(bx,by-s*2.5,s*1.5,s*1,col);
-            px(bx+s*1.5,by-s*1.5,s*2,s*1.2,col);px(bx+s*2,by-s*2.5,s*1.5,s*1,col);
-        }else{
-            // 날개 아래
-            px(bx-s*.5,by+s*1.2,s*2,s*1.2,col);px(bx,by+s*2,s*1.5,s*1,col);
-            px(bx+s*1.5,by+s*1.2,s*2,s*1.2,col);px(bx+s*2,by+s*2,s*1.5,s*1,col);
-        }
-    };
-    // 새 배치 — 원본 위치/색/크기 재현
-    const birds=[
-        // 왼쪽 상단 영역
-        {x:.08,y:.12,s:2.8,c:'#778899'},{x:.12,y:.18,s:2.2,c:'#dd8822'},{x:.08,y:.24,s:2.0,c:'#885544'},
-        {x:.16,y:.22,s:1.8,c:'#cc3333'},{x:.14,y:.30,s:2.5,c:'#ddcc33'},{x:.20,y:.14,s:2.0,c:'#778899'},
-        {x:.18,y:.28,s:1.6,c:'#4488cc'},{x:.22,y:.20,s:1.8,c:'#885544'},{x:.10,y:.36,s:2.2,c:'#4488cc'},
-        // 중앙 상단 (사람 머리 위)
-        {x:.35,y:.06,s:2.2,c:'#ddcc33'},{x:.42,y:.04,s:2.5,c:'#4488cc'},{x:.48,y:.08,s:2.0,c:'#778899'},
-        {x:.38,y:.12,s:1.8,c:'#dd8822'},{x:.44,y:.14,s:2.2,c:'#cc3333'},
-        // 오른쪽 상단
-        {x:.60,y:.04,s:2.8,c:'#ddcc33'},{x:.68,y:.06,s:2.5,c:'#4488cc'},{x:.74,y:.10,s:2.2,c:'#778899'},
-        {x:.80,y:.04,s:3.0,c:'#cc3333'},{x:.72,y:.16,s:2.0,c:'#dd8822'},{x:.82,y:.14,s:2.5,c:'#778899'},
-        // 오른쪽 중간
-        {x:.78,y:.28,s:2.2,c:'#4488cc'},{x:.84,y:.34,s:2.5,c:'#885544'},{x:.76,y:.38,s:2.0,c:'#dd8822'},
-        // 하단 (크고 성김)
-        {x:.03,y:.72,s:4.5,c:'#cc3333'},{x:.90,y:.78,s:4.2,c:'#4488cc'},
-        {x:.50,y:.70,s:2.5,c:'#ddcc33'},{x:.62,y:.66,s:2.8,c:'#dd8822'},{x:.38,y:.68,s:2.2,c:'#4488cc'},
-        {x:.72,y:.62,s:2.0,c:'#ddcc33'},{x:.20,y:.60,s:2.2,c:'#4488cc'},
-    ];
-    birds.forEach((b,i)=>{
-        const bx=b.x*W+Math.sin(t*.005+i*1.3)*4;
-        const by=b.y*H+Math.cos(t*.004+i*1.7)*3;
-        drawBird(bx,by,b.s,b.c,t*.06*((i%5+3)/5)+i*2);
-    });
+    // 배경 이미지 그리기 (원본 그대로)
+    if(!window._sceneBirdsImg){
+        window._sceneBirdsImg=new Image();
+        window._sceneBirdsImg.src='./scene_birds.jpg';
+        window._sceneBirdsLoaded=false;
+        window._sceneBirdsImg.onload=()=>{window._sceneBirdsLoaded=true;};
+    }
+    if(window._sceneBirdsLoaded){
+        ctx.drawImage(window._sceneBirdsImg,0,0,W,H);
+    }else{
+        ctx.fillStyle='#1a1a2e';ctx.fillRect(0,0,W,H);
+    }
     drawCameraOverlay(t);
 }
 function s11_neighbors(t){
@@ -374,10 +314,10 @@ function nextShot(){
 function startGame(){currentShot=0;animTime=0;document.getElementById('ending-btns').classList.remove('show');document.getElementById('fullscreen-replay').classList.remove('show');narrationEl.classList.remove('show');setAspect(shots[0].a);}
 
 container.addEventListener('click',function(e){if(e.target.tagName==='BUTTON')return;initAudio();if(!shots[currentShot].auto){nextShot();}});
-// 자동 재생 (5초마다 다음 씬)
-let autoTimer=null;
-function startAutoPlay(){clearInterval(autoTimer);autoTimer=setInterval(()=>{if(!shots[currentShot].auto&&currentShot<shots.length-1)nextShot();},5000);}
-startAutoPlay();
+
+
+
+
 document.getElementById('btn-replay').addEventListener('click',function(e){e.stopPropagation();startGame();});
 document.getElementById('btn-exit').addEventListener('click',function(e){
     e.stopPropagation();
