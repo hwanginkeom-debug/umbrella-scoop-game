@@ -97,10 +97,10 @@ const SCENES=[
   {t:'- 저런 거 보면 안 돼!'}
 ],auto:3900},
 {id:'s15',img:'assets/s15_dark_rest.jpg',bgm:'quiet',beats:[{t:''}],auto:5200},
-{id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature',fx:'natural',beats:[{t:''}],auto:3900},
-{id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[{t:''}],auto:3900},
-{id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[{t:''}],auto:3900},
-{id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'melancholy',fx:'natural',beats:[{t:''}],auto:5200},
+{id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature',fx:'natural',beats:[{t:''}],auto:6500},
+{id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[{t:''}],auto:6500},
+{id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[{t:''}],auto:6500},
+{id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:7000},
 {id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',fx:'pan_down',beats:[{t:''}],auto:5200},
 {id:'s22',img:null,fx:'iris',beats:[{t:''}],auto:0}
 ];
@@ -236,6 +236,29 @@ function _synthBgm(type){
       o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.2);bi++;
     },220);
     bgmN.push({stop:()=>clearInterval(bIv)});
+  }else if(type==='nature_mel'){
+    // nature + melancholy 동시 재생
+    const f1='assets/audio/bgm_nature.mp3',f2='assets/audio/bgm_melancholy.mp3';
+    const a1=new Audio(f1),a2=new Audio(f2);
+    a1.loop=true;a2.loop=true;a1.volume=0;a2.volume=0;
+    a1.play();a2.play();
+    const mx1=0.35,mx2=0.3;
+    let v1=0,v2=0;
+    const fi=setInterval(()=>{
+      v1+=mx1/40;v2+=mx2/40;
+      if(v1>=mx1)v1=mx1;if(v2>=mx2)v2=mx2;
+      a1.volume=v1;a2.volume=v2;
+      if(v1>=mx1&&v2>=mx2)clearInterval(fi);
+    },50);
+    bgmN.push({stop:()=>{
+      let vv1=a1.volume,vv2=a2.volume;
+      const fo=setInterval(()=>{
+        vv1-=.03;vv2-=.03;
+        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
+        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
+      },50);
+    }});
+    return;
   }else if(type==='melancholy'){
     bgmG.gain.value=.025;
     const o=actx.createOscillator();o.type='sine';o.frequency.value=110;
