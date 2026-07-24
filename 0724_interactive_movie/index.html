@@ -45,6 +45,31 @@ function playAlarm(){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.
 function playSiren(){initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='sawtooth';g.gain.value=.05;o.start();let t=0;const iv=setInterval(()=>{o.frequency.value=280+Math.sin(t*3)*180;t+=.04;},25);setTimeout(()=>{clearInterval(iv);g.gain.value=0;o.stop();},2200);}
 function playClap(){initAudio();const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.06,audioCtx.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2.5);const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=b;s.connect(g);g.connect(audioCtx.destination);g.gain.value=.15;s.start();}
 
+// 배경 앰비언스
+let bgmNode=null,bgmGain=null;
+function stopBgm(){if(bgmNode){try{bgmNode.stop();}catch(e){}bgmNode=null;}}
+function playBgm(type){
+    initAudio();stopBgm();
+    bgmGain=audioCtx.createGain();bgmGain.connect(audioCtx.destination);bgmGain.gain.value=0.04;
+    if(type==='morning'){
+        // 부드러운 톤 (일상)
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=220;o.connect(bgmGain);o.start();bgmNode=o;
+    }else if(type==='peace'){
+        // 평화로운 패드 (비상 중)
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=330;
+        const o2=audioCtx.createOscillator();o2.type='sine';o2.frequency.value=440;
+        const g2=audioCtx.createGain();g2.gain.value=0.02;
+        o.connect(bgmGain);o2.connect(g2);g2.connect(audioCtx.destination);
+        o.start();o2.start();bgmNode=o;
+        // o2는 별도 관리 (간단하게)
+    }else if(type==='tension'){
+        // 긴장 드론
+        const o=audioCtx.createOscillator();o.type='sawtooth';o.frequency.value=55;bgmGain.gain.value=0.03;o.connect(bgmGain);o.start();bgmNode=o;
+    }else{
+        stopBgm();
+    }
+}
+
 // ===================== CANVAS =====================
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
@@ -117,7 +142,7 @@ function drawCameraOverlay(t){
 // ===================== SHOTS =====================
 let currentShot=0,animTime=0,lastClickTime=Date.now(),easterEggShown=false;
 const shots=[
-    {a:'16:9',draw:s1_wake},
+    {a:'16:9',draw:s1_wake,bgm:'morning'},
     {a:'16:9',draw:s2_alarm,snd:'alarm'},
     {a:'16:9',draw:s3_ohno,nar:'"조졌네…"'},
     {a:'16:9',draw:s4_late,nar:'남자는 지각을 했습니다'},
@@ -125,16 +150,16 @@ const shots=[
     {a:'16:9',draw:s6_hall},
     {a:'16:9',draw:s7_eyes},
     {a:'16:9',draw:s_trans1,auto:true},
-    {a:'4:3',draw:s9_window},
+    {a:'4:3',draw:s9_window,bgm:'peace'},
     {a:'4:3',draw:s10_sky},
     {a:'4:3',draw:s11_neighbors},
     {a:'4:3',draw:s12_ground},
-    {a:'4:3',draw:s_trans2,snd:'siren',auto:true},
+    {a:'4:3',draw:s_trans2,snd:'siren',bgm:'tension'},
     {a:'1:1',draw:s13_fallen},
     {a:'1:1',draw:s14_crowd},
     {a:'1:1',draw:s15_smile},
     {a:'1:1',draw:s16_iris,auto:true},
-    {a:'1:1',draw:s17_credits},
+    {a:'1:1',draw:s17_credits,bgm:null},
     {a:'1:1',draw:s18_audience,snd:'clap'},
 ];
 
@@ -265,11 +290,6 @@ function s18_audience(t){
 }
 
 // ===================== UI =====================
-function drawClickUI(){
-    if(shots[currentShot].auto)return;
-    const pulse=(Math.sin(Date.now()*.003)+1)/2;ctx.globalAlpha=.3+pulse*.5;ctx.fillStyle='#fff';
-    ctx.beginPath();ctx.moveTo(W-14,H-14);ctx.lineTo(W-14,H-6);ctx.lineTo(W-7,H-10);ctx.closePath();ctx.fill();ctx.globalAlpha=1;
-}
 function drawEasterEgg(){
     const idle=Date.now()-lastClickTime;if(idle<10000||shots[currentShot].auto)return;
     const gy=H*.15+Math.sin(Date.now()*.002)*6,gx=W-28+Math.sin(Date.now()*.001)*4,ga=Math.min((idle-10000)/3000,.7);
@@ -282,6 +302,7 @@ function drawEasterEgg(){
 function nextShot(){
     if(currentShot<shots.length-1){currentShot++;animTime=0;const s=shots[currentShot];setAspect(s.a);
     if(s.snd==='alarm')playAlarm();if(s.snd==='siren')playSiren();if(s.snd==='clap')playClap();
+    if(s.bgm!==undefined)playBgm(s.bgm);
     if(s.nar){narrationEl.textContent=s.nar;narrationEl.classList.add('show');}else narrationEl.classList.remove('show');}
 }
 function startGame(){currentShot=0;animTime=0;document.getElementById('ending-btns').classList.remove('show');document.getElementById('fullscreen-replay').classList.remove('show');narrationEl.classList.remove('show');setAspect(shots[0].a);}
@@ -312,7 +333,7 @@ document.getElementById('btn-exit').addEventListener('click',function(e){
 document.getElementById('fullscreen-replay').addEventListener('click',startGame);
 
 // ===================== RENDER =====================
-function render(){requestAnimationFrame(render);ctx.save();ctx.clearRect(0,0,W,H);const s=shots[currentShot];if(s&&s.draw)s.draw(animTime);drawClickUI();drawEasterEgg();ctx.restore();animTime++;}
+function render(){requestAnimationFrame(render);ctx.save();ctx.clearRect(0,0,W,H);const s=shots[currentShot];if(s&&s.draw)s.draw(animTime);drawEasterEgg();ctx.restore();animTime++;}
 setAspect('16:9');render();
 </script>
 </body>
