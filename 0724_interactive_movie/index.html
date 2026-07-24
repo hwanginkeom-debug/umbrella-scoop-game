@@ -9,7 +9,7 @@
         body{background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:100vh;cursor:pointer}
         #game-container{position:relative;background:#0a0a14;overflow:hidden;border:1px solid #222}
         canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
-        #narration{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#eee;font-size:13px;font-family:monospace;text-align:center;max-width:85%;opacity:0;transition:opacity .6s;z-index:100;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+        #narration{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);color:#eee;font-size:14px;font-family:monospace;text-align:center;max-width:85%;opacity:0;transition:opacity .6s;z-index:100;letter-spacing:0.5px;text-shadow:0 1px 4px rgba(0,0,0,.8)}
         #narration.show{opacity:1}
         #ending-btns{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;gap:20px;z-index:300}
         #ending-btns.show{display:flex}
@@ -21,8 +21,11 @@
         #fullscreen-replay button:hover{background:#fff;color:#000}
         .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
         .back-btn:hover{color:#aaa}
+        #start-overlay{position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:500;cursor:pointer}
+        #start-overlay span{color:#888;font-family:monospace;font-size:11px;letter-spacing:1px}
+        #start-overlay.hide{display:none}
         #notice{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);color:#444;font-size:8px;font-family:monospace;z-index:10000;letter-spacing:.3px}
-        #progress-bar{position:absolute;bottom:0;left:0;width:100%;height:6px;background:#111;z-index:200;display:flex;align-items:center}
+        #progress-bar{position:absolute;bottom:0;left:0;width:100%;height:6px;background:#111;z-index:200;display:flex;align-items:center;pointer-events:none}
         #progress-fill{height:4px;background:#c08558;transition:width .3s;margin:0 1px}
         #progress-dot{width:6px;height:6px;background:#fff;position:absolute;transition:left .3s}
         #progress-ticks{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:space-between;padding:0 2px}
@@ -34,6 +37,7 @@
 <div id="notice">이 작품은 픽셀아트 시네마틱 실험작입니다. 클릭하여 진행하세요.</div>
 <div id="game-container">
     <canvas id="canvas"></canvas>
+    <div id="start-overlay"><span>▶ 클릭하여 시작</span></div>
     <div id="narration"></div>
     <div id="progress-bar"><div id="progress-fill" style="width:0%"></div><div id="progress-dot" style="left:0%"></div></div>
     <div id="ending-btns">
@@ -212,73 +216,73 @@ const SCENES=[
  {type:'nar',text:'- 아침은 지겨울 정도로 허기지고'},
  {type:'nar',text:'- 점심은 정신을 차리지 못할 정도로 숨가쁘며'},
  {type:'nar',text:'- 새벽은 언제 어두워질지도 모를 정도로 각박하고 길다.'}
-],auto:8000},
+],auto:5200},
 {id:'s02_room_throw',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[
  {type:'nar',text:'- 인생은 삶의 반복이다.'}
-],auto:6000},
+],auto:3900},
 {id:'s03_room_sigh',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
  {type:'nar',text:'- 새 탄생의 빛을 보면 설탕물과 소금물 정도의 밀도 차이를 느낀다.'},
  {type:'nar',text:'- 혈류는 이럴 때만 야속하게 힘 있게 뛰지 않는다.'}
-],auto:8000},
+],auto:5200},
 {id:'s04_hall_exit',img:'assets/s04_hall_exit.png',bgm:'footsteps',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s05_hall_title',img:'assets/s05_hall_title.jpeg',transition:'cut',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s06_hall_skygaze',img:'assets/s06_hall_skygaze.jpg',bgm:'fresh',beats:[
  {type:'action',text:''}
-],auto:7000},
+],auto:4550},
 {id:'s07_eyes_closeup',img:'assets/s07_eyes_closeup.jpeg',beats:[
  {type:'nar',text:'- 하늘을 보며 눈망울을 치켜올린다.'}
-],auto:7000},
+],auto:4550},
 {id:'s08_city_view',img:'assets/s08_city_view.jpg',beats:[
  {type:'nar',text:'- 개미집을 멀리서 보면 광활한 우주가 보인다.'}
-],auto:8000},
+],auto:5200},
 {id:'s09_birds_float',img:'assets/s09_birds_float.jpeg',bgm:'classic',transition:'glitch',beats:[
  {type:'nar',text:'- 몸을 던지면 모이를 쪼러 온갖 새들이 나에게 몰려온다.'}
-],auto:10000},
+],auto:6500},
 {id:'s10_crowd_sunset',img:'assets/s10_crowd_sunset.jpeg',transition:'glitch',beats:[
  {type:'nar',text:'- 오늘은 사람들에게 인사를 했다.'},
  {type:'nar',text:'- 반갑습니다'},
  {type:'nar',text:'- 고마워요'},
  {type:'nar',text:'- さよなら'}
-],auto:7000},
+],auto:4550},
 {id:'s11_meadow_fall',img:'assets/s11_meadow_fall.jpeg',transition:'glitch',beats:[
  {type:'nar',text:'어 세상이 …',glitch:true}
-],auto:7000},
+],auto:4550},
 {id:'s12_black_impact',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[
  {type:'action',text:''}
-],auto:5000},
+],auto:3250},
 {id:'s13_ground_body',img:'assets/s13_ground_body.jpeg',bgm:'rain',beats:[
  {type:'action',text:''}
-],auto:8000},
+],auto:5200},
 {id:'s14_rain_crowd',img:'assets/s14_rain_crowd.jpeg',sfx:'crowd',beats:[
  {type:'nar',text:'- 집값 떨어지게 어!'},
  {type:'nar',text:'- 에휴 말세다 말세'},
  {type:'nar',text:'- 저런 거 보면 안 돼!'}
-],auto:6000},
+],auto:3900},
 {id:'s15_dark_rest',img:'assets/s15_dark_rest.jpg',bgm:'quiet',beats:[
  {type:'action',text:''}
-],auto:8000},
+],auto:5200},
 {id:'s16_flowers_a',img:'assets/s16_flowers_a.jpeg',bgm:'nature',transition:'natural',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s17_flowers_b',img:'assets/s17_flowers_b.jpeg',transition:'natural',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s18_flowers_c',img:'assets/s18_flowers_c.jpeg',transition:'natural',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s19_flowers_field',img:'assets/s19_flowers_field.jpeg',bgm:'melancholy',transition:'natural',beats:[
  {type:'action',text:''}
-],auto:8000},
+],auto:5200},
 {id:'s20_cinema_end',img:'assets/s20_cinema_end.jpeg',bgm:'applause',transition:'slide',beats:[
  {type:'action',text:''}
-],auto:8000},
+],auto:5200},
 {id:'s21_iris_end',img:'assets/s21_iris_end.png',transition:'iris',beats:[
  {type:'action',text:''}
-],auto:6000},
+],auto:3900},
 {id:'s22_black_buttons',img:null,beats:[
  {type:'action',text:''}
 ],auto:0}
@@ -349,7 +353,7 @@ function renderBlocks(blocks,offsetFn){
 }
 
 function defaultOffset(y,t){
-    return Math.sin(t*.02+y*.15)*Math.sin(t*.008)*2;
+    return 0;
 }
 
 function render(){
@@ -518,10 +522,14 @@ document.getElementById('btn-exit').addEventListener('click',(e)=>{
 document.getElementById('fullscreen-replay').addEventListener('click',startGame);
 
 // ===================== START =====================
-// 페이지 로드시 오디오 초기화 시도 (일부 브라우저는 유저 인터랙션 필요)
-document.addEventListener('click',function once(){initAudio();document.removeEventListener('click',once);},{ once:true });
 render();
-goToScene(0);
+// 시작 오버레이 — 클릭하면 오디오 시작 + 첫 씬
+document.getElementById('start-overlay').addEventListener('click',(e)=>{
+    e.stopPropagation();
+    initAudio();
+    document.getElementById('start-overlay').classList.add('hide');
+    goToScene(0);
+});
 </script>
 </body>
 </html>
