@@ -617,7 +617,37 @@
         if(t>55) nextShot();
     }
 
-    // === PART 3 ===
+    // === PART 3 === (카메라 오버레이 포함)
+    function drawCameraOverlay(t) {
+        // 모서리 괄호
+        const m = 4; // 마진
+        const l = 10; // 길이
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.6;
+        // 좌상
+        ctx.beginPath(); ctx.moveTo(m, m+l); ctx.lineTo(m, m); ctx.lineTo(m+l, m); ctx.stroke();
+        // 우상
+        ctx.beginPath(); ctx.moveTo(W-m-l, m); ctx.lineTo(W-m, m); ctx.lineTo(W-m, m+l); ctx.stroke();
+        // 좌하
+        ctx.beginPath(); ctx.moveTo(m, H-m-l); ctx.lineTo(m, H-m); ctx.lineTo(m+l, H-m); ctx.stroke();
+        // 우하
+        ctx.beginPath(); ctx.moveTo(W-m-l, H-m); ctx.lineTo(W-m, H-m); ctx.lineTo(W-m, H-m-l); ctx.stroke();
+        // 중앙 크로스헤어 (작게)
+        const cx = W/2, cy = H/2;
+        px(cx-3, cy, 2, 1, '#fff');
+        px(cx+2, cy, 2, 1, '#fff');
+        px(cx, cy-3, 1, 2, '#fff');
+        px(cx, cy+2, 1, 2, '#fff');
+        // REC 표시
+        const blink = Math.floor(t/20)%2;
+        if(blink) {
+            px(W-22, 8, 3, 3, '#cc0000'); // 빨간 점
+            txt('REC', W-12, 11, 4, '#cc0000');
+        }
+        ctx.globalAlpha = 1;
+    }
+
     function s13_fallen(t) {
         ctx.fillStyle = '#0a0a0a';
         ctx.fillRect(0,0,W,H);
@@ -632,6 +662,7 @@
         px(W/2+6, H*0.73, spread+3, 1, '#880011');
         // 서있는 사람들
         for(let i=0;i<7;i++) drawMan(15+i*20, H*0.5);
+        drawCameraOverlay(t);
     }
 
     function s14_crowd(t) {
@@ -652,6 +683,7 @@
         px(92, H*0.2, 56, 18, '#fff');
         px(115, H*0.38, 2, 4, '#fff');
         txt('집값 떨어진다!', 120, H*0.2+12, 7, '#000');
+        drawCameraOverlay(t);
     }
 
     function s15_smile(t) {
@@ -670,6 +702,7 @@
         px(cx-6, cy+6, 12, 2, '#c44');
         px(cx-7, cy+5, 1, 1, '#c44');
         px(cx+6, cy+5, 1, 1, '#c44');
+        drawCameraOverlay(t);
     }
 
     function s16_iris(t) {
