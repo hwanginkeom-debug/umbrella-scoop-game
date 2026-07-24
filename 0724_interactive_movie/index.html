@@ -41,6 +41,135 @@ const W=320,H=180;
 const BLOCK=2;
 const SAMPLE_W=Math.floor(W/BLOCK),SAMPLE_H=Math.floor(H/BLOCK);
 
+// ===================== AUDIO ENGINE =====================
+const AudioCtx=window.AudioContext||window.webkitAudioContext;
+let audioCtx;
+function initAudio(){if(!audioCtx)audioCtx=new AudioCtx();}
+
+let bgmNodes=[],bgmGain=null;
+function stopBgm(){bgmNodes.forEach(n=>{try{n.stop();}catch(e){}});bgmNodes=[];}
+
+function playBgm(type){
+    initAudio();stopBgm();
+    if(!type||type==='none') return;
+    bgmGain=audioCtx.createGain();bgmGain.connect(audioCtx.destination);bgmGain.gain.value=0.04;
+    
+    if(type==='calm'){
+        // 조용하고 선선한 앰비언트
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=180;
+        const o2=audioCtx.createOscillator();o2.type='sine';o2.frequency.value=270;
+        const g2=audioCtx.createGain();g2.gain.value=0.02;
+        o.connect(bgmGain);o2.connect(g2);g2.connect(audioCtx.destination);
+        o.start();o2.start();bgmNodes.push(o,o2);
+    }else if(type==='footsteps'){
+        // 뚜벅뚜벅 리듬
+        bgmGain.gain.value=0.06;
+        let step=0;
+        const iv=setInterval(()=>{
+            if(!audioCtx||bgmNodes.length===0){clearInterval(iv);return;}
+            const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.05,audioCtx.sampleRate);
+            const d=b.getChannelData(0);
+            for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4)*(step%2?.6:.4);
+            const s=audioCtx.createBufferSource();s.buffer=b;s.connect(bgmGain);s.start();
+            step++;
+        },600);
+        bgmNodes.push({stop:()=>clearInterval(iv)});
+    }else if(type==='fresh'){
+        // 파도소리 같은 신선한 사운드
+        bgmGain.gain.value=0.035;
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=220;
+        const lfo=audioCtx.createOscillator();lfo.frequency.value=0.15;
+        const lfoG=audioCtx.createGain();lfoG.gain.value=30;
+        lfo.connect(lfoG);lfoG.connect(o.frequency);
+        o.connect(bgmGain);o.start();lfo.start();bgmNodes.push(o,lfo);
+    }else if(type==='classic'){
+        // 클래식 느낌 — 화음 패드
+        bgmGain.gain.value=0.03;
+        [261.6,329.6,392.0,523.2].forEach(freq=>{
+            const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=freq;
+            const g=audioCtx.createGain();g.gain.value=0.015;
+            o.connect(g);g.connect(audioCtx.destination);o.start();bgmNodes.push(o);
+        });
+    }else if(type==='rain'){
+        // 빗소리
+        bgmGain.gain.value=0.05;
+        const bufSize=audioCtx.sampleRate*2;
+        const buf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
+        const d=buf.getChannelData(0);
+        for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1)*0.3;
+        const src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
+        const filt=audioCtx.createBiquadFilter();filt.type='highpass';filt.frequency.value=800;
+        src.connect(filt);filt.connect(bgmGain);src.start();bgmNodes.push(src);
+    }else if(type==='quiet'){
+        // 들릴듯 말듯한 잔잔한 소리
+        bgmGain.gain.value=0.015;
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=150;
+        o.connect(bgmGain);o.start();bgmNodes.push(o);
+    }else if(type==='nature'){
+        // 벌레소리 + 바람
+        bgmGain.gain.value=0.03;
+        const bufSize=audioCtx.sampleRate*2;
+        const buf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
+        const d=buf.getChannelData(0);
+        for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1)*0.15;
+        const src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
+        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=3000;filt.Q.value=2;
+        src.connect(filt);filt.connect(bgmGain);src.start();bgmNodes.push(src);
+        // 벌레 chirp
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=4200;
+        const g2=audioCtx.createGain();g2.gain.value=0.008;
+        const lfo=audioCtx.createOscillator();lfo.frequency.value=8;
+        const lfoG=audioCtx.createGain();lfoG.gain.value=0.008;
+        lfo.connect(lfoG);lfoG.connect(g2.gain);
+        o.connect(g2);g2.connect(audioCtx.destination);o.start();lfo.start();bgmNodes.push(o,lfo);
+    }else if(type==='applause'){
+        // 박수소리
+        bgmGain.gain.value=0.07;
+        const bufSize=audioCtx.sampleRate*2;
+        const buf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
+        const d=buf.getChannelData(0);
+        for(let i=0;i<bufSize;i++){
+            d[i]=(Math.random()*2-1)*0.4*(1+Math.sin(i/800)*.3);
+        }
+        const src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
+        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1500;filt.Q.value=0.5;
+        src.connect(filt);filt.connect(bgmGain);src.start();bgmNodes.push(src);
+    }else if(type==='melancholy'){
+        // 침울하고 우울한 소리
+        bgmGain.gain.value=0.025;
+        const o=audioCtx.createOscillator();o.type='sine';o.frequency.value=110;
+        const o2=audioCtx.createOscillator();o2.type='sine';o2.frequency.value=138.6;
+        o.connect(bgmGain);o2.connect(bgmGain);o.start();o2.start();bgmNodes.push(o,o2);
+    }
+}
+
+function fadeBgm(){
+    if(bgmGain){bgmGain.gain.linearRampToValueAtTime(0,audioCtx.currentTime+2);}
+    setTimeout(stopBgm,2200);
+}
+
+// SFX
+function playSfx(type){
+    initAudio();
+    if(type==='throw'){
+        const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.08,audioCtx.sampleRate);
+        const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,3);
+        const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=b;g.gain.value=.12;s.connect(g);g.connect(audioCtx.destination);s.start();
+    }else if(type==='sigh'){
+        const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=180;
+        g.gain.value=.04;o.connect(g);g.connect(audioCtx.destination);o.start();
+        g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+1.2);setTimeout(()=>o.stop(),1300);
+    }else if(type==='impact'){
+        const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.15,audioCtx.sampleRate);
+        const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5)*.8;
+        const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=b;g.gain.value=.2;s.connect(g);g.connect(audioCtx.destination);s.start();
+    }else if(type==='crowd'){
+        const b=audioCtx.createBuffer(1,audioCtx.sampleRate*.5,audioCtx.sampleRate);
+        const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.2*(1+Math.sin(i/200)*.5);
+        const s=audioCtx.createBufferSource(),g=audioCtx.createGain();s.buffer=b;g.gain.value=.08;s.connect(g);g.connect(audioCtx.destination);s.start();
+    }
+}
+
 const PALETTE=[
 [26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],
 [68,136,204],[102,136,170],[136,85,68],[119,136,153],[255,255,255],
@@ -57,10 +186,10 @@ const SCENES=[
  {type:'nar',text:'점심은 정신을 차리지 못할 정도로 숨가쁘며'},
  {type:'nar',text:'새벽은 언제 어두워질지도 모를 정도로 각박하고 길다.'}
 ],auto:4000},
-{id:'s02_room_throw',img:'assets/s02_room_throw.jpeg',beats:[
+{id:'s02_room_throw',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[
  {type:'nar',text:'인생은 삶의 반복이다.'}
 ],auto:3000},
-{id:'s03_room_sigh',img:'assets/s03_room_sigh.jpeg',beats:[
+{id:'s03_room_sigh',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
  {type:'nar',text:'새 탄생의 빛을 보면 설탕물과 소금물 정도의 밀도 차이를 느낀다'},
  {type:'nar',text:'혈류는 이럴 때만 야속하게 힘있게 뛰지 않는다'}
 ],auto:4000},
@@ -91,13 +220,13 @@ const SCENES=[
 {id:'s11_meadow_fall',img:'assets/s11_meadow_fall.jpeg',transition:'glitch',beats:[
  {type:'nar',text:'어 세상이 …',glitch:true}
 ],auto:3500},
-{id:'s12_black_impact',img:'assets/s12_black_impact.png',beats:[
+{id:'s12_black_impact',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[
  {type:'action',text:''}
 ],auto:2500},
 {id:'s13_ground_body',img:'assets/s13_ground_body.jpeg',bgm:'rain',beats:[
  {type:'action',text:''}
 ],auto:4000},
-{id:'s14_rain_crowd',img:'assets/s14_rain_crowd.jpeg',beats:[
+{id:'s14_rain_crowd',img:'assets/s14_rain_crowd.jpeg',sfx:'crowd',beats:[
  {type:'nar',text:'집 값 떨어지게 어!'},
  {type:'nar',text:'에휴 말세다 말세'},
  {type:'nar',text:'저런 거 보면 안 돼!'}
@@ -114,7 +243,7 @@ const SCENES=[
 {id:'s18_flowers_c',img:'assets/s18_flowers_c.jpeg',transition:'natural',beats:[
  {type:'action',text:''}
 ],auto:3000},
-{id:'s19_flowers_field',img:'assets/s19_flowers_field.jpeg',transition:'natural',beats:[
+{id:'s19_flowers_field',img:'assets/s19_flowers_field.jpeg',bgm:'melancholy',transition:'natural',beats:[
  {type:'action',text:''}
 ],auto:4000},
 {id:'s20_cinema_end',img:'assets/s20_cinema_end.jpeg',bgm:'applause',transition:'slide',beats:[
@@ -264,6 +393,11 @@ function goToScene(idx){
         showNarration('');
     }
     
+    // BGM
+    if(scene.bgm) playBgm(scene.bgm);
+    // SFX
+    if(scene.sfx) playSfx(scene.sfx);
+    
     // Load image
     loadSceneImage(idx,(blocks)=>{
         if(scene.transition&&scene.transition!=='cut'&&pixelBlocks){
@@ -314,6 +448,7 @@ function startGame(){
 // ===================== INTERACTION =====================
 container.addEventListener('click',(e)=>{
     if(e.target.tagName==='BUTTON') return;
+    initAudio();
     advance();
 });
 
