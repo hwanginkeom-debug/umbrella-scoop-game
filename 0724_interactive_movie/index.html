@@ -582,7 +582,7 @@ document.getElementById('btn-credits').addEventListener('click',e=>{
   lines+='\n\n\n— CREDITS —\n\n';
   lines+='기획 · 연출 · 개발\nhwanginkeom\n\n';
   lines+='바이브코딩 Lab\n2026\n\n\n\n';
-  lines+='Thank you\nby 크에파\n\n\n\n\n';
+  lines+='<span style="font-size:24px;color:#fff">Thank you</span>\n<span style="font-size:18px;color:#ccc">by 크에파</span>\n\n\n\n\n';
   el.innerHTML='<div class="credits-roll">'+lines+'</div>';
   // 애니메이션 끝나면 버튼 화면으로 복귀
   el.querySelector('.credits-roll').addEventListener('animationend',()=>{
