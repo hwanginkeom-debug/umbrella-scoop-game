@@ -23,6 +23,13 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 #fullscreen-replay button{font-family:monospace;font-size:11px;padding:8px 18px;background:#000;color:#fff;border:1px solid #555;cursor:pointer}
 #fullscreen-replay button:hover{background:#fff;color:#000}
 .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
+#credits-screen{position:fixed;inset:0;background:#000;display:none;z-index:9998;overflow-y:auto;padding:40px 20px}
+#credits-screen.show{display:block}
+#credits-screen .credits-content{max-width:600px;margin:0 auto;color:#888;font-family:monospace;font-size:11px;line-height:2;text-align:center}
+#credits-screen .credits-content img{width:100%;margin:12px 0;image-rendering:pixelated;image-rendering:crisp-edges}
+#credits-screen .credits-content h2{color:#fff;font-size:14px;margin:30px 0 10px}
+#credits-screen .credits-close{position:fixed;top:12px;right:16px;color:#555;font-size:10px;font-family:monospace;cursor:pointer;z-index:9999}
+#credits-screen .credits-close:hover{color:#fff}
 .back-btn:hover{color:#aaa}
 </style>
 </head>
@@ -35,12 +42,14 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
   <div id="ending-btns">
     <button id="btn-replay">다시보기 ▶</button>
     <button id="btn-exit">나가기 ▶</button>
+    <button id="btn-credits">크레딧 ▶</button>
   </div>
 </div>
 <div id="progress-wrap"><div id="progress-fill" style="width:0%"></div></div>
 <div id="notice">클릭하여 진행하세요</div>
 
 <div id="fullscreen-replay"></div>
+<div id="credits-screen"></div>
 
 <script>
 // ===== CONFIG =====
@@ -549,6 +558,29 @@ document.getElementById('btn-exit').addEventListener('click',e=>{
   })();
 });
 document.getElementById('fullscreen-replay').addEventListener('click',restart);
+
+document.getElementById('btn-credits').addEventListener('click',e=>{
+  e.stopPropagation();
+  document.getElementById('ending-btns').classList.remove('show');
+  const el=document.getElementById('credits-screen');
+  el.classList.add('show');
+  // 씬 이미지들 + 크레딧 텍스트 생성
+  const scenes=SCENES.filter(s=>s.img);
+  let html='<div class="credits-content">';
+  html+='<span class="credits-close" onclick="document.getElementById(\'credits-screen\').classList.remove(\'show\')">✕ 닫기</span>';
+  html+='<h2>飛翔</h2>';
+  html+='<p>픽셀아트 시네마틱</p><br>';
+  scenes.forEach(s=>{html+='<img src="'+s.img+'" alt="'+s.id+'">';});
+  html+='<br><h2>CREDITS</h2>';
+  html+='<p>기획 · 연출 · 개발</p>';
+  html+='<p style="color:#fff">hwanginkeom</p><br>';
+  html+='<p>바이브코딩 Lab</p>';
+  html+='<p>2026</p><br><br>';
+  html+='<p style="color:#fff;font-size:13px">Thank you</p>';
+  html+='<p style="color:#aaa">by 크에파</p><br><br><br>';
+  html+='</div>';
+  el.innerHTML=html;
+});
 
 // ===== START =====
 render();
