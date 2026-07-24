@@ -141,8 +141,9 @@ function playBgm(type){
   testAudio.addEventListener('canplaythrough',()=>{
     testAudio.loop=true;testAudio.volume=0;testAudio.play();
     // Fade in (2초)
+    const maxVol=(type==='classic')?0.17:0.5;
     let vol=0;
-    const fadeIn=setInterval(()=>{vol+=0.025;if(vol>=0.5){vol=0.5;clearInterval(fadeIn);}testAudio.volume=vol;},50);
+    const fadeIn=setInterval(()=>{vol+=maxVol/40;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
     bgmN.push({stop:()=>{
       // Fade out (1.5초)
       let v=testAudio.volume;
