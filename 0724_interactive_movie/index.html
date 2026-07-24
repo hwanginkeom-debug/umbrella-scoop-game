@@ -225,67 +225,83 @@ function s9_window(t){
     drawCameraOverlay(t);
 }
 function s10_sky(t){
-    // 짙은 남색 배경
-    ctx.fillStyle='#12122a';ctx.fillRect(0,0,W,H);
-    // 별 — 60개, 반짝임
-    for(let i=0;i<60;i++){
-        const sx=(i*37+13)%W,sy=(i*53+7)%H;
-        const tw=Math.sin(t*.04+i*2.1)*.5+.5;
-        if(tw>.3){ctx.globalAlpha=tw*.6;px(sx,sy,1,1,'#8899bb');ctx.globalAlpha=1;}
+    // 딥 네이비 배경
+    ctx.fillStyle='#131428';ctx.fillRect(0,0,W,H);
+    // 별 70개 반짝임
+    for(let i=0;i<70;i++){
+        const sx=(i*41+17)%W,sy=(i*59+11)%H;
+        const tw=Math.sin(t*.035+i*2.3)*.5+.5;
+        if(tw>.35){ctx.globalAlpha=tw*.5;px(sx,sy,1,1,'#667799');ctx.globalAlpha=1;}
     }
-    // 구름 (가로 줄 3단 구름)
+    // 구름 — 이미지처럼 수평 3줄, 넓은 형태
     const drawCloud=(cx,cy,s)=>{
-        px(cx-1*s,cy,4*s,1*s,'#3a4466');
-        px(cx-3*s,cy+1*s,10*s,1*s,'#2e3a55');
-        px(cx-5*s,cy+2*s,14*s,1*s,'#242e44');
+        px(cx,cy,5*s,s,'#3a4466');
+        px(cx-2*s,cy+s,9*s,s,'#2e3a55');
+        px(cx-4*s,cy+2*s,13*s,s,'#242e44');
     };
-    drawCloud(22+(t*.03)%20,20,1.2);drawCloud(200+(t*.025)%15,28,1);
-    drawCloud(35+(t*.028)%18,130,1.1);drawCloud(210+(t*.02)%12,150,1.3);
-    drawCloud(18+(t*.022)%15,80,1);drawCloud(225+(t*.03)%10,95,1.1);
-    // 큰 실루엣 남자 (블록 조합 — 달리는 포즈) - 부유 애니메이션
-    const manY=H*.42+Math.sin(t*.012)*8;
-    const manX=W*.42;
-    const sc='#c8855a';
-    // 머리
-    px(manX+8,manY-52,18,18,sc);px(manX+10,manY-54,14,4,sc);
-    // 목+몸통
-    px(manX+12,manY-34,10,6,sc);
-    px(manX+4,manY-28,26,30,sc);px(manX+2,manY-24,4,20,sc);
-    // 왼팔 (뒤로 뻗음)
-    px(manX-14,manY-28,18,8,sc);px(manX-20,manY-24,10,6,sc);px(manX-26,manY-20,8,5,sc);
-    // 오른팔 (앞으로 뻗음)
-    px(manX+28,manY-30,10,7,sc);px(manX+36,manY-34,8,6,sc);px(manX+42,manY-38,6,5,sc);
-    // 왼다리 (뒤로 뻗음)
-    px(manX+4,manY+2,12,8,sc);px(manX-2,manY+10,12,8,sc);px(manX-8,manY+18,10,8,sc);px(manX-14,manY+24,8,6,sc);
-    // 오른다리 (앞으로 접힘)
-    px(manX+16,manY+2,12,8,sc);px(manX+22,manY+10,10,8,sc);px(manX+28,manY+16,8,6,sc);px(manX+24,manY+22,8,8,sc);
-    // 새 — V자 갈매기형
+    drawCloud(18+(t*.025)%15,18,1.3);drawCloud(195+(t*.02)%12,25,1.1);
+    drawCloud(30+(t*.02)%12,78,1.2);drawCloud(210+(t*.018)%10,90,1);
+    drawCloud(25+(t*.022)%10,138,1.1);drawCloud(200+(t*.025)%12,152,1.2);
+    // 큰 실루엣 남자 — 이미지처럼 화면 중앙, 크게, 달리는 포즈
+    const my=H*.28+Math.sin(t*.011)*6;
+    const mx=W*.38;
+    const sc='#c8855a';const sd='#b5744a';
+    // 머리 (크게)
+    px(mx+14,my,24,22,sc);px(mx+16,my-3,20,5,sc);px(mx+12,my+4,4,12,sc);px(mx+36,my+4,4,10,sc);
+    // 머리카락 힌트
+    px(mx+16,my-4,18,3,sd);
+    // 목
+    px(mx+20,my+22,12,8,sc);
+    // 몸통 (두꺼움)
+    px(mx+8,my+30,36,40,sc);px(mx+6,my+34,4,28,sc);px(mx+42,my+34,4,24,sc);
+    // 왼팔 — 뒤로 크게 뻗음
+    px(mx-8,my+30,16,10,sc);px(mx-20,my+26,14,9,sc);px(mx-30,my+22,12,8,sc);px(mx-38,my+18,10,7,sc);
+    // 오른팔 — 앞으로/위로 뻗음
+    px(mx+44,my+28,14,9,sc);px(mx+56,my+22,12,8,sc);px(mx+66,my+16,10,7,sc);px(mx+74,my+12,8,6,sc);
+    // 왼다리 — 뒤로 크게 뻗음 (이미지처럼)
+    px(mx+8,my+70,14,12,sc);px(mx,my+80,14,12,sc);px(mx-8,my+90,12,12,sc);px(mx-16,my+98,10,10,sc);px(mx-22,my+106,8,8,sc);
+    // 오른다리 — 앞아래로 접힘
+    px(mx+24,my+70,14,12,sc);px(mx+34,my+80,12,12,sc);px(mx+42,my+88,10,10,sc);px(mx+38,my+96,10,10,sc);px(mx+32,my+104,8,8,sc);
+    // 새 — 이미지 참고 배치 (남자 주변 밀집, 외곽은 성김, 크기 다양)
     const drawBird=(bx,by,s,col,wingUp)=>{
         if(wingUp){
             px(bx,by,s,s,col);
-            px(bx-s,by-s,s,s,col);px(bx-s*2,by-s*2,s,s,col);px(bx-s*3,by-s*2.5,s,s,col);
-            px(bx+s,by-s,s,s,col);px(bx+s*2,by-s*2,s,s,col);px(bx+s*3,by-s*2.5,s,s,col);
+            px(bx-s,by-s*.8,s,s,col);px(bx-s*2,by-s*1.8,s,s,col);px(bx-s*3,by-s*2.2,s*.8,s*.8,col);
+            px(bx+s,by-s*.8,s,s,col);px(bx+s*2,by-s*1.8,s,s,col);px(bx+s*3,by-s*2.2,s*.8,s*.8,col);
         }else{
             px(bx,by,s,s,col);
-            px(bx-s,by+s*.5,s,s,col);px(bx-s*2,by+s,s,s,col);px(bx-s*3,by+s*.8,s,s,col);
-            px(bx+s,by+s*.5,s,s,col);px(bx+s*2,by+s,s,s,col);px(bx+s*3,by+s*.8,s,s,col);
+            px(bx-s,by+s*.4,s,s,col);px(bx-s*2,by+s*.9,s,s,col);px(bx-s*3,by+s*.7,s*.8,s*.8,col);
+            px(bx+s,by+s*.4,s,s,col);px(bx+s*2,by+s*.9,s,s,col);px(bx+s*3,by+s*.7,s*.8,s*.8,col);
         }
     };
-    const birdColors=['#cc3333','#dd7722','#ddcc33','#4488cc','#6688aa','#885533','#cc4444','#5599dd','#aa7744','#dd9933','#3366aa','#778899','#cc5522','#ddbb33','#5577bb','#997744','#dd3838','#44aadd','#bbaa55','#7799bb','#cc2222','#ee8833','#eecc44','#5599cc'];
-    const birdData=[
-        {x:0.15,y:0.15,s:2.2,sp:0.7},{x:0.25,y:0.22,s:1.8,sp:0.9},{x:0.20,y:0.32,s:1.6,sp:0.6},
-        {x:0.35,y:0.13,s:2.0,sp:1.1},{x:0.30,y:0.40,s:1.4,sp:0.8},{x:0.58,y:0.10,s:2.5,sp:0.5},
-        {x:0.64,y:0.20,s:1.8,sp:1.0},{x:0.73,y:0.16,s:2.2,sp:0.7},{x:0.80,y:0.25,s:1.6,sp:0.9},
-        {x:0.87,y:0.13,s:2.0,sp:0.6},{x:0.70,y:0.50,s:1.8,sp:1.2},{x:0.84,y:0.45,s:1.5,sp:0.8},
-        {x:0.12,y:0.60,s:2.2,sp:0.5},{x:0.77,y:0.65,s:2.5,sp:0.7},{x:0.90,y:0.70,s:2.0,sp:1.0},
-        {x:0.38,y:0.55,s:1.4,sp:0.9},{x:0.48,y:0.68,s:1.8,sp:0.6},{x:0.60,y:0.72,s:1.6,sp:1.1},
-        {x:0.06,y:0.80,s:2.8,sp:0.4},{x:0.93,y:0.82,s:2.5,sp:0.8},
-        {x:0.42,y:0.18,s:1.5,sp:1.0},{x:0.52,y:0.30,s:1.3,sp:0.7},{x:0.68,y:0.38,s:1.6,sp:0.9},{x:0.22,y:0.48,s:1.8,sp:0.6}
+    const bc=['#cc3333','#dd7722','#ddcc33','#4488cc','#6688aa','#885533','#cc4444','#5599dd','#aa7744','#dd9933','#3366aa','#778899','#cc5522','#ddbb33','#5577bb','#997744','#dd3838','#44aadd','#bbaa55','#7799bb','#cc2222','#ee8833','#eecc44','#5599cc','#bb6633','#446699'];
+    // 남자 주변에 밀집 (이미지 기준)
+    const birds=[
+        // 왼쪽 위
+        {x:0.18,y:0.14,s:1.8,sp:0.8},{x:0.26,y:0.20,s:1.5,sp:1.0},{x:0.22,y:0.30,s:1.3,sp:0.7},
+        {x:0.30,y:0.12,s:1.6,sp:0.9},{x:0.34,y:0.24,s:1.2,sp:1.1},
+        // 중앙 위 (남자 머리 위)
+        {x:0.42,y:0.08,s:1.6,sp:0.6},{x:0.50,y:0.14,s:1.4,sp:0.9},{x:0.46,y:0.22,s:1.2,sp:1.0},
+        // 오른쪽 위
+        {x:0.60,y:0.10,s:2.0,sp:0.5},{x:0.68,y:0.16,s:1.8,sp:0.8},{x:0.74,y:0.12,s:1.5,sp:0.7},
+        {x:0.80,y:0.20,s:1.6,sp:1.0},{x:0.86,y:0.14,s:2.2,sp:0.6},
+        // 오른쪽 중간
+        {x:0.72,y:0.35,s:1.4,sp:1.1},{x:0.80,y:0.40,s:1.6,sp:0.8},{x:0.88,y:0.32,s:1.3,sp:0.9},
+        // 왼쪽 중간
+        {x:0.12,y:0.42,s:1.5,sp:0.7},{x:0.20,y:0.50,s:1.3,sp:1.0},
+        // 하단 (크고 성김)
+        {x:0.06,y:0.78,s:3.2,sp:0.4}, // 왼쪽하단 큰 빨간새
+        {x:0.90,y:0.82,s:3.0,sp:0.5}, // 오른쪽하단 큰 파란새
+        {x:0.50,y:0.75,s:2.0,sp:0.6},{x:0.65,y:0.68,s:1.8,sp:0.8},
+        {x:0.35,y:0.62,s:1.5,sp:0.9},{x:0.78,y:0.58,s:1.6,sp:0.7},
     ];
-    birdData.forEach((b,i)=>{
-        const bx=b.x*W+Math.sin(t*.007+i*1.3)*10;
-        const by=b.y*H+Math.cos(t*.005+i*1.7)*8;
-        const col=birdColors[i%birdColors.length];
+    // 특별 색 지정 (이미지 기준): 왼쪽하단=빨강, 오른쪽하단=파랑+회색
+    birds.forEach((b,i)=>{
+        const bx=b.x*W+Math.sin(t*.006+i*1.4)*8;
+        const by=b.y*H+Math.cos(t*.005+i*1.8)*6;
+        let col=bc[i%bc.length];
+        if(i===18)col='#cc3333'; // 왼쪽하단 큰 빨간
+        if(i===19)col='#5577aa'; // 오른쪽하단 큰 파란
         const wingUp=Math.floor(t*b.sp*.08+i)%2;
         drawBird(bx,by,b.s,col,wingUp);
     });
