@@ -226,55 +226,61 @@ function s9_window(t){
 }
 function s10_sky(t){
     if(!window._birdRef){
-        window._birdRef={img:new Image(),loaded:false,pixelData:null};
+        window._birdRef={img:new Image(),loaded:false,blocks:null};
         window._birdRef.img.src='./scene_birds.jpg';
         window._birdRef.img.onload=()=>{
+            // 원본 해상도로 읽기
             const oc=document.createElement('canvas');
-            oc.width=128;oc.height=72; // 2x2 블록 (256/128=2)
+            const iw=window._birdRef.img.naturalWidth,ih=window._birdRef.img.naturalHeight;
+            oc.width=iw;oc.height=ih;
             const octx=oc.getContext('2d');
-            octx.drawImage(window._birdRef.img,0,0,128,72);
-            window._birdRef.pixelData=octx.getImageData(0,0,128,72);
-            window._birdRef.loaded=true;
-            // 색상 양자화 — flat color 팔레트로 변환
-            const palette=[
-                [26,26,46],[20,20,40],[30,30,55], // 배경 (어두운 남색)
-                [192,133,88],[196,149,106],[180,120,75], // 피부
-                [204,51,51],[200,60,50], // 빨강
-                [221,136,34],[210,130,40], // 주황
-                [221,204,51],[220,200,60], // 노랑
-                [68,136,204],[80,140,200],[90,150,210], // 파랑
-                [102,136,170],[100,130,160], // 회파랑
-                [136,85,68],[130,90,70], // 갈색
-                [119,136,153],[110,130,140], // 회색
-                [255,255,255],[220,220,220], // 흰 (구름)
-                [85,85,100],[60,60,80], // 어두운 배경 변형
-            ];
-            const pd=window._birdRef.pixelData.data;
-            for(let i=0;i<pd.length;i+=4){
-                const r=pd[i],g=pd[i+1],b=pd[i+2];
-                // 가장 가까운 팔레트 색 찾기
-                let minD=Infinity,best=0;
-                for(let p=0;p<palette.length;p++){
-                    const dr=r-palette[p][0],dg=g-palette[p][1],db=b-palette[p][2];
-                    const d=dr*dr+dg*dg+db*db;
-                    if(d<minD){minD=d;best=p;}
+            octx.drawImage(window._birdRef.img,0,0);
+            const raw=octx.getImageData(0,0,iw,ih);
+            // 블록 크기: 출력 캔버스에서 3x3px 블록
+            const bCols=Math.floor(W/3), bRows=Math.floor(H/3);
+            const bw=iw/bCols, bh=ih/bRows;
+            // 팔레트 (단색만)
+            const pal=[[26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],[68,136,204],[102,136,170],[136,85,68],[119,136,153],[255,255,255],[40,40,60]];
+            // 각 블록에서 최빈 팔레트색 결정
+            const blocks=new Array(bRows*bCols);
+            for(let by=0;by<bRows;by++){
+                for(let bx=0;bx<bCols;bx++){
+                    const votes=new Array(pal.length).fill(0);
+                    const sx=Math.floor(bx*bw),sy=Math.floor(by*bh);
+                    const ex=Math.min(Math.floor((bx+1)*bw),iw),ey=Math.min(Math.floor((by+1)*bh),ih);
+                    for(let y=sy;y<ey;y++){
+                        for(let x=sx;x<ex;x++){
+                            const idx=(y*iw+x)*4;
+                            const r=raw.data[idx],g=raw.data[idx+1],b2=raw.data[idx+2];
+                            let minD=Infinity,best=0;
+                            for(let p=0;p<pal.length;p++){
+                                const d=(r-pal[p][0])**2+(g-pal[p][1])**2+(b2-pal[p][2])**2;
+                                if(d<minD){minD=d;best=p;}
+                            }
+                            votes[best]++;
+                        }
+                    }
+                    let maxV=0,winner=0;
+                    for(let p=0;p<pal.length;p++){if(votes[p]>maxV){maxV=votes[p];winner=p;}}
+                    blocks[by*bCols+bx]=winner;
                 }
-                pd[i]=palette[best][0];pd[i+1]=palette[best][1];pd[i+2]=palette[best][2];
             }
+            window._birdRef.blocks=blocks;
+            window._birdRef.bCols=bCols;
+            window._birdRef.bRows=bRows;
+            window._birdRef.pal=pal;
+            window._birdRef.loaded=true;
         };
     }
-    if(window._birdRef.loaded&&window._birdRef.pixelData){
-        const pd=window._birdRef.pixelData;
-        const pw=pd.width,ph=pd.height;
-        const bw=W/pw,bh=H/ph;
-        // 부유감 오프셋
+    if(window._birdRef.loaded){
+        const{blocks,bCols,bRows,pal}=window._birdRef;
         const floatY=Math.sin(t*.012)*2;
-        for(let y=0;y<ph;y++){
-            for(let x=0;x<pw;x++){
-                const idx=(y*pw+x)*4;
-                const r=pd.data[idx],g=pd.data[idx+1],b=pd.data[idx+2];
-                ctx.fillStyle=`rgb(${r},${g},${b})`;
-                ctx.fillRect(Math.floor(x*bw),Math.floor(y*bh+floatY),Math.ceil(bw),Math.ceil(bh));
+        for(let by=0;by<bRows;by++){
+            for(let bx=0;bx<bCols;bx++){
+                const ci=blocks[by*bCols+bx];
+                const c=pal[ci];
+                ctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
+                ctx.fillRect(bx*3,by*3+floatY,3,3);
             }
         }
     }else{
