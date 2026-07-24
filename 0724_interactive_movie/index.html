@@ -125,17 +125,36 @@ function playBgm(type){
         lfo.connect(lfoG);lfoG.connect(g2.gain);
         o.connect(g2);g2.connect(audioCtx.destination);o.start();lfo.start();bgmNodes.push(o,lfo);
     }else if(type==='applause'){
-        // 박수소리
-        bgmGain.gain.value=0.07;
+        // 박수 + 신나는 쇼 엔딩 음악 (빠른 메이저 코드 진행)
+        bgmGain.gain.value=0.05;
+        // 박수 레이어
         const bufSize=audioCtx.sampleRate*2;
         const buf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
         const d=buf.getChannelData(0);
-        for(let i=0;i<bufSize;i++){
-            d[i]=(Math.random()*2-1)*0.4*(1+Math.sin(i/800)*.3);
-        }
+        for(let i=0;i<bufSize;i++) d[i]=(Math.random()*2-1)*0.25*(1+Math.sin(i/600)*.4);
         const src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
-        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1500;filt.Q.value=0.5;
+        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1800;filt.Q.value=0.4;
         src.connect(filt);filt.connect(bgmGain);src.start();bgmNodes.push(src);
+        // 신나는 멜로디 레이어 (빠른 메이저 아르페지오)
+        const notes=[523,659,784,1047,784,659,523,659,784,1047,1318,1047,784,659];
+        let ni=0;
+        const melGain=audioCtx.createGain();melGain.gain.value=0.03;melGain.connect(audioCtx.destination);
+        const playNote=()=>{
+            if(!audioCtx||bgmNodes.length===0) return;
+            const o=audioCtx.createOscillator();o.type='square';
+            o.frequency.value=notes[ni%notes.length];
+            const eg=audioCtx.createGain();eg.gain.value=0.03;
+            eg.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.15);
+            o.connect(eg);eg.connect(audioCtx.destination);
+            o.start();o.stop(audioCtx.currentTime+0.15);
+            ni++;
+        };
+        const melIv=setInterval(playNote,180);
+        bgmNodes.push({stop:()=>clearInterval(melIv)});
+        // 베이스라인
+        const bass=audioCtx.createOscillator();bass.type='sawtooth';bass.frequency.value=130.8;
+        const bassG=audioCtx.createGain();bassG.gain.value=0.02;
+        bass.connect(bassG);bassG.connect(audioCtx.destination);bass.start();bgmNodes.push(bass);
     }else if(type==='melancholy'){
         // 침울하고 우울한 소리
         bgmGain.gain.value=0.025;
