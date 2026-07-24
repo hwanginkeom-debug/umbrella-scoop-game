@@ -14,7 +14,7 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rend
 #progress-wrap{width:100%;height:6px;background:#000;position:relative;overflow:hidden}
 #progress-fill{height:100%;background:#fff;transition:width .3s;min-width:2px;margin-left:3.125%;max-width:93.75%}
 #notice{color:#555;font-size:8px;font-family:monospace;margin-top:10px;letter-spacing:.3px}
-#ending-btns{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;gap:20px;z-index:300}
+#ending-btns{position:absolute;bottom:15%;left:50%;transform:translateX(-50%);display:none;gap:20px;z-index:300}
 #ending-btns.show{display:flex}
 #ending-btns button{font-family:monospace;font-size:12px;padding:12px 28px;background:transparent;color:#fff;border:none;cursor:pointer}
 #ending-btns button:hover{opacity:.6}
@@ -101,22 +101,23 @@ const SCENES=[
   {t:'- 아주 짧았다.'}
 ],auto:5200},
 {id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature_mel',fx:'natural',beats:[
-  {t:'- 지겹다고 생각했다.'},
-  {t:'- 하지만 또 달리 보이기도 했다.'}
-],auto:6500},
+  {t:'- 짧은 가방'},
+  {t:'- 아름다운 공간'},
+  {t:'- 맑은 피'},
+  {t:'- 똑똑한 사람들'}
+],auto:4500},
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[
   {t:'- 물이 먹고 싶다고 생각했다.'},
   {t:'- 왜냐하면 그것은 없었기 때문이다.'},
   {t:'- 생각해 보면 당연한 일이었다.'},
   {t:'- 하지만 또 달리 생각해 보면 당연한 게 아니었다.'}
-],auto:6500},
+],auto:4500},
 {id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[
-  {t:'- 짧은 가방'},
-  {t:'- 아름다운 공간'},
-  {t:'- 맑은 피'},
-  {t:'- 똑똑한 사람들'}
-],auto:6500},
-{id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:7000},
+  {t:'- 지겹다고 싶었다.'},
+  {t:'- 하지만 또 달리 보이기도 한다.'}
+],auto:5000},
+{id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:5500},
+{id:'credits',img:null,fx:'natural',beats:[{t:''}],auto:8000},
 {id:'s20',img:'assets/s20_cinema_end.jpeg',bgm:'applause',fx:'pan_down',beats:[{t:''}],auto:5200},
 {id:'s22',img:null,fx:'iris',beats:[{t:''}],auto:0}
 ];
@@ -181,7 +182,7 @@ function playBgm(type){
   testAudio.addEventListener('canplaythrough',()=>{
     testAudio.loop=true;testAudio.volume=0;testAudio.play();
     // Fade in (2초)
-    const maxVol=(type==='classic')?0.12:0.5;
+    const maxVol=(type==='classic')?0.07:(type==='fresh')?0.7:0.5;
     let vol=0;
     const fadeIn=setInterval(()=>{vol+=maxVol/40;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
     bgmN.push({stop:()=>{
@@ -413,6 +414,18 @@ function render(){
   if(cur>=SCENES.length)return;
   const sc=SCENES[cur];
 
+  if(sc.id==='credits'){
+    ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#888';ctx.font='7px monospace';ctx.textAlign='center';
+    const credits=['','飛翔','','기획 · 연출','hwanginkeom','','바이브코딩 Lab','','픽셀아트 시네마틱','2026','','',''];
+    const startY=H-animT*0.5;
+    credits.forEach((line,i)=>{
+      const ly=startY+i*14;
+      if(ly>-10&&ly<H+10) ctx.fillText(line,W/2,ly);
+    });
+    ctx.fillStyle='#000';ctx.fillRect(0,0,MASK,H);ctx.fillRect(W-MASK,0,MASK,H);
+    animT++;return;
+  }
   if(sc.id==='s22'){
     if(trans){
       // iris 트랜지션 진행 중 — 이전 씬에서 원 닫힘
