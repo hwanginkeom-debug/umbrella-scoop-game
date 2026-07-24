@@ -467,7 +467,22 @@ function render(){
     transP+=(SCENES[cur]&&SCENES[cur].fx==='pan_down')?.008:.02;
     if(transP>=1){trans=false;blocks=nextBlocks;nextBlocks=null;}
   }else{
-    drawBlocks(blocks,wave);
+    if((cur===8||cur===9)&&blocks){
+      // s09/s10: 어두운 실루엣(인덱스 0,10)만 위아래 부유
+      const floatY=Math.sin(animT*.03)*2;
+      for(let y=0;y<SAMPLE_H;y++){
+        const ox=wave(y,animT);
+        for(let x=0;x<SAMPLE_W;x++){
+          const ci=blocks[y*SAMPLE_W+x];
+          const c=PALETTE[ci];
+          const yOff=(ci===0||ci===10)?floatY:0;
+          ctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
+          ctx.fillRect(Math.floor(x*BLOCK+ox),Math.floor(y*BLOCK+yOff),BLOCK+1,BLOCK);
+        }
+      }
+    }else{
+      drawBlocks(blocks,wave);
+    }
   }
 
   // s05(타이틀): 서서히 나타남
