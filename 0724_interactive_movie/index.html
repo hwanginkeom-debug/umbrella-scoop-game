@@ -296,18 +296,17 @@ function s10_sky(t){
             for(let i=0;i<bRows*bCols;i++){
                 if(blocks[i]===1&&!maxSet.has(i)) blocks[i]=0;
             }
-            // 특정 영역 피부색 돌출부 제거 (배경색으로)
-            // 왼쪽 아래 돌출 (넓게)
-            for(let by=46;by<74;by++){
-                for(let bx=18;bx<46;bx++){
-                    if(blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
+            // 분홍선 기준 사선 처리
+            // 사선: (bx=58, by=36) → (bx=50, by=72) 방향으로 내려감
+            for(let by=36;by<72;by++){
+                const lineX=58-(by-36)*0.22; // 사선 X좌표
+                // 왼쪽: 피부색 → 배경색 (돌출부 제거)
+                for(let bx=Math.floor(lineX);bx<Math.floor(lineX)+6;bx++){
+                    if(bx>=0&&bx<bCols&&blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
                 }
-            }
-            // 오른쪽 중간 돌출 (사선으로 자르기 — 위에서 아래로 갈수록 왼쪽으로)
-            for(let by=36;by<56;by++){
-                const cutX=84-(by-36)*0.7; // 사선: 위쪽은 84, 아래로 갈수록 왼쪽으로
-                for(let bx=Math.floor(cutX);bx<90;bx++){
-                    if(bx<bCols&&blocks[by*bCols+bx]===1) blocks[by*bCols+bx]=0;
+                // 오른쪽: 배경색 → 피부색 (구멍 채우기)
+                for(let bx=Math.floor(lineX)-4;bx<Math.floor(lineX);bx++){
+                    if(bx>=0&&bx<bCols&&(blocks[by*bCols+bx]===0||blocks[by*bCols+bx]===10)) blocks[by*bCols+bx]=1;
                 }
             }
             window._birdRef.loaded=true;
