@@ -97,7 +97,7 @@ const SCENES=[
   {t:'- 저런 거 보면 안 돼!'}
 ],auto:3900},
 {id:'s15',img:'assets/s15_dark_rest.jpg',bgm:'quiet',beats:[{t:''}],auto:5200},
-{id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature',fx:'natural',beats:[{t:''}],auto:6500},
+{id:'s16',img:'assets/s16_flowers_a.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:6500},
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[{t:''}],auto:6500},
 {id:'s18',img:'assets/s18_flowers_c.jpeg',fx:'natural',beats:[{t:''}],auto:6500},
 {id:'s19',img:'assets/s19_flowers_field.jpeg',bgm:'nature_mel',fx:'natural',beats:[{t:''}],auto:7000},
@@ -409,6 +409,23 @@ function render(){
     if(transP>=1){trans=false;blocks=nextBlocks;nextBlocks=null;}
   }else{
     drawBlocks(blocks,wave);
+  }
+
+  // s01~s03: 공 튀기기 모션
+  if(cur<=2&&blocks){
+    const ballX=W/2;
+    const period=60; // 프레임 주기
+    const phase=animT%period;
+    // 바운스: sin 기반으로 위아래
+    const bounceY=Math.abs(Math.sin(phase/period*Math.PI))*40;
+    const ballY=H*0.7-bounceY;
+    const ballSize=4;
+    // 공 그리기 (밝은 흰색 작은 사각형 — 픽셀 느낌)
+    ctx.fillStyle='#ddd';
+    ctx.fillRect(Math.floor(ballX-ballSize/2),Math.floor(ballY-ballSize/2),ballSize,ballSize);
+    // 그림자
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.fillRect(Math.floor(ballX-ballSize/2-1),Math.floor(H*0.72),ballSize+2,2);
   }
 
   // 양쪽 마스크
