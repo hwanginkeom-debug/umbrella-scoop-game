@@ -342,7 +342,24 @@ function render(){
   if(cur>=SCENES.length)return;
   const sc=SCENES[cur];
 
-  if(sc.id==='s22'){document.getElementById('ending-btns').classList.add('show');return;}
+  if(sc.id==='s22'){
+    if(trans){
+      // iris 트랜지션 진행 중 — 이전 씬에서 원 닫힘
+      const t=transP;
+      if(blocks) drawBlocks(blocks,wave);
+      const maxR=Math.sqrt(W*W+H*H)/2;
+      const r=maxR*(1-t);
+      ctx.fillStyle='#000';
+      ctx.beginPath();ctx.rect(0,0,W,H);
+      ctx.moveTo(W/2+r,H/2);ctx.arc(W/2,H/2,r,0,Math.PI*2,true);
+      ctx.fill();
+      ctx.fillStyle='#000';ctx.fillRect(0,0,MASK,H);ctx.fillRect(W-MASK,0,MASK,H);
+      transP+=.015;
+      if(transP>=1){trans=false;blocks=null;}
+      animT++;return;
+    }
+    document.getElementById('ending-btns').classList.add('show');return;
+  }
 
   if(trans&&nextBlocks){
     const t=transP,fx=sc.fx;
@@ -389,8 +406,14 @@ function goTo(idx){
   if(sc.sfx)playSfx(sc.sfx);
   updateBar();
   loadScene(idx,bl=>{
-    if(sc.fx&&sc.fx!=='cut'&&blocks){nextBlocks=bl;trans=true;transP=0;}
-    else{blocks=bl;}
+    if(sc.fx&&sc.fx!=='cut'&&blocks){
+      nextBlocks=bl;trans=true;transP=0;
+    }else if(!bl&&sc.fx==='iris'&&blocks){
+      // s22: 이미지 없지만 iris 트랜지션 필요
+      trans=true;transP=0;
+    }else{
+      blocks=bl;
+    }
   });
   if(sc.auto>0){clearTimeout(window._at);window._at=setTimeout(advance,sc.auto);}
 }
