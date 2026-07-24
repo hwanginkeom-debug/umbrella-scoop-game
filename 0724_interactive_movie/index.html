@@ -394,6 +394,7 @@ function goToScene(idx){
     }
     
     // BGM
+    initAudio();
     if(scene.bgm) playBgm(scene.bgm);
     // SFX
     if(scene.sfx) playSfx(scene.sfx);
@@ -475,6 +476,8 @@ document.getElementById('btn-exit').addEventListener('click',(e)=>{
 document.getElementById('fullscreen-replay').addEventListener('click',startGame);
 
 // ===================== START =====================
+// 페이지 로드시 오디오 초기화 시도 (일부 브라우저는 유저 인터랙션 필요)
+document.addEventListener('click',function once(){initAudio();document.removeEventListener('click',once);},{ once:true });
 render();
 goToScene(0);
 </script>
