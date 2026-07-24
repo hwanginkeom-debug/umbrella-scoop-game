@@ -135,6 +135,30 @@ function playBgm(type){
   initA();stopBgm();
   if(!type||type==='none')return;
   bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
+  // nature_mel: 두 파일 동시 재생 (특별 처리)
+  if(type==='nature_mel'){
+    const a1=new Audio('assets/audio/bgm_nature.mp3');
+    const a2=new Audio('assets/audio/bgm_melancholy.mp3');
+    a1.loop=true;a2.loop=true;a1.volume=0;a2.volume=0;
+    a1.play().catch(()=>{});a2.play().catch(()=>{});
+    const mx1=0.35,mx2=0.3;
+    let v1=0,v2=0;
+    const fi=setInterval(()=>{
+      v1+=mx1/40;v2+=mx2/40;
+      if(v1>=mx1)v1=mx1;if(v2>=mx2)v2=mx2;
+      a1.volume=v1;a2.volume=v2;
+      if(v1>=mx1&&v2>=mx2)clearInterval(fi);
+    },50);
+    bgmN.push({stop:()=>{
+      let vv1=a1.volume,vv2=a2.volume;
+      const fo=setInterval(()=>{
+        vv1-=.03;vv2-=.03;
+        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
+        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
+      },50);
+    }});
+    return;
+  }
   // 파일 기반 재생 시도
   const audioFile='assets/audio/bgm_'+type+'.mp3';
   const testAudio=new Audio(audioFile);
