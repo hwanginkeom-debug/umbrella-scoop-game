@@ -265,6 +265,21 @@ function s10_sky(t){
             window._birdRef.bCols=bCols;
             window._birdRef.bRows=bRows;
             window._birdRef.pal=pal;
+            // 후처리: 실루엣 내부 배경색 구멍 → 피부색으로 채움
+            // 피부색(1)으로 둘러싸인 배경색(0,10) 블록을 피부색으로 교체
+            for(let pass=0;pass<3;pass++){
+                for(let by=1;by<bRows-1;by++){
+                    for(let bx=1;bx<bCols-1;bx++){
+                        const ci=blocks[by*bCols+bx];
+                        if(ci!==0&&ci!==10) continue; // 배경색만 체크
+                        // 상하좌우 4방향 중 피부색(1) 또는 갈색(7) 개수
+                        let skinN=0;
+                        const neighbors=[blocks[(by-1)*bCols+bx],blocks[(by+1)*bCols+bx],blocks[by*bCols+bx-1],blocks[by*bCols+bx+1]];
+                        neighbors.forEach(n=>{if(n===1||n===7)skinN++;});
+                        if(skinN>=3) blocks[by*bCols+bx]=1;
+                    }
+                }
+            }
             window._birdRef.loaded=true;
         };
     }
