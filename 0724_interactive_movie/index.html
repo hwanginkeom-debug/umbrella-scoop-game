@@ -13,7 +13,7 @@
         #narration.show{opacity:1}
         #ending-btns{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:none;gap:20px;z-index:300}
         #ending-btns.show{display:flex}
-        #ending-btns button{font-family:monospace;font-size:12px;padding:12px 28px;background:#000;color:#fff;border:1px solid #555;cursor:pointer}
+        #ending-btns button{font-family:monospace;font-size:12px;padding:12px 28px;background:transparent;color:#fff;border:none;cursor:pointer}
         #ending-btns button:hover{background:#fff;color:#000}
         #fullscreen-replay{position:fixed;inset:0;background:#000;display:none;flex-wrap:wrap;align-content:center;justify-content:center;z-index:9999;cursor:pointer;padding:20px;gap:10px;overflow:hidden}
         #fullscreen-replay.show{display:flex}
@@ -21,25 +21,20 @@
         #fullscreen-replay button:hover{background:#fff;color:#000}
         .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
         .back-btn:hover{color:#aaa}
-        #start-overlay{position:absolute;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:500;cursor:pointer}
-        #start-overlay span{color:#888;font-family:monospace;font-size:11px;letter-spacing:1px}
-        #start-overlay.hide{display:none}
-        #notice{position:fixed;bottom:6px;left:50%;transform:translateX(-50%);color:#444;font-size:8px;font-family:monospace;z-index:10000;letter-spacing:.3px}
+        #notice{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);color:#555;font-size:8px;font-family:monospace;z-index:10000;letter-spacing:.3px}
         #progress-bar{position:absolute;bottom:0;left:0;width:100%;height:6px;background:#111;z-index:200;display:flex;align-items:center;pointer-events:none}
-        #progress-fill{height:4px;background:#c08558;transition:width .3s;margin:0 1px}
-        #progress-dot{width:6px;height:6px;background:#fff;position:absolute;transition:left .3s}
+        #progress-fill{height:4px;background:#fff;transition:width .3s;margin:0 1px}
         #progress-ticks{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;justify-content:space-between;padding:0 2px}
         #progress-ticks span{width:1px;height:100%;background:#333}
     </style>
 </head>
 <body>
 <a href="../bridge.html" class="back-btn">← BACK</a>
-<div id="notice">이 작품은 픽셀아트 시네마틱 실험작입니다. 클릭하여 진행하세요.</div>
+<div id="notice">클릭하여 진행하세요</div>
 <div id="game-container">
     <canvas id="canvas"></canvas>
-    <div id="start-overlay"><span>▶ 클릭하여 시작</span></div>
     <div id="narration"></div>
-    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div><div id="progress-dot" style="left:0%"></div></div>
+    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
     <div id="ending-btns">
         <button id="btn-replay">다시보기 ▶</button>
         <button id="btn-exit">나가기 ▶</button>
@@ -135,36 +130,47 @@ function playBgm(type){
         lfo.connect(lfoG);lfoG.connect(g2.gain);
         o.connect(g2);g2.connect(audioCtx.destination);o.start();lfo.start();bgmNodes.push(o,lfo);
     }else if(type==='applause'){
-        // 박수 + 신나는 쇼 엔딩 음악 (빠른 메이저 코드 진행)
+        // 박수 + 빠른 변주 많은 쇼 엔딩 음악
         bgmGain.gain.value=0.05;
         // 박수 레이어
         const bufSize=audioCtx.sampleRate*2;
         const buf=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
         const d=buf.getChannelData(0);
-        for(let i=0;i<bufSize;i++) d[i]=(Math.random()*2-1)*0.25*(1+Math.sin(i/600)*.4);
+        for(let i=0;i<bufSize;i++) d[i]=(Math.random()*2-1)*0.2*(1+Math.sin(i/400)*.5);
         const src=audioCtx.createBufferSource();src.buffer=buf;src.loop=true;
-        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=1800;filt.Q.value=0.4;
+        const filt=audioCtx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=2000;filt.Q.value=0.3;
         src.connect(filt);filt.connect(bgmGain);src.start();bgmNodes.push(src);
-        // 신나는 멜로디 레이어 (빠른 메이저 아르페지오)
-        const notes=[523,659,784,1047,784,659,523,659,784,1047,1318,1047,784,659];
-        let ni=0;
-        const melGain=audioCtx.createGain();melGain.gain.value=0.03;melGain.connect(audioCtx.destination);
+        // 빠른 변주 멜로디 (랜덤 스케일 점프 + 빠른 템포)
+        const scale=[523,587,659,698,784,880,988,1047,1175,1318,1397,1568];
+        let ni=0,dir=1;
         const playNote=()=>{
             if(!audioCtx||bgmNodes.length===0) return;
-            const o=audioCtx.createOscillator();o.type='square';
-            o.frequency.value=notes[ni%notes.length];
-            const eg=audioCtx.createGain();eg.gain.value=0.03;
-            eg.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.15);
+            const o=audioCtx.createOscillator();
+            o.type=ni%4<2?'square':'sawtooth';
+            const noteIdx=Math.floor(Math.random()*scale.length);
+            o.frequency.value=scale[noteIdx];
+            const eg=audioCtx.createGain();eg.gain.value=0.025;
+            eg.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.1);
             o.connect(eg);eg.connect(audioCtx.destination);
-            o.start();o.stop(audioCtx.currentTime+0.15);
+            o.start();o.stop(audioCtx.currentTime+0.1);
             ni++;
         };
-        const melIv=setInterval(playNote,180);
+        const melIv=setInterval(playNote,110);
         bgmNodes.push({stop:()=>clearInterval(melIv)});
-        // 베이스라인
-        const bass=audioCtx.createOscillator();bass.type='sawtooth';bass.frequency.value=130.8;
-        const bassG=audioCtx.createGain();bassG.gain.value=0.02;
-        bass.connect(bassG);bassG.connect(audioCtx.destination);bass.start();bgmNodes.push(bass);
+        // 빠른 베이스
+        const bassNotes=[130.8,146.8,164.8,174.6];
+        let bi=0;
+        const playBass=()=>{
+            if(!audioCtx||bgmNodes.length===0) return;
+            const o=audioCtx.createOscillator();o.type='sawtooth';
+            o.frequency.value=bassNotes[bi%bassNotes.length];
+            const eg=audioCtx.createGain();eg.gain.value=0.02;
+            eg.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.2);
+            o.connect(eg);eg.connect(audioCtx.destination);
+            o.start();o.stop(audioCtx.currentTime+0.2);bi++;
+        };
+        const bassIv=setInterval(playBass,220);
+        bgmNodes.push({stop:()=>clearInterval(bassIv)});
     }else if(type==='melancholy'){
         // 침울하고 우울한 소리
         bgmGain.gain.value=0.025;
@@ -253,7 +259,7 @@ const SCENES=[
 ],auto:4550},
 {id:'s12_black_impact',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[
  {type:'action',text:''}
-],auto:3250},
+],auto:2000},
 {id:'s13_ground_body',img:'assets/s13_ground_body.jpeg',bgm:'rain',beats:[
  {type:'action',text:''}
 ],auto:5200},
@@ -434,7 +440,7 @@ function updateProgress(){
     const total=SCENES.length;
     const pct=((currentScene)/Math.max(total-1,1))*100;
     document.getElementById('progress-fill').style.width=pct+'%';
-    document.getElementById('progress-dot').style.left=Math.min(pct,98)+'%';
+    
 }
 
 function showNarration(text){
@@ -545,13 +551,8 @@ document.getElementById('fullscreen-replay').addEventListener('click',startGame)
 
 // ===================== START =====================
 render();
-// 시작 오버레이 — 클릭하면 오디오 시작 + 첫 씬
-document.getElementById('start-overlay').addEventListener('click',(e)=>{
-    e.stopPropagation();
-    initAudio();
-    document.getElementById('start-overlay').classList.add('hide');
-    goToScene(0);
-});
+initAudio();
+goToScene(0);
 </script>
 </body>
 </html>
