@@ -137,6 +137,18 @@ function playBgm(type){
   initA();stopBgm();
   if(!type||type==='none')return;
   bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
+  // 파일 기반 재생 시도
+  const audioFile='assets/audio/bgm_'+type+'.mp3';
+  const testAudio=new Audio(audioFile);
+  testAudio.addEventListener('canplaythrough',()=>{
+    testAudio.loop=true;testAudio.volume=0.5;testAudio.play();
+    bgmN.push({stop:()=>{testAudio.pause();testAudio.currentTime=0;}});
+  },{once:true});
+  testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
+  testAudio.load();
+}
+function _synthBgm(type){
+  // 합성음 fallback
   if(type==='calm'){
     const o=actx.createOscillator();o.type='sine';o.frequency.value=180;
     const o2=actx.createOscillator();o2.type='sine';o2.frequency.value=270;
@@ -228,6 +240,13 @@ function playBgm(type){
 
 function playSfx(type){
   initA();
+  // 파일 기반 재생 시도
+  const sfxFile='assets/audio/sfx_'+type+'.mp3';
+  const sa=new Audio(sfxFile);
+  sa.volume=0.6;sa.play().catch(()=>_synthSfx(type));
+  return;
+}
+function _synthSfx(type){
   const sr=actx.sampleRate;
   if(type==='throw'){
     const b=actx.createBuffer(1,sr*.08,sr),d=b.getChannelData(0);
