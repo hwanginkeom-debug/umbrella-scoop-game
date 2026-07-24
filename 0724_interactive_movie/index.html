@@ -476,7 +476,11 @@ function render(){
 
 // ===== UI =====
 function updateBar(){
-  document.getElementById('progress-fill').style.width=((cur)/Math.max(SCENES.length-1,1)*100)+'%';
+  const pct=((cur)/Math.max(SCENES.length-1,1)*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  // 영화관(s20) 이후 재생바 숨김
+  const sc=SCENES[cur];
+  document.getElementById('progress-wrap').style.opacity=(sc&&(sc.id==='s20'||sc.id==='s22'))?'0':'1';
 }
 function showNar(txt){
   if(!txt){narEl.classList.remove('show');return;}
