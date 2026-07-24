@@ -15,14 +15,10 @@
         #ending-btns.show{display:flex}
         #ending-btns button{font-family:monospace;font-size:11px;padding:10px 22px;background:#000;color:#fff;border:1px solid #555;cursor:pointer}
         #ending-btns button:hover{background:#fff;color:#000}
-        #fullscreen-replay{position:fixed;inset:0;background:#000;display:none;flex-wrap:wrap;align-content:center;justify-content:center;z-index:9999;cursor:pointer;padding:20px;gap:8px;overflow:hidden}
+        #fullscreen-replay{position:fixed;inset:0;background:#000;display:none;flex-wrap:wrap;align-content:center;justify-content:center;z-index:9999;cursor:pointer;padding:20px;gap:10px;overflow:hidden}
         #fullscreen-replay.show{display:flex}
-        #fullscreen-replay span{font-family:monospace;font-size:14px;color:#c00;letter-spacing:1px;animation:hp .8s infinite;text-shadow:0 0 6px #f00}
-        #fullscreen-replay span:nth-child(odd){animation-delay:.1s;font-size:12px}
-        #fullscreen-replay span:nth-child(3n){font-size:18px;color:#ff0000}
-        #fullscreen-replay span:nth-child(5n){font-size:10px;color:#800}
-        #fullscreen-replay span:nth-child(7n){font-size:22px}
-        @keyframes hp{0%,100%{opacity:1;transform:scale(1)}25%{opacity:.7;transform:scale(1.02) skewX(-1deg)}50%{opacity:1;transform:scale(.98)}75%{opacity:.8;transform:scale(1.01) skewX(1deg)}}
+        #fullscreen-replay button{font-family:monospace;font-size:11px;padding:8px 18px;background:#000;color:#fff;border:1px solid #555;cursor:pointer;transition:opacity .3s}
+        #fullscreen-replay button:hover{background:#fff;color:#000}
         .back-btn{position:fixed;top:8px;left:8px;z-index:10000;padding:4px 10px;background:transparent;color:#444;font-size:9px;font-family:monospace;text-decoration:none}
         .back-btn:hover{color:#aaa}
     </style>
@@ -292,7 +288,27 @@ function startGame(){currentShot=0;animTime=0;document.getElementById('ending-bt
 
 container.addEventListener('click',function(e){if(e.target.tagName==='BUTTON')return;initAudio();if(!shots[currentShot].auto){nextShot();lastClickTime=Date.now();easterEggShown=false;}});
 document.getElementById('btn-replay').addEventListener('click',function(e){e.stopPropagation();startGame();});
-document.getElementById('btn-exit').addEventListener('click',function(e){e.stopPropagation();document.getElementById('ending-btns').classList.remove('show');const el=document.getElementById('fullscreen-replay');el.innerHTML='';for(let i=0;i<80;i++){const s=document.createElement('span');s.textContent='다시보기';el.appendChild(s);}el.classList.add('show');});
+document.getElementById('btn-exit').addEventListener('click',function(e){
+    e.stopPropagation();
+    document.getElementById('ending-btns').classList.remove('show');
+    const el=document.getElementById('fullscreen-replay');
+    el.innerHTML='';
+    el.classList.add('show');
+    // 버튼 1개 시작, 점점 증식
+    let count=0;
+    function addBtn(){
+        const b=document.createElement('button');
+        b.textContent='다시보기';
+        b.addEventListener('click',function(ev){ev.stopPropagation();startGame();});
+        el.appendChild(b);
+        count++;
+        if(count<80){
+            const delay=Math.max(300-count*3,30);
+            setTimeout(addBtn,delay);
+        }
+    }
+    addBtn();
+});
 document.getElementById('fullscreen-replay').addEventListener('click',startGame);
 
 // ===================== RENDER =====================
