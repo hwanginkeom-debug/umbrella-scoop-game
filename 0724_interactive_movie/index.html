@@ -229,19 +229,15 @@ function s10_sky(t){
         window._birdRef={img:new Image(),loaded:false,blocks:null};
         window._birdRef.img.src='./scene_birds.jpg';
         window._birdRef.img.onload=()=>{
-            // 원본 해상도로 읽기
             const oc=document.createElement('canvas');
             const iw=window._birdRef.img.naturalWidth,ih=window._birdRef.img.naturalHeight;
             oc.width=iw;oc.height=ih;
             const octx=oc.getContext('2d');
             octx.drawImage(window._birdRef.img,0,0);
             const raw=octx.getImageData(0,0,iw,ih);
-            // 블록 크기: 출력 캔버스에서 3x3px 블록
             const bCols=Math.floor(W/3), bRows=Math.floor(H/3);
             const bw=iw/bCols, bh=ih/bRows;
-            // 팔레트 (단색만)
             const pal=[[26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],[68,136,204],[102,136,170],[136,85,68],[119,136,153],[255,255,255],[40,40,60]];
-            // 각 블록에서 최빈 팔레트색 결정
             const blocks=new Array(bRows*bCols);
             for(let by=0;by<bRows;by++){
                 for(let bx=0;bx<bCols;bx++){
@@ -274,13 +270,14 @@ function s10_sky(t){
     }
     if(window._birdRef.loaded){
         const{blocks,bCols,bRows,pal}=window._birdRef;
-        const floatY=Math.sin(t*.012)*2;
         for(let by=0;by<bRows;by++){
+            // 계단식 좌우 모션: 각 행마다 위상이 다르게 좌우로 흔들렸다 돌아옴
+            const rowOffset=Math.sin(t*.02+by*.15)*Math.sin(t*.008)*3;
             for(let bx=0;bx<bCols;bx++){
                 const ci=blocks[by*bCols+bx];
                 const c=pal[ci];
                 ctx.fillStyle=`rgb(${c[0]},${c[1]},${c[2]})`;
-                ctx.fillRect(bx*3,by*3+floatY,3,3);
+                ctx.fillRect(Math.floor(bx*3+rowOffset),by*3,3,3);
             }
         }
     }else{
@@ -346,12 +343,7 @@ function s18_audience(t){
 }
 
 // ===================== UI =====================
-function drawEasterEgg(){
-    const idle=Date.now()-lastClickTime;if(idle<10000||shots[currentShot].auto)return;
-    const gy=H*.15+Math.sin(Date.now()*.002)*6,gx=W-28+Math.sin(Date.now()*.001)*4,ga=Math.min((idle-10000)/3000,.7);
-    ctx.globalAlpha=ga;px(gx-3,gy-4,7,8,'#aaccff');px(gx-1,gy-2,1,1,'#000');px(gx+1,gy-2,1,1,'#000');
-    px(gx-3,gy+4,1,2,'#aaccff');px(gx-1,gy+4,1,2,'#aaccff');px(gx+1,gy+4,1,2,'#aaccff');px(gx+3,gy+4,1,2,'#aaccff');ctx.globalAlpha=1;
-    if(idle>15000){ctx.globalAlpha=Math.min((idle-15000)/2000,.6);txt('...보고 있어',gx-2,gy+16,4,'#aaccff');ctx.globalAlpha=1;}
+function drawEasterEgg(){}
 }
 
 // ===================== LOGIC =====================
