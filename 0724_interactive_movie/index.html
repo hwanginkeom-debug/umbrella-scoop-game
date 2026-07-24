@@ -237,7 +237,7 @@ function s10_sky(t){
             const raw=octx.getImageData(0,0,iw,ih);
             const bCols=Math.floor(W/2), bRows=Math.floor(H/2);
             const bw=iw/bCols, bh=ih/bRows;
-            const pal=[[26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],[68,136,204],[102,136,170],[136,85,68],[119,136,153],[255,255,255],[40,40,60]];
+            const pal=[[26,26,46],[192,133,88],[204,51,51],[221,136,34],[221,204,51],[68,136,204],[102,136,170],[26,26,46],[119,136,153],[255,255,255],[40,40,60]];
             const blocks=new Array(bRows*bCols);
             for(let by=0;by<bRows;by++){
                 for(let bx=0;bx<bCols;bx++){
