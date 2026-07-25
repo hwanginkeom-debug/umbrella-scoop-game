@@ -193,11 +193,11 @@ function playBgm(type){
     // Fade in (2초)
     const maxVol=(type==='classic')?0.07:(type==='fresh')?0.7:0.5;
     let vol=0;
-    const fadeIn=setInterval(()=>{vol+=maxVol/40;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
+    const fadeIn=setInterval(()=>{vol+=maxVol/44;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
     bgmN.push({stop:()=>{
       // Fade out (1.5초)
       let v=testAudio.volume;
-      const fadeOut=setInterval(()=>{v-=0.03;if(v<=0){v=0;clearInterval(fadeOut);testAudio.pause();testAudio.currentTime=0;}testAudio.volume=Math.max(0,v);},50);
+      const fadeOut=setInterval(()=>{v-=0.025;if(v<=0){v=0;clearInterval(fadeOut);testAudio.pause();testAudio.currentTime=0;}testAudio.volume=Math.max(0,v);},50);
     }});
   },{once:true});
   testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
