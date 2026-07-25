@@ -70,14 +70,14 @@ const SCENES=[
 {id:'s01',img:'assets/s01_room_wake.png.jpeg',bgm:'calm',beats:[
   {t:''},
   {t:'- 인생은 삶의 반복이다'},
-  {t:'- 아침은 지겨울 정도로<br>허기지고'},
+  {t:'- 아침은<br>지겨울 정도로 허기지고'},
   {t:'- 점심은 정신을 차리지 못할 정도로<br>숨가쁘며'},
-  {t:'- 새벽은 언제 어두워질지도 모를 정도로<br>각박하고 길다'}
+  {t:'- 새벽은 언제 어두워질지도<br>모를 정도로 각박하고 길다'}
 ],auto:5200},
 {id:'s02',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[{t:''}],auto:3900},
 {id:'s03',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
-  {t:'- 탄생의 빛을 보면<br>설탕물과 소금물 정도의 밀도 차이를 느낀다'},
-  {t:'- 혈류는 이럴 때만<br>야속하게 힘 있게 뛰지 않는다'}
+  {t:'- 금일 탄생한 빛을 보면<br>설탕물과 소금물 정도의 밀도 차이를 느낀다'},
+  {t:'- 혈류는 야속하게<br>이럴 때만 힘있게 뛰지 않는다'}
 ],auto:5200},
 {id:'s04',img:'assets/s04_hall_exit.png',bgm:'footsteps',beats:[{t:''}],auto:3900},
 {id:'s05',img:'assets/s05_hall_title.jpeg',beats:[{t:'- 비상'}],auto:3900},
@@ -175,7 +175,14 @@ function playBgm(type){
       a1.volume=v1;a2.volume=v2;
       if(v1>=mx1&&v2>=mx2)clearInterval(fi);
     },50);
-    bgmN.push({stop:()=>{a1.pause();a1.currentTime=0;a2.pause();a2.currentTime=0;}});
+    bgmN.push({stop:()=>{
+      let vv1=a1.volume,vv2=a2.volume;
+      const fo=setInterval(()=>{
+        vv1-=.05;vv2-=.05;
+        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
+        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
+      },50);
+    }});
     return;
   }
   // 파일 기반 재생 시도
@@ -293,7 +300,14 @@ function _synthBgm(type){
       a1.volume=v1;a2.volume=v2;
       if(v1>=mx1&&v2>=mx2)clearInterval(fi);
     },50);
-    bgmN.push({stop:()=>{a1.pause();a1.currentTime=0;a2.pause();a2.currentTime=0;}});
+    bgmN.push({stop:()=>{
+      let vv1=a1.volume,vv2=a2.volume;
+      const fo=setInterval(()=>{
+        vv1-=.05;vv2-=.05;
+        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
+        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
+      },50);
+    }});
     return;
   }else if(type==='melancholy'){
     bgmG.gain.value=.025;
