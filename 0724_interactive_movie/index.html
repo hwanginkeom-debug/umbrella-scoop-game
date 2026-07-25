@@ -77,7 +77,7 @@ const SCENES=[
 {id:'s02',img:'assets/s02_room_throw.jpeg',sfx:'throw',beats:[{t:''}],auto:3900},
 {id:'s03',img:'assets/s03_room_sigh.jpeg',sfx:'sigh',beats:[
   {t:'- 금일 탄생한 빛을 보면<br>설탕물과 소금물 정도의 밀도 차이를 느낀다'},
-  {t:'- 혈류는 야속하게<br>이럴 때만 힘있게 뛰지 않는다'}
+  {t:'- 혈류는 야속하게<br>이럴 때만 힘 있게 뛰지 않는다'}
 ],auto:5200},
 {id:'s04',img:'assets/s04_hall_exit.png',bgm:'footsteps',beats:[{t:''}],auto:3900},
 {id:'s05',img:'assets/s05_hall_title.jpeg',beats:[{t:'- 비상'}],auto:3900},
@@ -117,7 +117,7 @@ const SCENES=[
   {t:'- 똑똑한 사람들'}
 ],auto:2800},
 {id:'s17',img:'assets/s17_flowers_b.jpeg',fx:'natural',beats:[
-  {t:'- 물이 먹고 싶다고 생각했다'},
+  {t:'- 물을 먹고 싶다고 생각했다'},
   {t:'- 왜냐하면<br>그것은 없었기 때문이다'},
   {t:'- 생각해 보면<br>당연한 일이었다'},
   {t:'- 하지만 또 달리 생각해 보면<br>당연한 게 아니었다'}
@@ -155,7 +155,7 @@ resize();window.addEventListener('resize',resize);
 const AC=window.AudioContext||window.webkitAudioContext;
 let actx,bgmN=[],bgmG;
 function initA(){if(!actx)actx=new AC();}
-function stopBgm(immediate){bgmN.forEach(n=>{try{if(immediate&&n.pause){n.pause();}else{n.stop();}}catch(e){try{n.stop();}catch(e2){}}});bgmN=[];}
+function stopBgm(immediate){bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});bgmN=[];}
 
 function playBgm(type){
   initA();
@@ -196,7 +196,7 @@ function playBgm(type){
   testAudio.addEventListener('canplaythrough',()=>{
     testAudio.loop=true;testAudio.volume=0;testAudio.play();
     // Fade in (2초)
-    const maxVol=(type==='classic')?0.07:(type==='fresh')?0.7:0.5;
+    const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
     let vol=0;
     const fadeIn=setInterval(()=>{vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
     bgmN.push({_audio:testAudio,stop:()=>{
