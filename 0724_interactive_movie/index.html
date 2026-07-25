@@ -473,7 +473,7 @@ function render(){
     // 크레딧 스크롤 + 버튼
     ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#666';ctx.font='7px monospace';ctx.textAlign='center';
-    const creds=['','飛翔','','기획 · 연출','hwanginkeom','','바이브코딩 Lab','','픽셀아트 시네마틱','2026'];
+    const creds=['','飛翔','','기획 · 연출','hwanginkeom','','바이브코딩 Lab','','2026'];
     const startY=H-animT*0.4;
     creds.forEach((line,i)=>{
       const ly=startY+i*14;
@@ -613,7 +613,7 @@ document.getElementById('btn-credits').addEventListener('click',e=>{
   const el=document.getElementById('credits-screen');
   el.classList.add('show');
   const scenes=SCENES.filter(s=>s.img);
-  let lines='\n\n\n飛翔\n\n픽셀아트 시네마틱\n\n\n';
+  let lines='\n\n\n飛翔\n\n\n';
   scenes.forEach(s=>{
     lines+='<img src="'+s.img+'">\n'+s.id+'\n\n';
   });
