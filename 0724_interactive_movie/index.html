@@ -89,7 +89,7 @@ const SCENES=[
   {t:'- 개미집을 멀리서 보면<br>광활한 우주가 보인다'}
 ],auto:5200},
 {id:'s09',img:'assets/s09_birds_float.jpeg',bgm:'classic',fx:'glitch',beats:[
-  {t:'- 몸을 던지면 모이를 쪼러<br>온갖 새들이 나에게 몰려온다'}
+  {t:'- 한발 내딛으면 모이를 쪼러<br>온갖 새들이 나에게 몰려온다'}
 ],auto:6500},
 {id:'s10',img:'assets/s10_crowd_sunset.jpeg',fx:'glitch',beats:[
   {t:'- 오늘은 사람들에게 인사를 했다'},
@@ -155,11 +155,16 @@ resize();window.addEventListener('resize',resize);
 const AC=window.AudioContext||window.webkitAudioContext;
 let actx,bgmN=[],bgmG;
 function initA(){if(!actx)actx=new AC();}
-function stopBgm(){bgmN.forEach(n=>{try{n.stop();}catch(e){}});bgmN=[];}
+function stopBgm(immediate){bgmN.forEach(n=>{try{if(immediate&&n.pause){n.pause();}else{n.stop();}}catch(e){try{n.stop();}catch(e2){}}});bgmN=[];}
 
 function playBgm(type){
-  initA();stopBgm();
-  if(!type||type==='none')return;
+  initA();
+  if(!type||type==='none'){
+    // 즉시 정지 (암전 등)
+    bgmN.forEach(n=>{try{if(n.kill)n.kill();else n.stop();}catch(e){}});
+    bgmN=[];return;
+  }
+  stopBgm();
   bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
   // nature_mel: 두 파일 동시 재생 (특별 처리)
   if(type==='nature_mel'){
@@ -193,12 +198,12 @@ function playBgm(type){
     // Fade in (2초)
     const maxVol=(type==='classic')?0.07:(type==='fresh')?0.7:0.5;
     let vol=0;
-    const fadeIn=setInterval(()=>{vol+=maxVol/44;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
-    bgmN.push({stop:()=>{
-      // Fade out (1.5초)
+    const fadeIn=setInterval(()=>{vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
+    bgmN.push({_audio:testAudio,stop:()=>{
+      // Fade out (1.7초)
       let v=testAudio.volume;
-      const fadeOut=setInterval(()=>{v-=0.025;if(v<=0){v=0;clearInterval(fadeOut);testAudio.pause();testAudio.currentTime=0;}testAudio.volume=Math.max(0,v);},50);
-    }});
+      const fadeOut=setInterval(()=>{v-=0.02;if(v<=0){v=0;clearInterval(fadeOut);testAudio.pause();testAudio.currentTime=0;}testAudio.volume=Math.max(0,v);},50);
+    },kill:()=>{testAudio.pause();testAudio.currentTime=0;}});
   },{once:true});
   testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
   testAudio.load();
