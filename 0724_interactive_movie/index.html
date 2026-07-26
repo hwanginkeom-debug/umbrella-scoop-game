@@ -153,23 +153,19 @@ resize();window.addEventListener('resize',resize);
 
 // ===== AUDIO =====
 const AC=window.AudioContext||window.webkitAudioContext;
-let actx,bgmN=[],bgmG,_bgmAudio=null,_bgmFadeIn=null,_bgmId=0;
+let actx,bgmN=[],bgmG,_bgmAudio=null,_bgmFadeIn=null;
 function initA(){if(!actx)actx=new AC();}
 function stopBgm(){
-  _bgmId++;
   if(_bgmFadeIn){clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
-  bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.src='';n._audio.load();}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
+  bgmN.forEach(n=>{try{n.stop();}catch(e){}});
   bgmN=[];
-  if(_bgmAudio){try{_bgmAudio.pause();_bgmAudio.src='';_bgmAudio.load();}catch(e){}_bgmAudio=null;}
+  if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
 }
 
 function playBgm(type){
   initA();
-  if(!type||type==='none'){
-    stopBgm();
-    return;
-  }
   stopBgm();
+  if(!type||type==='none')return;
   bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
   // nature_mel: 두 파일 동시 재생 (특별 처리)
   if(type==='nature_mel'){
@@ -185,41 +181,24 @@ function playBgm(type){
       a1.volume=v1;a2.volume=v2;
       if(v1>=mx1&&v2>=mx2)clearInterval(fi);
     },50);
-    bgmN.push({stop:()=>{
-      let vv1=a1.volume,vv2=a2.volume;
-      const fo=setInterval(()=>{
-        vv1-=.05;vv2-=.05;
-        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
-        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
-      },50);
-    }});
+    bgmN.push({stop:()=>{clearInterval(fi);a1.pause();a2.pause();}});
     return;
   }
-  // 파일 기반 재생 시도
-  const audioFile='assets/audio/bgm_'+type+'.mp3';
-  const testAudio=new Audio(audioFile);
-  testAudio.loop=true;testAudio.volume=0;
-  testAudio.preload='auto';
-  _bgmAudio=testAudio;
-  const myId=_bgmId;
-  // 즉시 bgmN에 등록 (비동기 타이밍 문제 방지)
-  bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.src='';},kill:()=>{testAudio.pause();testAudio.src='';}});
-  const startPlay=()=>{
-    if(myId!==_bgmId){testAudio.pause();testAudio.src='';return;}
-    testAudio.play().then(()=>{
-      if(myId!==_bgmId){testAudio.pause();testAudio.src='';return;}
-      const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
-      let vol=0;
-      _bgmFadeIn=setInterval(()=>{
-        if(myId!==_bgmId){clearInterval(_bgmFadeIn);_bgmFadeIn=null;return;}
-        vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
-        testAudio.volume=vol;
-      },50);
-    }).catch(()=>{});
-  };
-  testAudio.addEventListener('canplay',startPlay,{once:true});
-  testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
-  testAudio.load();
+  // 파일 기반 재생
+  const a=new Audio('assets/audio/bgm_'+type+'.mp3');
+  a.loop=true;a.volume=0;
+  _bgmAudio=a;
+  a.play().then(()=>{
+    const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
+    let vol=0;
+    _bgmFadeIn=setInterval(()=>{
+      vol+=maxVol/48;
+      if(vol>=maxVol){vol=maxVol;clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
+      if(_bgmAudio===a)a.volume=vol;
+      else{clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
+    },50);
+  }).catch(()=>{_synthBgm(type);});
+  bgmN.push({stop:()=>{a.pause();a.currentTime=0;}});
 }
 function _synthBgm(type){
   // 합성음 fallback
