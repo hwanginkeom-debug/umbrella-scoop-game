@@ -153,21 +153,20 @@ resize();window.addEventListener('resize',resize);
 
 // ===== AUDIO =====
 const AC=window.AudioContext||window.webkitAudioContext;
-let actx,bgmN=[],bgmG,_bgmAudio=null;
+let actx,bgmN=[],bgmG,_bgmAudio=null,_bgmFadeIn=null,_bgmId=0;
 function initA(){if(!actx)actx=new AC();}
 function stopBgm(){
-  bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
+  _bgmId++;
+  if(_bgmFadeIn){clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
+  bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.src='';n._audio.load();}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
   bgmN=[];
-  if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
+  if(_bgmAudio){try{_bgmAudio.pause();_bgmAudio.src='';_bgmAudio.load();}catch(e){}_bgmAudio=null;}
 }
 
 function playBgm(type){
   initA();
   if(!type||type==='none'){
-    // 즉시 정지
-    bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
-    bgmN=[];
-    if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
+    stopBgm();
     return;
   }
   stopBgm();
@@ -200,14 +199,22 @@ function playBgm(type){
   const audioFile='assets/audio/bgm_'+type+'.mp3';
   const testAudio=new Audio(audioFile);
   _bgmAudio=testAudio;
+  const myId=_bgmId;
   testAudio.addEventListener('canplaythrough',()=>{
-    if(_bgmAudio!==testAudio)return; // 이미 다른 곡으로 교체됨
-    testAudio.loop=true;testAudio.volume=0;testAudio.play();
-    // Fade in (2.4초)
-    const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
-    let vol=0;
-    const fadeIn=setInterval(()=>{vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
-    bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.currentTime=0;},kill:()=>{testAudio.pause();testAudio.currentTime=0;}});
+    if(myId!==_bgmId){testAudio.src='';return;} // 이미 취소됨
+    testAudio.loop=true;testAudio.volume=0;
+    testAudio.play().then(()=>{
+      if(myId!==_bgmId){testAudio.pause();testAudio.src='';return;}
+      // Fade in
+      const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
+      let vol=0;
+      _bgmFadeIn=setInterval(()=>{
+        if(myId!==_bgmId){clearInterval(_bgmFadeIn);_bgmFadeIn=null;return;}
+        vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
+        testAudio.volume=vol;
+      },50);
+    }).catch(()=>{});
+    bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.src='';testAudio.load();},kill:()=>{testAudio.pause();testAudio.src='';testAudio.load();}});
   },{once:true});
   testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
   testAudio.load();
