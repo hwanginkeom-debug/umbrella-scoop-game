@@ -96,7 +96,7 @@ const SCENES=[
   {t:'- 반갑습니다'},
   {t:'- 고마워요'}
 ],auto:4550},
-{id:'s11',img:'assets/s11_meadow_fall.jpeg',fx:'glitch',beats:[
+{id:'s11',img:'assets/s11_meadow_fall.jpeg',bgm:'none',fx:'glitch',beats:[
   {t:'- 어 세상이 $!@%!#!@아@'}
 ],auto:1800},
 {id:'s12',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[{t:''}],auto:1500},
@@ -198,14 +198,16 @@ function playBgm(type){
   // 파일 기반 재생 시도
   const audioFile='assets/audio/bgm_'+type+'.mp3';
   const testAudio=new Audio(audioFile);
+  testAudio.loop=true;testAudio.volume=0;
+  testAudio.preload='auto';
   _bgmAudio=testAudio;
   const myId=_bgmId;
-  testAudio.addEventListener('canplaythrough',()=>{
-    if(myId!==_bgmId){testAudio.src='';return;} // 이미 취소됨
-    testAudio.loop=true;testAudio.volume=0;
+  // 즉시 bgmN에 등록 (비동기 타이밍 문제 방지)
+  bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.src='';},kill:()=>{testAudio.pause();testAudio.src='';}});
+  const startPlay=()=>{
+    if(myId!==_bgmId){testAudio.pause();testAudio.src='';return;}
     testAudio.play().then(()=>{
       if(myId!==_bgmId){testAudio.pause();testAudio.src='';return;}
-      // Fade in
       const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
       let vol=0;
       _bgmFadeIn=setInterval(()=>{
@@ -214,8 +216,8 @@ function playBgm(type){
         testAudio.volume=vol;
       },50);
     }).catch(()=>{});
-    bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.src='';testAudio.load();},kill:()=>{testAudio.pause();testAudio.src='';testAudio.load();}});
-  },{once:true});
+  };
+  testAudio.addEventListener('canplay',startPlay,{once:true});
   testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
   testAudio.load();
 }
