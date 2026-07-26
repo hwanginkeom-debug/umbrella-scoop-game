@@ -96,7 +96,7 @@ const SCENES=[
   {t:'- 반갑습니다'},
   {t:'- 고마워요'}
 ],auto:4550},
-{id:'s11',img:'assets/s11_meadow_fall.jpeg',bgm:'none',fx:'glitch',beats:[
+{id:'s11',img:'assets/s11_meadow_fall.jpeg',fx:'glitch',beats:[
   {t:'- 어 세상이 $!@%!#!@아@'}
 ],auto:1800},
 {id:'s12',img:'assets/s12_black_impact.png',bgm:'none',sfx:'impact',beats:[{t:''}],auto:1500},
@@ -284,15 +284,14 @@ function _synthBgm(type){
   }
 }
 
-let _curSfx=null;
-function stopSfx(){if(_curSfx){_curSfx.pause();_curSfx.currentTime=0;_curSfx=null;}}
+let _sfxEl=null;
+function stopSfx(){if(_sfxEl){_sfxEl.pause();_sfxEl.currentTime=0;}}
 function playSfx(type){
-  initA();stopSfx();
-  const sfxFile='assets/audio/sfx_'+type+'.mp3';
-  const sa=new Audio(sfxFile);
-  sa.volume=0.6;sa.play().catch(()=>_synthSfx(type));
-  _curSfx=sa;
-  return;
+  initA();
+  if(!_sfxEl){_sfxEl=new Audio();_sfxEl.volume=0.6;}
+  _sfxEl.src='assets/audio/sfx_'+type+'.mp3';
+  _sfxEl.volume=0.6;
+  _sfxEl.play().catch(()=>_synthSfx(type));
 }
 function _synthSfx(type){
   const sr=actx.sampleRate;
