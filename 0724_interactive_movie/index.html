@@ -153,16 +153,22 @@ resize();window.addEventListener('resize',resize);
 
 // ===== AUDIO =====
 const AC=window.AudioContext||window.webkitAudioContext;
-let actx,bgmN=[],bgmG;
+let actx,bgmN=[],bgmG,_bgmAudio=null;
 function initA(){if(!actx)actx=new AC();}
-function stopBgm(immediate){bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});bgmN=[];}
+function stopBgm(){
+  bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
+  bgmN=[];
+  if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
+}
 
 function playBgm(type){
   initA();
   if(!type||type==='none'){
-    // 즉시 정지 (암전 등)
-    bgmN.forEach(n=>{try{if(n.kill)n.kill();else n.stop();}catch(e){}});
-    bgmN=[];return;
+    // 즉시 정지
+    bgmN.forEach(n=>{try{if(n._audio){n._audio.pause();n._audio.currentTime=0;}else if(n.kill){n.kill();}else{n.stop();}}catch(e){}});
+    bgmN=[];
+    if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
+    return;
   }
   stopBgm();
   bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
@@ -193,17 +199,15 @@ function playBgm(type){
   // 파일 기반 재생 시도
   const audioFile='assets/audio/bgm_'+type+'.mp3';
   const testAudio=new Audio(audioFile);
+  _bgmAudio=testAudio;
   testAudio.addEventListener('canplaythrough',()=>{
+    if(_bgmAudio!==testAudio)return; // 이미 다른 곡으로 교체됨
     testAudio.loop=true;testAudio.volume=0;testAudio.play();
-    // Fade in (2초)
+    // Fade in (2.4초)
     const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
     let vol=0;
     const fadeIn=setInterval(()=>{vol+=maxVol/48;if(vol>=maxVol){vol=maxVol;clearInterval(fadeIn);}testAudio.volume=vol;},50);
-    bgmN.push({_audio:testAudio,stop:()=>{
-      // Fade out (1.7초)
-      let v=testAudio.volume;
-      const fadeOut=setInterval(()=>{v-=0.02;if(v<=0){v=0;clearInterval(fadeOut);testAudio.pause();testAudio.currentTime=0;}testAudio.volume=Math.max(0,v);},50);
-    },kill:()=>{testAudio.pause();testAudio.currentTime=0;}});
+    bgmN.push({_audio:testAudio,stop:()=>{testAudio.pause();testAudio.currentTime=0;},kill:()=>{testAudio.pause();testAudio.currentTime=0;}});
   },{once:true});
   testAudio.addEventListener('error',()=>{_synthBgm(type);},{once:true});
   testAudio.load();
