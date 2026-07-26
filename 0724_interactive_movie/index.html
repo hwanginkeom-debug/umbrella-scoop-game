@@ -190,7 +190,7 @@ function playBgm(type){
   a.src='assets/audio/bgm_'+type+'.mp3';
   a.volume=0;
   a.play().then(()=>{
-    const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
+    const maxVol=(type==='classic')?0.034:(type==='fresh')?0.7:0.5;
     let vol=0;
     _bgmFadeIn=setInterval(()=>{
       vol+=maxVol/48;
@@ -293,7 +293,7 @@ function stopSfx(){if(_sfxEl){_sfxEl.pause();_sfxEl.currentTime=0;}}
 function playSfx(type){
   initA();
   _sfxEl.src='assets/audio/sfx_'+type+'.mp3';
-  _sfxEl.volume=0.6;
+  _sfxEl.volume=(type==='murmur')?0.66:0.6;
   _sfxEl.currentTime=0;
   _sfxEl.play().catch(()=>_synthSfx(type));
 }
