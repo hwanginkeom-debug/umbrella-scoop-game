@@ -153,84 +153,82 @@ resize();window.addEventListener('resize',resize);
 
 // ===== AUDIO =====
 const AC=window.AudioContext||window.webkitAudioContext;
-let actx,bgmN=[],bgmG,_bgmAudio=null,_bgmFadeIn=null;
-function initA(){if(!actx)actx=new AC();}
+let actx,bgmG;
+// 하나의 Audio 엘리먼트를 재사용 (모바일 자동재생 정책 우회)
+let _bgmEl=null,_bgmFadeIn=null,_synthNodes=[];
+
+function initA(){
+  if(!actx)actx=new AC();
+  if(!_bgmEl){
+    _bgmEl=new Audio();
+    _bgmEl.loop=true;
+    _bgmEl.volume=0;
+  }
+}
+
 function stopBgm(){
+  // fadeIn 중이면 정리
   if(_bgmFadeIn){clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
-  bgmN.forEach(n=>{try{n.stop();}catch(e){}});
-  bgmN=[];
-  if(_bgmAudio){_bgmAudio.pause();_bgmAudio.currentTime=0;_bgmAudio=null;}
+  // 파일 기반 정지
+  if(_bgmEl){_bgmEl.pause();_bgmEl.currentTime=0;_bgmEl.volume=0;}
+  // 합성음 정지
+  _synthNodes.forEach(n=>{try{n.stop();}catch(e){}});
+  _synthNodes=[];
 }
 
 function playBgm(type){
   initA();
   stopBgm();
   if(!type||type==='none')return;
-  bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
-  // nature_mel: 두 파일 동시 재생 (특별 처리)
-  if(type==='nature_mel'){
-    const a1=new Audio('assets/audio/bgm_nature.mp3');
-    const a2=new Audio('assets/audio/bgm_melancholy.mp3');
-    a1.loop=true;a2.loop=true;a1.volume=0;a2.volume=0;
-    a1.play().catch(()=>{});a2.play().catch(()=>{});
-    const mx1=0.35,mx2=0.3;
-    let v1=0,v2=0;
-    const fi=setInterval(()=>{
-      v1+=mx1/40;v2+=mx2/40;
-      if(v1>=mx1)v1=mx1;if(v2>=mx2)v2=mx2;
-      a1.volume=v1;a2.volume=v2;
-      if(v1>=mx1&&v2>=mx2)clearInterval(fi);
-    },50);
-    bgmN.push({stop:()=>{clearInterval(fi);a1.pause();a2.pause();}});
-    return;
-  }
-  // 파일 기반 재생
-  const a=new Audio('assets/audio/bgm_'+type+'.mp3');
-  a.loop=true;a.volume=0;
-  _bgmAudio=a;
+
+  // 파일이 있는 타입은 파일 재생 시도
+  const a=_bgmEl;
+  a.src='assets/audio/bgm_'+type+'.mp3';
+  a.volume=0;
   a.play().then(()=>{
     const maxVol=(type==='classic')?0.042:(type==='fresh')?0.7:0.5;
     let vol=0;
     _bgmFadeIn=setInterval(()=>{
       vol+=maxVol/48;
       if(vol>=maxVol){vol=maxVol;clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
-      if(_bgmAudio===a)a.volume=vol;
-      else{clearInterval(_bgmFadeIn);_bgmFadeIn=null;}
+      a.volume=vol;
     },50);
-  }).catch(()=>{_synthBgm(type);});
-  bgmN.push({stop:()=>{a.pause();a.currentTime=0;}});
+  }).catch(()=>{
+    // 파일 재생 실패 시 합성음 fallback
+    _synthBgm(type);
+  });
 }
 function _synthBgm(type){
-  // 합성음 fallback
+  bgmG=actx.createGain();bgmG.connect(actx.destination);bgmG.gain.value=.04;
   if(type==='calm'){
     const o=actx.createOscillator();o.type='sine';o.frequency.value=180;
     const o2=actx.createOscillator();o2.type='sine';o2.frequency.value=270;
     const g2=actx.createGain();g2.gain.value=.02;
     o.connect(bgmG);o2.connect(g2);g2.connect(actx.destination);
-    o.start();o2.start();bgmN.push(o,o2);
+    o.start();o2.start();_synthNodes.push(o,o2);
   }else if(type==='footsteps'){
     bgmG.gain.value=.06;let s=0;
     const iv=setInterval(()=>{
-      if(!actx||!bgmN.length){clearInterval(iv);return;}
+      if(!actx||!_synthNodes.length){clearInterval(iv);return;}
       const b=actx.createBuffer(1,actx.sampleRate*.05,actx.sampleRate);
       const d=b.getChannelData(0);
       for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4)*(s%2?.6:.4);
       const src=actx.createBufferSource();src.buffer=b;src.connect(bgmG);src.start();s++;
     },600);
-    bgmN.push({stop:()=>clearInterval(iv)});
+    _synthNodes.push({stop:()=>clearInterval(iv)});
   }else if(type==='fresh'){
     bgmG.gain.value=.035;
     const o=actx.createOscillator();o.type='sine';o.frequency.value=220;
     const lfo=actx.createOscillator();lfo.frequency.value=.15;
     const lg=actx.createGain();lg.gain.value=30;
     lfo.connect(lg);lg.connect(o.frequency);
-    o.connect(bgmG);o.start();lfo.start();bgmN.push(o,lfo);
+    o.connect(bgmG);o.start();lfo.start();_synthNodes.push(o,lfo);
   }else if(type==='classic'){
     bgmG.gain.value=.03;
     [261.6,329.6,392,523.2].forEach(f=>{
       const o=actx.createOscillator();o.type='sine';o.frequency.value=f;
       const g=actx.createGain();g.gain.value=.015;
-      o.connect(g);g.connect(actx.destination);o.start();bgmN.push(o);
+      o.connect(g);g.connect(actx.destination);o.start();_synthNodes.push(o);
     });
   }else if(type==='rain'){
     bgmG.gain.value=.05;
@@ -238,79 +236,51 @@ function _synthBgm(type){
     const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.3;
     const src=actx.createBufferSource();src.buffer=buf;src.loop=true;
     const f=actx.createBiquadFilter();f.type='highpass';f.frequency.value=800;
-    src.connect(f);f.connect(bgmG);src.start();bgmN.push(src);
+    src.connect(f);f.connect(bgmG);src.start();_synthNodes.push(src);
   }else if(type==='quiet'){
     bgmG.gain.value=.015;
     const o=actx.createOscillator();o.type='sine';o.frequency.value=150;
-    o.connect(bgmG);o.start();bgmN.push(o);
+    o.connect(bgmG);o.start();_synthNodes.push(o);
   }else if(type==='nature'){
     bgmG.gain.value=.03;
     const buf=actx.createBuffer(1,actx.sampleRate*2,actx.sampleRate);
     const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.15;
     const src=actx.createBufferSource();src.buffer=buf;src.loop=true;
     const f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=3000;f.Q.value=2;
-    src.connect(f);f.connect(bgmG);src.start();bgmN.push(src);
+    src.connect(f);f.connect(bgmG);src.start();_synthNodes.push(src);
     const o=actx.createOscillator();o.type='sine';o.frequency.value=4200;
     const g2=actx.createGain();g2.gain.value=.008;
     const lfo=actx.createOscillator();lfo.frequency.value=8;
     const lg=actx.createGain();lg.gain.value=.008;
     lfo.connect(lg);lg.connect(g2.gain);o.connect(g2);g2.connect(actx.destination);
-    o.start();lfo.start();bgmN.push(o,lfo);
+    o.start();lfo.start();_synthNodes.push(o,lfo);
   }else if(type==='applause'){
     bgmG.gain.value=.05;
     const buf=actx.createBuffer(1,actx.sampleRate*2,actx.sampleRate);
     const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*.2*(1+Math.sin(i/400)*.5);
     const src=actx.createBufferSource();src.buffer=buf;src.loop=true;
     const f=actx.createBiquadFilter();f.type='bandpass';f.frequency.value=2000;f.Q.value=.3;
-    src.connect(f);f.connect(bgmG);src.start();bgmN.push(src);
+    src.connect(f);f.connect(bgmG);src.start();_synthNodes.push(src);
     const scale=[523,587,659,698,784,880,988,1047,1175,1318,1397,1568];
     let ni=0;
     const mIv=setInterval(()=>{
-      if(!actx||!bgmN.length)return;
+      if(!actx||!_synthNodes.length)return;
       const o=actx.createOscillator();o.type=ni%4<2?'square':'sawtooth';
       o.frequency.value=scale[Math.floor(Math.random()*scale.length)];
       const g=actx.createGain();g.gain.value=.025;
       g.gain.linearRampToValueAtTime(0,actx.currentTime+.1);
       o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.1);ni++;
     },110);
-    bgmN.push({stop:()=>clearInterval(mIv)});
+    _synthNodes.push({stop:()=>clearInterval(mIv)});
     const bass=[130.8,146.8,164.8,174.6];let bi=0;
     const bIv=setInterval(()=>{
-      if(!actx||!bgmN.length)return;
+      if(!actx||!_synthNodes.length)return;
       const o=actx.createOscillator();o.type='sawtooth';o.frequency.value=bass[bi%4];
       const g=actx.createGain();g.gain.value=.02;
       g.gain.linearRampToValueAtTime(0,actx.currentTime+.2);
       o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+.2);bi++;
     },220);
-    bgmN.push({stop:()=>clearInterval(bIv)});
-  }else if(type==='nature_mel'){
-    // nature + melancholy 동시 재생
-    const f1='assets/audio/bgm_nature.mp3',f2='assets/audio/bgm_melancholy.mp3';
-    const a1=new Audio(f1),a2=new Audio(f2);
-    a1.loop=true;a2.loop=true;a1.volume=0;a2.volume=0;
-    a1.play();a2.play();
-    const mx1=0.35,mx2=0.3;
-    let v1=0,v2=0;
-    const fi=setInterval(()=>{
-      v1+=mx1/40;v2+=mx2/40;
-      if(v1>=mx1)v1=mx1;if(v2>=mx2)v2=mx2;
-      a1.volume=v1;a2.volume=v2;
-      if(v1>=mx1&&v2>=mx2)clearInterval(fi);
-    },50);
-    bgmN.push({stop:()=>{
-      let vv1=a1.volume,vv2=a2.volume;
-      const fo=setInterval(()=>{
-        vv1-=.05;vv2-=.05;
-        if(vv1<=0&&vv2<=0){clearInterval(fo);a1.pause();a2.pause();}
-        a1.volume=Math.max(0,vv1);a2.volume=Math.max(0,vv2);
-      },50);
-    }});
-    return;
-  }else if(type==='melancholy'){
-    bgmG.gain.value=.025;
-    const o=actx.createOscillator();o.type='sine';o.frequency.value=110;
-    const o2=actx.createOscillator();o2.type='sine';o2.frequency.value=138.6;
-    o.connect(bgmG);o2.connect(bgmG);o.start();o2.start();bgmN.push(o,o2);
+    _synthNodes.push({stop:()=>clearInterval(bIv)});
   }
 }
 
@@ -587,7 +557,7 @@ function restart(){
 container.addEventListener('click',e=>{
   if(e.target.tagName==='BUTTON')return;
   initA();
-  if(actx&&actx.state==='suspended'){actx.resume().then(()=>{const sc=SCENES[cur];if(sc&&sc.bgm&&bgmN.length===0)playBgm(sc.bgm);});}
+  if(actx&&actx.state==='suspended'){actx.resume().then(()=>{const sc=SCENES[cur];if(sc&&sc.bgm&&!_bgmEl.src)playBgm(sc.bgm);});}
   
   if(e.shiftKey) advance();
 });
