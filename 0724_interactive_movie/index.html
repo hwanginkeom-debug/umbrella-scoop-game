@@ -164,6 +164,10 @@ function initA(){
     _bgmEl.loop=true;
     _bgmEl.volume=0;
   }
+  if(!_sfxEl){
+    _sfxEl=new Audio();
+    _sfxEl.volume=0.6;
+  }
 }
 
 function stopBgm(){
@@ -288,9 +292,9 @@ let _sfxEl=null;
 function stopSfx(){if(_sfxEl){_sfxEl.pause();_sfxEl.currentTime=0;}}
 function playSfx(type){
   initA();
-  if(!_sfxEl){_sfxEl=new Audio();_sfxEl.volume=0.6;}
   _sfxEl.src='assets/audio/sfx_'+type+'.mp3';
   _sfxEl.volume=0.6;
+  _sfxEl.currentTime=0;
   _sfxEl.play().catch(()=>_synthSfx(type));
 }
 function _synthSfx(type){
@@ -596,7 +600,16 @@ document.getElementById('btn-credits').addEventListener('click',e=>{
 // ===== START =====
 render();
 // 시작 화면 클릭 시 재생
-document.getElementById('start-screen').addEventListener('click',()=>{initA();document.getElementById('start-screen').classList.add('hide');goTo(0);});
+document.getElementById('start-screen').addEventListener('click',()=>{
+  initA();
+  // 모바일 오디오 unlock: 무음 재생으로 두 엘리먼트 모두 활성화
+  _bgmEl.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+  _bgmEl.play().then(()=>{_bgmEl.pause();_bgmEl.currentTime=0;}).catch(()=>{});
+  _sfxEl.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+  _sfxEl.play().then(()=>{_sfxEl.pause();_sfxEl.currentTime=0;}).catch(()=>{});
+  document.getElementById('start-screen').classList.add('hide');
+  goTo(0);
+});
 </script>
 </body>
 </html>
