@@ -758,7 +758,7 @@ function drawRoll(){
       ctx.restore();
     } else {
       // si=2: 항상 표시 — cuts가 있으면 갭으로 분할
-      if(G.stage===7 && G.cuts.length>0){
+      if(G.stage===6 && G.cuts.length>0){
         // 잘린 조각들 (cuts 기준으로 X 분할, 4px 갭)
         var cutXs=[cx-sz*0.5].concat(G.cuts.map(function(ct){return ct.x;})).concat([cx+sz*0.5]);
         cutXs.sort(function(a,b){return a-b;});
@@ -935,6 +935,8 @@ function updateShout(){
     G.blowDone = true;
     G.scores.blow = 100;
     if(G.shoutStream) G.shoutStream.getTracks().forEach(function(t){t.stop();});
+    // 훅 불기 완료 → 완성 카드 표시
+    setTimeout(function(){ showResultCard(); }, 800);
   }
 }
 
@@ -956,7 +958,7 @@ function drawShoutGauge(){
   ctx.beginPath(); ctx.moveTo(bx-10,by+35); ctx.lineTo(bx,by+50); ctx.lineTo(bx+10,by+35); ctx.fill();
 
   // 글자: 회색 베이스
-  var txt='배달 나왔습니다!';
+  var txt='주문하신 김밥 나왔습니다!';
   ctx.font='bold '+Math.round(sz*0.055)+'px Pretendard,sans-serif';
   ctx.textAlign='center'; ctx.textBaseline='middle';
   ctx.fillStyle='rgba(0,0,0,0.15)';
@@ -1107,6 +1109,8 @@ function drawCuts(){
 function showResultCard(){
   G.stage=8; // 렌더 멈춤
   var _kn = getKimbapName();
+  G.kimbapName = _kn.name;
+  G.kimbapDesc = _kn.desc || '';
   var card = document.getElementById('resultCard');
   document.getElementById('rcName').textContent = _kn.name;
   document.getElementById('rcDesc').textContent = _kn.desc;
@@ -1315,7 +1319,7 @@ document.getElementById('saveBtn').addEventListener('click', function(){
 
 // ===== 스테이지 전환 =====
 var STAGE_LABELS=['','Stage 1 — 김 펴기','Stage 2 — 밥 깔기','Stage 3 — 재료 올리기',
-  'Stage 4 — 말기','Stage 5 — 참깨 뿌리기','Stage 6 — 훅 불기','Stage 7 — 썰기','Stage 8 — 완성!'];
+  'Stage 4 — 말기','Stage 5 — 참깨 뿌리기','Stage 6 — 썰기','Stage 7 — 훅 불기','Stage 8 — 완성!'];
 var STAGE_HINTS=[
   '',
   '버텍스를 드래그해서 김을 펴주세요',
@@ -1323,8 +1327,8 @@ var STAGE_HINTS=[
   '숫자키(1~0)로 재료 선택, 클릭으로 올려요',
   '가이드선을 따라 왼→오른으로 드래그해서 마세요',
   '꾹 눌러서 참깨를 쌓아요',
-  '크게 소리를 내서 김밥을 완성해요',
   '위→아래로 드래그해서 썰어요 (6번)',
+  '크게 소리를 내서 김밥을 완성해요',
   '완성! 저장하거나 다시 만들어보세요'
 ];
 
@@ -1344,8 +1348,8 @@ function goStage(n){
   if(n===3) updateIngPanel();
   if(n===4){ setTimeout(captureRollSnap,50); }
   if(n===5){ G.sesameList=[]; }
-  if(n===6){ G.blowDone=false; G.blowGoodTime=0; G.shoutStarted=false; startShout(); }
-  if(n===7){ G.cuts=[]; G.kimbapName=''; }
+  if(n===6){ G.cuts=[]; G.kimbapName=''; }
+  if(n===7){ G.blowDone=false; G.blowGoodTime=0; G.shoutStarted=false; startShout(); }
   if(n===8){
     showResultCard();
   }
@@ -1429,17 +1433,6 @@ function draw(){
     var smsg=cnt<10?'꾹 눌러서 참깨를 쌓아요':cnt<40?'점점 많아지고 있어요!':'✅ 딱 적당해요 👍';
     document.getElementById('statusMsg').textContent=smsg;
   } else if(G.stage===6){
-    // 말기 완성 + 참깨
-    G.rollProg=1;
-    drawRoll();
-    drawSesame();
-    // "배달 나왔습니다!" 게이지
-    drawShoutGauge();
-    if(G.blowDone){
-      document.getElementById('statusMsg').textContent='완벽해요! 🎉';
-      var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent='85점';
-    }
-  } else if(G.stage===7){
     // 말기 완성 김밥 + 참깨 표시
     G.rollProg=1;
     drawRoll();
@@ -1463,6 +1456,22 @@ function draw(){
 
     var cmsg=['슥~ 그어서 썰어주세요','한번!','두번!','세번!','네번!','다섯번!','완성! 🔪'][Math.min(6,G.cuts.length)];
     document.getElementById('statusMsg').textContent=cmsg;
+  } else if(G.stage===7){
+    // 말기 완성 + 참깨 + 잘린 갭 유지
+    G.rollProg=1;
+    drawRoll();
+    drawSesame();
+    // 이전 단계에서 잘린 갭 표시
+    G.cuts.forEach(function(cut){
+      ctx.fillStyle='#cba87a';
+      ctx.fillRect(cut.x-2, cut.y1, 4, cut.y2-cut.y1);
+    });
+    // "주문하신 김밥 나왔습니다!" 게이지
+    drawShoutGauge();
+    if(G.blowDone){
+      document.getElementById('statusMsg').textContent='완벽해요! 🎉';
+      var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent='85점';
+    }
   } else if(G.stage===8){
     // 배경만 (뒤에 아무것도 안 그림)
   }
@@ -1517,7 +1526,7 @@ function update(){
   if(G.stage===2){ updateRice(); }
   if(G.stage===3){ updateIngAnim(); }
   if(G.stage===4 && G.mdown){ updateRoll(G.MX,G.MY); }
-  if(G.stage===7 && G.mdown){ G.slicing=true; G.slicePath=[{x:G.MX,y:G.MY}]; }
+  if(G.stage===6 && G.mdown){ G.slicing=true; G.slicePath=[{x:G.MX,y:G.MY}]; }
   if(G.stage===5){ updateSesame(); }
 }
 
@@ -1534,9 +1543,9 @@ canvas.addEventListener('mousedown', function(e){
   if(G.stage===1) startKimDrag(mx,my);
   if(G.stage===2) dropRice(mx,my);
   if(G.stage===3) dropIng(mx,my);
-  if(G.stage===7){ G.slicing=true; G.slicePath=[{x:mx,y:my}]; }
+  if(G.stage===6){ G.slicing=true; G.slicePath=[{x:mx,y:my}]; }
   if(G.stage===5){ dropSesame(mx,my); G.sesameLastDrop=Date.now(); }
-  if(G.stage===7){
+  if(G.stage===6){
     G.cutDragging=true;
     G.cutStart={x:mx,y:my};
   }
@@ -1547,7 +1556,7 @@ canvas.addEventListener('contextmenu', function(e){
 });
 canvas.addEventListener('mousemove', function(e){
   G.MX=e.clientX; G.MY=e.clientY;
-  if(G.stage===7 && G.slicing){
+  if(G.stage===6 && G.slicing){
     if(G.slicePath) G.slicePath.push({x:G.MX,y:G.MY});
     // 실시간 썰기: 마우스가 김밥 Y 범위 안에 있으면 즉시 잘림
     var kimT7=cy-sz*0.15, kimB7=cy+sz*0.15;
@@ -1559,7 +1568,7 @@ canvas.addEventListener('mousemove', function(e){
         G.rollWobbleV=-3;
         // 6번 이상이면 완료
         if(G.cuts.length>=6){
-          setTimeout(function(){ showResultCard(); }, 600);
+          setTimeout(function(){ goStage(7); }, 600);
         }
       }
     }
@@ -1596,7 +1605,7 @@ canvas.addEventListener('mouseup', function(e){
   G.kimDragging=-1;
   G.riceHoldTimer=0;
   G.ingHoldTimer=0;
-  if(G.stage===7 && G.cutDragging && G.cutStart){
+  if(G.stage===6 && G.cutDragging && G.cutStart){
     var ex=e.clientX, ey=e.clientY;
     if(checkCut(G.cutStart.x,G.cutStart.y,ex,ey)){
       G.cuts.push({x1:G.cutStart.x,y1:G.cutStart.y,x2:ex,y2:ey});
@@ -1605,7 +1614,7 @@ canvas.addEventListener('mouseup', function(e){
     G.cutDragging=false; G.cutStart=null;
   }
   if(G.stage===4) G.rollPrevX=-1;
-  if(G.stage===7) {
+  if(G.stage===6) {
     G.slicing=false;
     // 궤적이 김밥을 관통했는지 체크
     if(G.slicePath && G.slicePath.length>0){
@@ -1649,8 +1658,8 @@ window.addEventListener('keydown', function(e){
     if(s===1||s===2||s===3) goStage(s+1);
     else if(s===4&&G.rollDone) goStage(5);
     else if(s===5&&G.sesameList.length>=40) goStage(6);
-    else if(s===6) goStage(7); // 테스트용: 마이크 스킵
-    else if(s===7){ showResultCard(); }
+    else if(s===6&&G.cuts.length>=6) goStage(7);
+    else if(s===7&&G.blowDone){ showResultCard(); }
   }
 });
 window.addEventListener('keyup', function(e){

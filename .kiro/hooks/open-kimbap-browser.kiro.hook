@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "name": "김밥 브라우저 열기",
+  "description": "",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "open \"0727_kimbap/index3d.html\""
+  },
+  "workspaceFolderName": "0716_바이브코딩 2",
+  "shortName": "open-kimbap-browser"
+}
