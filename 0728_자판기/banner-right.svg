@@ -1,0 +1,8 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='120' height='200'>
+<rect width='120' height='200' fill='#fff0f0' stroke='#ff0000' stroke-width='3'/>
+<rect x='10' y='10' width='100' height='180' fill='none' stroke='#ff0000' stroke-width='1' stroke-dasharray='4'/>
+<text x='60' y='90' text-anchor='middle' font-size='14' fill='#ff0000' font-family='monospace'>광고</text>
+<text x='60' y='110' text-anchor='middle' font-size='10' fill='#999' font-family='monospace'>120x200</text>
+<text x='60' y='130' text-anchor='middle' font-size='8' fill='#999' font-family='monospace'>이미지를</text>
+<text x='60' y='145' text-anchor='middle' font-size='8' fill='#999' font-family='monospace'>여기에 넣으세요</text>
+</svg>

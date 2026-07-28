@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>돈을 벌어라!! 자판기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <button class="sound-btn" onclick="toggleBGM()">🔊 BGM</button>
+
+    <div class="top-banner">
+        <marquee>$$$ 돈 을 벌어라!! 100원 으로 인생역전 가능 하읍니다 $$$</marquee>
+    </div>
+
+    <div class="money-area">
+        <span id="money">100원</span>
+    </div>
+
+    <div class="vending-wrapper">
+        <!-- 왼쪽 배너 -->
+        <div class="ad-col">
+            <a href="https://jiunglee-dev.github.io/2026-07-22-umbrella/?v=31" id="ad-link-left" target="_blank">
+                <img src="banner-left.jpg" class="ad-img" alt="광고">
+            </a>
+            <div class="ad-label">광고</div>
+            <div class="side-panel">
+                <div class="side-title">[ 내 꺼 ]</div>
+                <div id="owned" class="side-content"></div>
+            </div>
+        </div>
+
+        <!-- 자판기 중앙 -->
+        <div class="vending-center">
+            <div class="vm-frame">
+                <div class="vm-body">
+                    <div class="vm-glass">
+                        <div class="vm-shelves" id="vm-grid"></div>
+                    </div>
+                    <div class="vm-right-panel">
+                        <div class="vm-screen" id="vm-screen">자판기</div>
+                        <div class="vm-buttons">
+                            <div class="vm-btn-row"><span></span><span></span><span></span></div>
+                            <div class="vm-btn-row"><span></span><span></span><span></span></div>
+                            <div class="vm-btn-row"><span></span><span></span><span></span></div>
+                        </div>
+                        <div class="vm-coin-slot"></div>
+                    </div>
+                </div>
+                <div class="vm-footer">
+                    <div class="vm-pickup-door"></div>
+                </div>
+                <div class="vm-legs"><span></span><span></span></div>
+            </div>
+        </div>
+
+        <!-- 오른쪽 배너 -->
+        <div class="ad-col">
+            <a href="https://jhwaj.github.io/cutout-cinema/" id="ad-link-right" target="_blank">
+                <img src="banner-right.jpg" class="ad-img" alt="광고">
+            </a>
+            <div class="ad-label">광고</div>
+            <div class="side-panel">
+                <div class="side-title">[ 뭘 살수 있나 ]</div>
+                <div id="tooltip-list" class="side-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 돈을 벌다 -->
+    <div class="gamble-area">
+        <div class="gamble-header">-- 돈 을 벌다 --</div>
+        <div class="streak-row">연속 <span id="streak">0</span>회 성공</div>
+
+        <div class="bet-options" id="bet-options"></div>
+
+        <div class="reward-display">
+            <div class="reward-big" id="reward-big">5배!</div>
+            <div class="reward-sub" id="reward-sub">(성공 하면 500원)</div>
+        </div>
+
+        <button class="go-btn" onclick="doGamble()">돈 을 벌다</button>
+        <p id="result" class="result"></p>
+    </div>
+
+    <!-- 게임 설명 -->
+    <div class="game-rules">
+        <div class="rules-title">[ 게임 설명 ]</div>
+        <ul>
+            <li>시작 금액: 100원</li>
+            <li>성공 하면: 확률 에 따라 배수 만큼 돈 을 벌다</li>
+            <li>실패 하면: 소지금 의 50% 를 잃다</li>
+            <li>10만원 을 넘긴 후, 다시 10만원 이하 로 떨어지면 GAME OVER</li>
+            <li>GAME OVER 시 산 것 도 전부 잃다</li>
+            <li>확률 이 낮을수록 배수 가 높다</li>
+            <li>1% 와 0.5% 는... 직접 눌러 보라</li>
+            <li>모든 물건 을 모으면 클리어 다</li>
+        </ul>
+    </div>
+
+    <canvas id="coin-canvas" class="coin-layer"></canvas>
+    <script src="pixel-art.js"></script>
+    <script src="game.js"></script>
+    <script src="bgm.js"></script>
+</body>
+</html>
