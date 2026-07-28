@@ -225,7 +225,7 @@ function doGamble() {
             streak = 0;
             spawnLoseEffect();
             playSfxLose();
-            document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>소 - 50% 잃었어요 (-' + fmt(lost) + ')';
+            document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>너무 무리한 도박 이었다... (-' + fmt(lost) + ')';
             document.getElementById("result").className = "result l";
 
             if (money <= 0) {
