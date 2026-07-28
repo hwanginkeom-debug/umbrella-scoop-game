@@ -26,7 +26,7 @@ var ITEMS=[
 ];
 
 var BET_OPTIONS=[
-{pct:75,mult:1.01,label:"75%",loseRate:0.5},
+{pct:75,mult:0.005,label:"75%",loseRate:0.5},
 {pct:50,mult:2,label:"50%",loseRate:0.5},
 {pct:25,mult:5,label:"25%",loseRate:0.6},
 {pct:10,mult:10,label:"10%",loseRate:0.7},
@@ -98,12 +98,13 @@ function checkGameClear() {
 }
 
 function update() {
+    money = Math.round(money);
     if (gameClear) return;
     
 
     document.getElementById("money").textContent = fmt(money);
     var opt = BET_OPTIONS[curBet];
-    var reward = Math.floor(money * opt.mult);
+    var reward = Math.round(money * opt.mult);
     document.getElementById("reward-big").textContent = Math.round((opt.mult - 1) * 100) + "%!";
     document.getElementById("reward-sub").textContent = "(성공 하면 " + fmt(money + reward) + ")";
     document.getElementById("streak").textContent = streak;
@@ -218,7 +219,7 @@ function doGamble() {
     setTimeout(function() {
         var win = Math.random() < chance;
         if (win) {
-            var gain = Math.floor(money * opt.mult);
+            var gain = Math.round(money * opt.mult);
             money += gain;
             streak++;
             document.getElementById("result").textContent = "성공 하다! +" + fmt(gain) + " 을 벌다!";
@@ -226,7 +227,7 @@ function doGamble() {
             spawnCoins(Math.min(streak * 3 + 5, 40));
             playSfxWin();
         } else {
-            var lost = Math.floor(money * opt.loseRate);
+            var lost = Math.round(money * opt.loseRate);
             money -= lost;
             streak = 0;
             spawnLoseEffect();
@@ -252,6 +253,7 @@ function buy(idx) {
     // 동전 투입 애니메이션
     animateCoinInsert(function() {
         money -= item.price;
+        if (money <= 0) { money = 0; update(); setTimeout(function(){gameOver("zero");}, 600); return; }
         bought.push(item);
         document.getElementById("result").textContent = item.name + " 을 구매 하다! -- " + item.desc;
         document.getElementById("result").className = "result w";
