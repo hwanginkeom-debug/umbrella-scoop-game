@@ -35,7 +35,7 @@ var BET_OPTIONS=[
 {pct:0.5,mult:10000000,label:"0.5%",trap:true},
 ];
 
-var money = 100;
+var money = 10;
 var streak = 0;
 var curBet = 2;
 var bought = [];
@@ -80,7 +80,7 @@ function showClear() {
 
 function restartGame() {
     bought = [];
-    money = 100;
+    money = 10;
     streak = 0;
     reachedCheckpoint = -1;
     gameClear = false;
@@ -273,7 +273,7 @@ function buy(idx) {
 
 function gameOver() {
     bought = [];
-    money = 100;
+    money = 10;
     streak = 0;
     reachedCheckpoint = -1;
     var d = document.createElement("div");
