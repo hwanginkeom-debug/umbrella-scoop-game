@@ -26,13 +26,13 @@ var ITEMS=[
 ];
 
 var BET_OPTIONS=[
-{pct:75,mult:1.2,label:"75%"},
-{pct:50,mult:2,label:"50%"},
-{pct:25,mult:5,label:"25%"},
-{pct:10,mult:10,label:"10%"},
-{pct:5,mult:100,label:"5%"},
-{pct:1,mult:10000,label:"1%"},
-{pct:0.5,mult:10000000,label:"0.5%"},
+{pct:75,mult:1.2,label:"75%",loseRate:0.5},
+{pct:50,mult:2,label:"50%",loseRate:0.5},
+{pct:25,mult:5,label:"25%",loseRate:0.6},
+{pct:10,mult:10,label:"10%",loseRate:0.7},
+{pct:5,mult:100,label:"5%",loseRate:0.8},
+{pct:1,mult:10000,label:"1%",loseRate:0.9},
+{pct:0.5,mult:10000000,label:"0.5%",loseRate:1},
 ];
 
 var money = 10;
@@ -40,8 +40,7 @@ var streak = 0;
 var curBet = 2;
 var bought = [];
 var busy = false;
-var checkpoints = [100000, 1000000000, 10000000000, 100000000000, 500000000000];
-var reachedCheckpoint = -1; // 도달한 최고 체크포인트 index
+
 var easterClicks = 0;
 var gameClear = false;
 
@@ -82,8 +81,7 @@ function restartGame() {
     bought = [];
     money = 10;
     streak = 0;
-    reachedCheckpoint = -1;
-    gameClear = false;
+        gameClear = false;
     var overlays = document.querySelectorAll(".overlay");
     overlays.forEach(function(o) { o.remove(); });
     update();
@@ -101,12 +99,7 @@ function checkGameClear() {
 
 function update() {
     if (gameClear) return;
-    for (var ci = checkpoints.length - 1; ci >= 0; ci--) {
-        if (money >= checkpoints[ci] && ci > reachedCheckpoint) {
-            reachedCheckpoint = ci;
-            break;
-        }
-    }
+    
 
     document.getElementById("money").textContent = fmt(money);
     var opt = BET_OPTIONS[curBet];
@@ -220,7 +213,7 @@ function doGamble() {
             spawnCoins(Math.min(streak * 3 + 5, 40));
             playSfxWin();
         } else {
-            var lost = Math.floor(money * 0.5);
+            var lost = Math.floor(money * opt.loseRate);
             money -= lost;
             streak = 0;
             spawnLoseEffect();
@@ -230,8 +223,6 @@ function doGamble() {
 
             if (money <= 0) {
                 setTimeout(function(){gameOver('zero');}, 600);
-            } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
-                setTimeout(function(){gameOver('checkpoint');}, 600);
             }
         }
         update();
@@ -302,11 +293,8 @@ function gameOver(reason) {
     bought = [];
     money = 10;
     streak = 0;
-    reachedCheckpoint = -1;
-    var msg = "";
-    if (reason === "checkpoint") {
-        msg = "GAME OVER<br><br>하한선 이하 로 떨어졌다..<br><br>한번 올라간 자 는 떨어지면 끝 이다..<br>다시 처음 부터 시작 하라<br><br><span>클릭 하라</span>";
-    } else if (reason === "zero") {
+        var msg = "";
+    if (reason === "zero") {
         msg = "GAME OVER<br><br>0원 이 되었다..<br><br>무일푼.. 다시 시작 하라<br><br><span>클릭 하라</span>";
     } else {
         msg = "GAME OVER<br><br>사기 를 당해 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
