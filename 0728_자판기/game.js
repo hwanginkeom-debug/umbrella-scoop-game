@@ -40,7 +40,8 @@ var streak = 0;
 var curBet = 2;
 var bought = [];
 var busy = false;
-var hasReached100k = false;
+var checkpoints = [100000, 1000000000, 10000000000, 100000000000, 500000000000];
+var reachedCheckpoint = -1; // 도달한 최고 체크포인트 index
 var easterClicks = 0;
 var gameClear = false;
 
@@ -81,7 +82,7 @@ function restartGame() {
     bought = [];
     money = 100;
     streak = 0;
-    hasReached100k = false;
+    reachedCheckpoint = -1;
     gameClear = false;
     var overlays = document.querySelectorAll(".overlay");
     overlays.forEach(function(o) { o.remove(); });
@@ -100,7 +101,12 @@ function checkGameClear() {
 
 function update() {
     if (gameClear) return;
-    if (money >= 100000) hasReached100k = true;
+    for (var ci = checkpoints.length - 1; ci >= 0; ci--) {
+        if (money >= checkpoints[ci] && ci > reachedCheckpoint) {
+            reachedCheckpoint = ci;
+            break;
+        }
+    }
 
     document.getElementById("money").textContent = fmt(money);
     var opt = BET_OPTIONS[curBet];
@@ -234,7 +240,7 @@ function doGamble() {
             document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>소 - 50% 잃었어요 (-' + fmt(lost) + ')';
             document.getElementById("result").className = "result l";
 
-            if (hasReached100k && money < 100000) {
+            if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
                 setTimeout(gameOver, 600);
             }
         }
@@ -256,7 +262,7 @@ function buy(idx) {
     playSfxWin();
     update();
     checkGameClear();
-    if (hasReached100k && money < 100000) {
+    if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
         setTimeout(gameOver, 600);
     }
 }
@@ -265,7 +271,7 @@ function gameOver() {
     bought = [];
     money = 100;
     streak = 0;
-    hasReached100k = false;
+    reachedCheckpoint = -1;
     var d = document.createElement("div");
     d.className = "overlay go";
     d.innerHTML = "GAME OVER<br><br>사기 를 당해 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
