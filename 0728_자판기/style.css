@@ -248,3 +248,12 @@ body{
 .restart-btn{background:#fff;color:#000;border:3px outset #ccc;padding:10px 24px;font-size:14px;font-weight:bold;font-family:inherit;cursor:pointer;margin-top:10px;}
 .restart-btn:active{border-style:inset;}
 .vm-item.vm-owned{opacity:0.5;cursor:default;border-color:#999;}
+
+/* 동전 투입 애니메이션 */
+.insert-coin{
+    position:fixed;
+    font-size:24px;
+    z-index:998;
+    pointer-events:none;
+    transition:top 0.4s ease-in, opacity 0.3s ease 0.2s, transform 0.3s ease 0.2s;
+}

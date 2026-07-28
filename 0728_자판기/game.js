@@ -256,19 +256,63 @@ function buy(idx) {
     var item = ITEMS[idx];
     if (money < item.price) return;
     if (bought.indexOf(item) !== -1) return;
-    money -= item.price;
-    bought.push(item);
-    document.getElementById("result").textContent = item.name + " 을 구매 하다! -- " + item.desc;
-    document.getElementById("result").className = "result w";
-    spawnCoins(5);
-    playSfxWin();
-    update();
-    checkGameClear();
-    if (money <= 0) {
-        setTimeout(gameOver, 600);
-    } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
-        setTimeout(gameOver, 600);
-    }
+
+    // 동전 투입 애니메이션
+    animateCoinInsert(function() {
+        money -= item.price;
+        bought.push(item);
+        document.getElementById("result").textContent = item.name + " 을 구매 하다! -- " + item.desc;
+        document.getElementById("result").className = "result w";
+        spawnCoins(5);
+        playSfxWin();
+        update();
+        checkGameClear();
+        if (money <= 0) {
+            setTimeout(gameOver, 600);
+        } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
+            setTimeout(gameOver, 600);
+        }
+    });
+}
+
+function animateCoinInsert(callback) {
+    var coinSlot = document.querySelector(".vm-coin-slot");
+    if (!coinSlot) { callback(); return; }
+    var rect = coinSlot.getBoundingClientRect();
+    var coin = document.createElement("div");
+    coin.className = "insert-coin";
+    coin.textContent = "🪙";
+    coin.style.left = (rect.left + rect.width/2) + "px";
+    coin.style.top = (rect.top - 60) + "px";
+    document.body.appendChild(coin);
+
+    // 동전이 슬롯으로 떨어지는 애니메이션
+    setTimeout(function() {
+        coin.style.top = (rect.top + rect.height/2) + "px";
+        coin.style.opacity = "0";
+        coin.style.transform = "scale(0.3)";
+    }, 50);
+
+    setTimeout(function() {
+        coin.remove();
+        // 찰칵 소리
+        if (typeof playSfxWin === "function") {
+            initAudio();
+            if (audioCtx) {
+                var osc = audioCtx.createOscillator();
+                var gain = audioCtx.createGain();
+                osc.type = "sine";
+                osc.frequency.value = 1200;
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            }
+        }
+        callback();
+    }, 500);
 }
 
 function gameOver() {
