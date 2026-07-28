@@ -26,7 +26,7 @@ var ITEMS=[
 ];
 
 var BET_OPTIONS=[
-{pct:75,mult:1.2,label:"75%",loseRate:0.5},
+{pct:75,mult:1.1,label:"75%",loseRate:0.5},
 {pct:50,mult:2,label:"50%",loseRate:0.5},
 {pct:25,mult:5,label:"25%",loseRate:0.6},
 {pct:10,mult:10,label:"10%",loseRate:0.7},
@@ -148,15 +148,28 @@ function renderOwned() {
         return;
     }
     var html = "";
-    bought.forEach(function(item) {
+    bought.forEach(function(item, i) {
+        var sellPrice = Math.floor(item.price * 0.7);
         html += '<div class="o-item">';
         html += '<canvas data-art="' + item.art + '" width="12" height="12"></canvas>';
-        html += '<span>' + item.name + '</span></div>';
+        html += '<span>' + item.name + '</span>';
+        html += '<button class="sell-btn" onclick="sell(' + i + ')">팔다 ' + fmt(sellPrice) + '</button>';
+        html += '</div>';
     });
     el.innerHTML = html;
     document.querySelectorAll("#owned canvas").forEach(function(c) {
         drawPixelArt(c, c.dataset.art, 2);
     });
+}
+
+function sell(idx) {
+    var item = bought[idx];
+    var sellPrice = Math.floor(item.price * 0.7);
+    money += sellPrice;
+    bought.splice(idx, 1);
+    document.getElementById("result").textContent = item.name + " 을 팔다! +" + fmt(sellPrice);
+    document.getElementById("result").className = "result w";
+    update();
 }
 
 function renderTooltip() {

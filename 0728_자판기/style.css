@@ -268,3 +268,12 @@ body{
     font-family:inherit;
 }
 .back-btn:hover{background:rgba(0,0,0,0.8);}
+
+.sell-btn{
+    margin-left:auto;
+    background:#ff6;color:#000;border:1px outset #cc0;
+    padding:1px 4px;font-size:8px;cursor:pointer;font-family:inherit;
+    white-space:nowrap;
+}
+.sell-btn:active{border-style:inset;}
+.o-item{display:flex;align-items:center;gap:3px;padding:2px 3px;border-bottom:1px dotted #ccc;font-size:9px;}
