@@ -26,7 +26,7 @@ var ITEMS=[
 ];
 
 var BET_OPTIONS=[
-{pct:75,mult:1.1,label:"75%",loseRate:0.5},
+{pct:75,mult:1.01,label:"75%",loseRate:0.5},
 {pct:50,mult:2,label:"50%",loseRate:0.5},
 {pct:25,mult:5,label:"25%",loseRate:0.6},
 {pct:10,mult:10,label:"10%",loseRate:0.7},
@@ -104,7 +104,7 @@ function update() {
     document.getElementById("money").textContent = fmt(money);
     var opt = BET_OPTIONS[curBet];
     var reward = Math.floor(money * opt.mult);
-    document.getElementById("reward-big").textContent = opt.mult + "배!";
+    document.getElementById("reward-big").textContent = Math.round((opt.mult - 1) * 100) + "%!";
     document.getElementById("reward-sub").textContent = "(성공 하면 " + fmt(money + reward) + ")";
     document.getElementById("streak").textContent = streak;
     renderShop();
