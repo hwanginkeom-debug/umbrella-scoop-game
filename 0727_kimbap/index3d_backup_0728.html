@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🍙 김밥 만들기 게임</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#fdf8f2;font-family:'Pretendard',sans-serif;overflow:hidden;width:100vw;height:100vh;}
+canvas{display:block;position:fixed;top:0;left:0;}
+#ui{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+#stageLabel{position:absolute;top:18px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,0.55);backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.7);border-radius:999px;
+  padding:6px 22px;font-size:14px;font-weight:600;color:#555;white-space:nowrap;}
+#stageDots{position:absolute;top:52px;left:50%;transform:translateX(-50%);
+  display:flex;gap:6px;align-items:center;}
+.sdot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,0.18);transition:all .3s;}
+.sdot.active{background:#c8773a;transform:scale(1.3);}
+.sdot.done{background:#8bc34a;}
+#statusBox{position:absolute;top:18px;right:18px;background:#fff;border-radius:14px;
+  padding:14px 18px;min-width:170px;box-shadow:0 2px 16px rgba(0,0,0,0.10);
+  font-size:13px;color:#444;line-height:1.7;}
+#statusBox .sTitle{font-weight:700;font-size:12px;color:#aaa;margin-bottom:2px;}
+#statusBox .sScore{font-size:22px;font-weight:800;color:#c8773a;}
+#statusBox .sMsg{font-size:12px;color:#888;margin-top:3px;}
+#collBtn{position:absolute;top:18px;left:18px;background:#fff;border:none;border-radius:14px;
+  padding:10px 16px;font-size:15px;cursor:pointer;pointer-events:all;
+  box-shadow:0 2px 12px rgba(0,0,0,0.10);font-family:'Pretendard',sans-serif;
+  transition:transform .15s;}
+#collBtn:hover{transform:scale(1.07);}
+#hintBox{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);
+  text-align:center;pointer-events:none;}
+#hintText{font-size:14px;color:#888;margin-bottom:5px;}
+#enterHint{font-size:13px;color:#c8773a;font-weight:600;opacity:0.85;}
+#ingPanel{position:absolute;bottom:24px;right:24px;
+  background:rgba(255,255,255,0.95);border-radius:16px;padding:14px 16px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.1);pointer-events:all;display:none;min-width:110px;}
+#ingPanel .iKey{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.06em;}
+#ingPanel .iName{font-size:14px;font-weight:700;color:#333;text-align:center;}
+#ingPanel canvas{border-radius:8px;background:#fdf8f2;}
+#ingPanel .iNav{display:flex;gap:8px;align-items:center;}
+#ingPanel button{background:none;border:1px solid #ddd;border-radius:8px;
+  padding:4px 10px;cursor:pointer;font-size:14px;font-family:'Pretendard',sans-serif;}
+#micBtn{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);
+  width:64px;height:64px;border-radius:50%;background:#e74c3c;border:none;
+  font-size:28px;cursor:pointer;pointer-events:all;display:none;
+  box-shadow:0 4px 20px rgba(231,76,60,0.4);
+  animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 4px 20px rgba(231,76,60,0.4);}
+  50%{box-shadow:0 4px 32px rgba(231,76,60,0.75),0 0 0 12px rgba(231,76,60,0.10);}}
+#saveBtn{position:absolute;bottom:32px;right:18px;background:#c8773a;color:#fff;
+  border:none;border-radius:12px;padding:10px 20px;font-size:14px;font-weight:600;
+  cursor:pointer;pointer-events:all;display:none;font-family:'Pretendard',sans-serif;}
+#scoreOverlay{position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(253,248,242,0.96);display:none;align-items:center;justify-content:center;
+  flex-direction:column;z-index:50;pointer-events:all;}
+#scoreOverlay h2{font-size:32px;font-weight:800;color:#c8773a;margin-bottom:8px;}
+#scoreOverlay .grade{font-size:18px;font-weight:600;color:#888;margin-bottom:24px;}
+.scoreRow{display:flex;align-items:center;gap:10px;margin-bottom:10px;width:320px;}
+.scoreRow .sLabel{font-size:13px;color:#888;width:80px;text-align:right;}
+.scoreBar{flex:1;height:10px;background:#eee;border-radius:5px;overflow:hidden;}
+.scoreBar .sFill{height:100%;background:#c8773a;border-radius:5px;transition:width 1s;}
+.scoreRow .sNum{font-size:13px;font-weight:700;color:#c8773a;width:36px;}
+#scoreOverlay button{margin-top:24px;background:#c8773a;color:#fff;border:none;
+  border-radius:12px;padding:12px 32px;font-size:15px;font-weight:600;cursor:pointer;
+  font-family:'Pretendard',sans-serif;}
+#collOverlay{position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(253,248,242,0.97);display:none;align-items:flex-start;justify-content:center;
+  z-index:50;pointer-events:all;padding-top:60px;}
+#collOverlay h2{position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  font-size:22px;font-weight:800;color:#c8773a;}
+#collGrid{display:flex;flex-wrap:wrap;gap:14px;max-width:700px;justify-content:center;
+  margin-top:40px;}
+.collCard{background:#fff;border-radius:14px;padding:12px;text-align:center;
+  box-shadow:0 2px 12px rgba(0,0,0,0.08);}
+.collCard canvas{border-radius:8px;}
+.collCard .cName{font-size:12px;font-weight:600;color:#888;margin-top:6px;}
+#collClose{position:absolute;top:20px;right:24px;background:none;border:1px solid #ddd;
+  border-radius:8px;padding:6px 14px;cursor:pointer;font-size:14px;font-family:'Pretendard',sans-serif;}
+#volBar{position:absolute;bottom:200px;left:50%;transform:translateX(-50%);
+  display:none;flex-direction:column;align-items:center;gap:6px;}
+#volBarInner{width:200px;height:12px;background:#eee;border-radius:6px;overflow:hidden;}
+#volFill{height:100%;background:#27ae60;border-radius:6px;transition:width .1s;}
+#volLabel{font-size:12px;color:#888;}
+#clearEffect{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;
+  z-index:100;display:none;align-items:center;justify-content:center;}
+#clearText{font-size:72px;font-weight:900;color:#c8773a;text-shadow:0 4px 32px rgba(200,119,58,0.4);
+  animation:springIn .6s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes springIn{from{transform:scale(0.2) rotate(-15deg);opacity:0;}to{transform:scale(1) rotate(0deg);opacity:1;}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="stageLabel">Stage 1 — 김 펴기</div>
+  <div id="stageDots"></div>
+  <div id="statusBox">
+    <div class="sMsg" id="statusMsg">시작해볼까요!</div>
+  </div>
+  <button id="collBtn">🍙 컬렉션</button>
+  <div id="hintBox">
+    <div id="hintText">버텍스를 드래그해서 김을 펴주세요</div>
+    <div id="enterHint">ENTER → 다음 단계</div>
+  </div>
+  <div id="ingPanel">
+    <div class="iKey" id="ingKey">1 / 10</div>
+    <canvas id="ingPreview" width="72" height="50"></canvas>
+    <div class="iName" id="ingName">시금치</div>
+    <div class="iNav">
+      <button id="ingPrev">◀</button>
+      <button id="ingNext">▶</button>
+    </div>
+  </div>
+  <button id="micBtn">🎤</button>
+  <button id="saveBtn">💾 저장</button>
+  <div id="volBar">
+    <div id="volBarInner"><div id="volFill" style="width:0%"></div></div>
+    <div id="volLabel">소리 감지 중...</div>
+  </div>
+</div>
+<div id="scoreOverlay">
+  <h2>🍙 완성!</h2>
+  <div class="grade" id="gradeText">가정식김밥</div>
+  <div id="scoreRows"></div>
+  <button onclick="restartGame()">다시 만들기</button>
+</div>
+<div id="collOverlay">
+  <h2>🍙 나의 컬렉션</h2>
+  <button id="collClose">닫기</button>
+  <div id="collGrid"></div>
+</div>
+<div id="clearEffect"><span id="clearText">CLEAR!</span></div>
+<script>
+
+// ===== 전역 상태 =====
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var W, H, sz, cx, cy;
+var G = {
+  stage:1, mdown:false, MX:0, MY:0,
+  // Stage1 김
+  kimVerts:[], kimDragging:-1, kimScore:0,
+  // Stage2 밥
+  riceGrains:[], riceScore:0, riceHoldTimer:0, riceLastDrop:0,
+  // Stage3 재료
+  ingList:[], ingIdx:0, ingPlaced:[], ingScore:0, ingHoldTimer:0, ingLastDrop:0,
+  // Stage4 말기
+  rollSnap:null, rollProg:0, rollDone:false, rollScore:0, brushPts:[], rollPrevX:-1,
+  // Stage5 참깨
+  sesameList:[], sesameScore:0,
+  // Stage6 훅 불기
+  blowScore:0, blowDone:false, micStream:null, audioCtx:null, analyser:null,
+  blowGoodTime:0,
+  // Stage7 썰기
+  cuts:[], cutDragging:false, cutStart:null, cutEnd:null, cutScore:0, kimbapName:'',
+  // Stage8 완성
+  finalPieces:[], cameraX:0, showScore:false,
+  // 공통
+  collection:[], scores:{},
+  confetti:[], clearShown:false,
+  enterReady:false,
+  // BGM
+  bgmStarted:false, bgmOsc:null, bgmIdx:0, bgmTimeout:null
+};
+
+// ===== 리사이즈 =====
+function resize(){
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  sz = Math.min(W, H) * 0.82;
+  cx = W/2; cy = H/2;
+}
+window.addEventListener('resize', function(){ resize(); initStageVisuals(); });
+resize();
+
+// ===== BGM =====
+var BGM_NOTES = [329.63,392,440,329.63,392,523.25,493.88,440,
+                 392,329.63,293.66,329.63,392,440,392,329.63];
+function startBGM(){
+  if(G.bgmStarted) return;
+  G.bgmStarted = true;
+  try{
+    var ac = new (window.AudioContext||window.webkitAudioContext)();
+    var playNote = function(i){
+      var o = ac.createOscillator();
+      var g = ac.createGain();
+      o.type = 'triangle';
+      o.frequency.value = BGM_NOTES[i % BGM_NOTES.length];
+      g.gain.setValueAtTime(0.07, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+0.45);
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime+0.45);
+      G.bgmTimeout = setTimeout(function(){ playNote(i+1); }, 480);
+    };
+    playNote(0);
+  }catch(e){}
+}
+
+// ===== 재료 정의 =====
+var INGS = [
+  {name:'시금치',    key:'1', type:'spinach',     color:'#4a7c3f'},
+  {name:'당근',      key:'2', type:'long-bar',     color:'#e8753a'},
+  {name:'단무지',    key:'3', type:'long-bar',     color:'#d4b800', stripe:true},
+  {name:'햄',        key:'4', type:'long-bar',     color:'#e87b8a', thick:true},
+  {name:'우엉',      key:'5', type:'long-dark',    color:'#7a5c3a'},
+  {name:'계란지단',  key:'6', type:'flat-wide',    color:'#fce97a'},
+  {name:'오이',      key:'7', type:'long-green',   color:'#7bbf5e'},
+  {name:'게맛살',    key:'8', type:'long-stripe',  color:'#e8453a'},
+  {name:'치즈',      key:'9', type:'cheese',       color:'#f5d96b'},
+  {name:'참치마요',  key:'0', type:'blob',         color:'#f5f5dc'}
+];
+
+// ===== 스테이지 도트 =====
+(function initDots(){
+  var d = document.getElementById('stageDots');
+  d.innerHTML = '';
+  for(var i=1;i<=8;i++){
+    var el = document.createElement('div');
+    el.className = 'sdot' + (i===1?' active':'');
+    el.id = 'dot'+i;
+    d.appendChild(el);
+  }
+})();
+
+function updateDots(){
+  for(var i=1;i<=8;i++){
+    var el = document.getElementById('dot'+i);
+    if(!el) continue;
+    el.className = 'sdot' + (i<G.stage?' done': i===G.stage?' active':'');
+  }
+}
+
+// ===== Stage 1: 김 버텍스 초기화 =====
+function initKimVerts(){
+  G.kimVerts = [];
+  var N=12, perSide=3;
+  var s = sz*0.88;
+  var x0=cx-s/2, y0=cy-s/2;
+  var noiseAmp = s*0.18;
+  // 12버텍스: 각 변 3개씩 = 4*3=12
+  for(var i=0;i<N;i++){
+    var side = Math.floor(i/perSide);
+    var t = (i%perSide+1)/(perSide+1);
+    var bx,by,tx,ty;
+    if(side===0){      bx=x0+t*s; by=y0; tx=x0+t*s; ty=y0; }
+    else if(side===1){ bx=x0+s;   by=y0+t*s; tx=x0+s; ty=y0+t*s; }
+    else if(side===2){ bx=x0+(1-t)*s; by=y0+s; tx=x0+(1-t)*s; ty=y0+s; }
+    else {             bx=x0;     by=y0+(1-t)*s; tx=x0; ty=y0+(1-t)*s; }
+    var nx = (Math.random()-0.5)*noiseAmp;
+    var ny = (Math.random()-0.5)*noiseAmp;
+    G.kimVerts.push({x:bx+nx, y:by+ny, tx:tx, ty:ty});
+  }
+}
+
+// ===== Stage 1: 김 드래그 =====
+function startKimDrag(mx,my){
+  var best=-1, bd=1e9;
+  for(var i=0;i<G.kimVerts.length;i++){
+    var v=G.kimVerts[i];
+    var d=Math.hypot(mx-v.x,my-v.y);
+    if(d<bd){bd=d;best=i;}
+  }
+  if(bd<40) G.kimDragging=best;
+}
+function flattenKim(mx,my){
+  if(G.kimDragging>=0){
+    G.kimVerts[G.kimDragging].x = mx;
+    G.kimVerts[G.kimDragging].y = my;
+  }
+}
+function scoreKim(){
+  var s=sz*0.88, maxDist=sz*0.28, total=0;
+  for(var i=0;i<G.kimVerts.length;i++){
+    var v=G.kimVerts[i];
+    var d=Math.hypot(v.x-v.tx, v.y-v.ty);
+    total += Math.max(0, 1-d/maxDist);
+  }
+  return Math.round(total/G.kimVerts.length*100);
+}
+
+
+// ===== Stage 1: 그리기 =====
+function drawKimWaved(showHandles){
+  if(showHandles===undefined) showHandles=true;
+  var verts = G.kimVerts;
+  if(verts.length<3) return;
+  ctx.save();
+  // 김 폴리곤
+  ctx.beginPath();
+  ctx.moveTo(verts[0].x, verts[0].y);
+  for(var i=0;i<verts.length;i++){
+    var cur = verts[i];
+    var nxt = verts[(i+1)%verts.length];
+    var nxtIsCorner = ((i+1)%3===0);
+    var curIsCorner = (i%3===0);
+    if(nxtIsCorner){
+      var mx=(cur.x+nxt.x)/2, my=(cur.y+nxt.y)/2;
+      ctx.quadraticCurveTo(cur.x,cur.y,mx,my);
+      ctx.lineTo(nxt.x,nxt.y);
+    } else if(curIsCorner){
+      ctx.lineTo(nxt.x,nxt.y);
+    } else {
+      ctx.quadraticCurveTo(cur.x,cur.y,nxt.x,nxt.y);
+    }
+  }
+  ctx.closePath();
+  ctx.fillStyle='#1c1c1c'; ctx.fill();
+  // 테두리 강조
+  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=2; ctx.stroke();
+  // 결
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(verts[0].x, verts[0].y);
+  for(var i=0;i<verts.length;i++){
+    var cur=verts[i],nxt=verts[(i+1)%verts.length];
+    var nIsC=((i+1)%3===0),cIsC=(i%3===0);
+    if(nIsC){var mx=(cur.x+nxt.x)/2,my=(cur.y+nxt.y)/2;ctx.quadraticCurveTo(cur.x,cur.y,mx,my);ctx.lineTo(nxt.x,nxt.y);}
+    else if(cIsC){ctx.lineTo(nxt.x,nxt.y);}
+    else{ctx.quadraticCurveTo(cur.x,cur.y,nxt.x,nxt.y);}
+  }
+  ctx.closePath(); ctx.clip();
+  // 김 위 격자 — sz*0.88 고정 크기 8×8 (클리핑 안에서)
+  ctx.strokeStyle='rgba(255,255,255,0.07)'; ctx.lineWidth=1;
+  var kimSz=sz*0.88;
+  var gx0=cx-kimSz/2, gy0=cy-kimSz/2;
+  var gCols=8, gRows=8;
+  var gcw=kimSz/gCols, grh=kimSz/gRows;
+  for(var gi=0;gi<=gCols;gi++){
+    ctx.beginPath();ctx.moveTo(gx0+gi*gcw,gy0);ctx.lineTo(gx0+gi*gcw,gy0+kimSz);ctx.stroke();
+  }
+  for(var gj=0;gj<=gRows;gj++){
+    ctx.beginPath();ctx.moveTo(gx0,gy0+gj*grh);ctx.lineTo(gx0+kimSz,gy0+gj*grh);ctx.stroke();
+  }
+  ctx.restore();
+  // 핸들 강조
+  if(showHandles) for(var j=0;j<verts.length;j++){
+    var v=verts[j];
+    var isCornerH=(j%3===0);
+    var r=isCornerH?5.5:4;
+    if(G.kimDragging===j) r=isCornerH?11:8;
+    ctx.beginPath(); ctx.arc(v.x,v.y,r,0,Math.PI*2);
+    ctx.fillStyle=G.kimDragging===j?'rgba(255,255,255,0.98)':'rgba(255,255,255,0.7)'; ctx.fill();
+    ctx.strokeStyle=G.kimDragging===j?'rgba(0,0,0,0.6)':'rgba(0,0,0,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ===== Stage 2: 밥 =====
+function dropRice(mx, my){
+  var kw=sz*0.88, kh=sz*0.14*3;
+  var x0=cx-kw/2, y0=cy-kh/2;
+  var cellW=kw/8, cellH=kh/3;
+  for(var i=0;i<32;i++){
+    var ox=(Math.random()-0.5)*cellW;
+    var oy=(Math.random()-0.5)*cellH*0.5;
+    var rx=7+Math.random()*6, ry=5+Math.random()*4;
+    var landY=my+oy;
+    var gx=mx+ox, gy=my-sz*0.08;
+    // good: 중앙 3칸 안
+    var good = (mx+ox > x0) && (mx+ox < x0+kw) &&
+               (my+oy > y0) && (my+oy < y0+kh);
+    G.riceGrains.push({x:gx,y:gy,rx:rx,ry:ry,a:Math.random()*Math.PI,
+      vy:0,landY:landY,good:good,removed:false});
+  }
+}
+function removeRice(mx,my){
+  var r=sz*0.06;
+  G.riceGrains.forEach(function(g){
+    if(Math.hypot(g.x-mx,g.y-my)<r) g.removed=true;
+  });
+  G.riceGrains = G.riceGrains.filter(function(g){return !g.removed;});
+}
+function updateRice(){
+  G.riceGrains.forEach(function(g){
+    if(g.y < g.landY){
+      g.vy += 0.8;
+      g.y += g.vy;
+      if(g.y > g.landY){ g.y=g.landY; g.vy=0; }
+    }
+  });
+}
+function scoreRice(){
+  var kw=sz*0.88, kh=sz*0.14*3;
+  var x0=cx-kw/2, y0=cy-kh/2;
+  var cellW=kw/8, cellH=kh/3;
+  var grid={};
+  G.riceGrains.forEach(function(g){
+    if(!g.good) return;
+    var col=Math.floor((g.x-x0)/cellW);
+    var row=Math.floor((g.y-y0)/cellH);
+    var key=col+'_'+row;
+    grid[key]=(grid[key]||0)+1;
+  });
+  var total=24, filled=0, fat=0;
+  for(var k in grid){
+    if(grid[k]>0) filled++;
+    if(grid[k]>=5) fat++;
+  }
+  var cov=filled/total;
+  var sc = Math.round(Math.min(100, cov*140 - fat*8));
+  return Math.max(0,sc);
+}
+function drawRiceLayer(){
+  G.riceGrains.forEach(function(g){
+    ctx.save();
+    ctx.translate(g.x,g.y);
+    ctx.rotate(g.a);
+    ctx.beginPath();
+    ctx.ellipse(0,0,g.rx,g.ry,0,0,Math.PI*2);
+    ctx.fillStyle = g.good ? '#f8f8f0' : '#ede8c8';
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ===== Stage 3: 재료 그리기 유틸 =====
+// blob(참치마요) 고정 오프셋 테이블 — br=1 기준 정규화, 매 프레임 배열 재생성 방지
+var BLOB_OFFSETS = [
+  [0,    0,    1.0],
+  [-1.1, 0.2,  0.7],
+  [0.9, -0.3,  0.65],
+  [0.2,  0.9,  0.6],
+  [-0.8,-0.6,  0.55],
+  [0.6,  0.6,  0.5],
+  [-0.3, 0.6,  0.45],
+  [0.7, -0.7,  0.4]
+];
+function drawIngShape(ctx2, type, color, w, h, cx2, cy2, forPanel){
+  var len = forPanel ? w*0.7 : sz*0.88;
+  var kw = forPanel ? w*0.7 : sz*0.88;
+  ctx2.save();
+  if(type==='spinach'){
+    // 가로로 긴 일자 막대 (여러 가닥)
+    var sLen=forPanel?w*0.65:len;
+    var sH=forPanel?3:6;
+    var offsets=forPanel?[-4,0,4]:[-8,-2,4,10];
+    for(var si=0;si<offsets.length;si++){
+      ctx2.fillStyle=si%2===0?'#4caf50':'#66bb6a';
+      ctx2.beginPath();
+      if(ctx2.roundRect) ctx2.roundRect(cx2-sLen/2, cy2+offsets[si]-sH/2, sLen, sH, sH/2);
+      else ctx2.rect(cx2-sLen/2, cy2+offsets[si]-sH/2, sLen, sH);
+      ctx2.fill();
+    }
+  } else if(type==='long-bar'||type==='long-dark'||type==='long-green'||type==='flat-wide'||type==='long-stripe'||type==='cheese'){
+    var bh = (type==='flat-wide'||type==='cheese') ? (forPanel?10:18) :
+             (type==='long-bar'&&color==='#e87b8a') ? (forPanel?8:18) : (forPanel?5:10);
+    var bw = (type==='cheese') ? (forPanel?40:kw*0.28) : len;
+    ctx2.beginPath();
+    ctx2.roundRect ? ctx2.roundRect(cx2-bw/2, cy2-bh/2, bw, bh, 4) :
+      ctx2.rect(cx2-bw/2, cy2-bh/2, bw, bh);
+    ctx2.fillStyle=color;
+    ctx2.fill();
+    if(type==='long-bar'&&color==='#d4b800'){
+      // 단무지 세로줄
+      ctx2.strokeStyle='#b89900';
+      ctx2.lineWidth=1;
+      for(var xi=cx2-bw/2+8;xi<cx2+bw/2;xi+=8){
+        ctx2.beginPath();ctx2.moveTo(xi,cy2-bh/2);ctx2.lineTo(xi,cy2+bh/2);ctx2.stroke();
+      }
+    }
+    if(type==='long-stripe'){
+      // 게맛살 줄무늬
+      for(var xi2=cx2-bw/2;xi2<cx2+bw/2;xi2+=8){
+        ctx2.fillStyle=(Math.floor((xi2-(cx2-bw/2))/8)%2===0)?'#e8453a':'#fff';
+        ctx2.fillRect(xi2, cy2-bh/2, 8, bh);
+      }
+    }
+    if(type==='flat-wide'){
+      ctx2.strokeStyle='rgba(200,180,80,0.3)';
+      ctx2.lineWidth=1;
+      for(var xi3=cx2-bw/2;xi3<cx2+bw/2;xi3+=10){
+        ctx2.beginPath();
+        ctx2.moveTo(xi3,cy2-bh/2);
+        var waveY=cy2+Math.sin((xi3-(cx2-bw/2))*0.3)*2;
+        ctx2.lineTo(xi3+5,waveY);
+        ctx2.stroke();
+      }
+    }
+  } else if(type==='blob'){
+    var br=forPanel?7:len/2*0.037; // 1/3 크기
+    // 불규칙 8각형 + 찌글찌글 덩어리
+    var pts=[[br*1.3,0],[br*1.0,-br*0.9],[br*0.2,-br*1.2],[-br*0.7,-br*1.0],
+             [-br*1.4,-br*0.2],[-br*1.1,br*0.8],[-br*0.3,br*1.1],[br*0.8,br*0.9]];
+    ctx2.fillStyle='#cec6b4';
+    ctx2.beginPath(); ctx2.moveTo(cx2+pts[0][0],cy2+pts[0][1]);
+    for(var pi=1;pi<pts.length;pi++) ctx2.lineTo(cx2+pts[pi][0],cy2+pts[pi][1]);
+    ctx2.closePath(); ctx2.fill();
+    var chunks=[[-br*0.6,-br*0.5,br*0.45,br*0.35],[br*0.5,-br*0.3,br*0.4,br*0.3],
+                [br*0.1,br*0.5,br*0.38,br*0.28],[-br*0.4,br*0.4,br*0.32,br*0.25],
+                [-br*0.1,-br*0.2,br*0.28,br*0.22],[br*0.6,br*0.2,br*0.3,br*0.22]];
+    chunks.forEach(function(ck,ii){
+      var col=185+ii*8;
+      ctx2.fillStyle='rgb('+col+','+(col-8)+','+(col-20)+')';
+      ctx2.beginPath(); ctx2.ellipse(cx2+ck[0],cy2+ck[1],ck[2],ck[3],ii*0.6,0,Math.PI*2); ctx2.fill();
+    });
+    ctx2.fillStyle='rgba(255,255,248,0.7)';
+    ctx2.beginPath(); ctx2.ellipse(cx2-br*0.2,cy2-br*0.3,br*0.28,br*0.18,0.4,0,Math.PI*2); ctx2.fill();
+    ctx2.beginPath(); ctx2.ellipse(cx2+br*0.3,cy2+br*0.1,br*0.18,br*0.12,0,0,Math.PI*2); ctx2.fill();
+  }
+  ctx2.restore();
+}
+
+
+// ===== Stage 3: 재료 패널 =====
+function updateIngPanel(){
+  var ing = INGS[G.ingIdx];
+  document.getElementById('ingKey').textContent = ing.key;
+  document.getElementById('ingName').textContent = ing.name;
+  var pc = document.getElementById('ingPreview');
+  var pctx = pc.getContext('2d');
+  pctx.clearRect(0,0,60,60);
+  drawIngShape(pctx, ing.type, ing.color, 60, 12, 30, 30, true);
+}
+document.getElementById('ingPrev').addEventListener('click', function(){
+  G.ingIdx=(G.ingIdx-1+INGS.length)%INGS.length; updateIngPanel();
+});
+document.getElementById('ingNext').addEventListener('click', function(){
+  G.ingIdx=(G.ingIdx+1)%INGS.length; updateIngPanel();
+});
+
+// ===== Stage 3: 재료 드롭 =====
+function dropIng(mx, my){
+  var ing = INGS[G.ingIdx];
+  var isLong = ['long-bar','long-dark','flat-wide','long-green','long-stripe','cheese'].indexOf(ing.type)>=0;
+  var slotY = isLong ? (my - cy) : (my - cy);
+  G.ingPlaced.push({
+    type: ing.type, color: ing.color, name: ing.name,
+    slotY: slotY, dropX: isLong ? cx : mx,
+    animY: cy - sz*0.5, finalY: cy + slotY,
+    isLong: isLong
+  });
+}
+function updateIngAnim(){
+  G.ingPlaced.forEach(function(p){
+    if(p.animY < p.finalY){
+      p.animY += (p.finalY - p.animY) * 0.15 + 3;
+      if(p.animY > p.finalY) p.animY = p.finalY;
+    }
+  });
+}
+function scoreIng(){
+  var types = G.ingPlaced.map(function(p){return p.type;});
+  var unique = types.filter(function(v,i,a){return a.indexOf(v)===i;}).length;
+  return Math.min(100, Math.round(unique * 18 + G.ingPlaced.length * 4));
+}
+function drawIngLayer(){
+  var kw=sz*0.88, kh=sz*0.14*3, y0=cy-kh/2;
+  // 클리핑 없음 — 재료가 영역 밖으로 나가도 그대로 표시
+  G.ingPlaced.forEach(function(p){
+    drawIngShape(ctx, p.type, p.color, kw, 14, p.dropX, p.animY, false);
+  });
+  // 호버 미리보기
+  if(G.stage===3 && !G.mdown){
+    var ing=INGS[G.ingIdx];
+    var isLong=['long-bar','long-dark','flat-wide','long-green','long-stripe','cheese'].indexOf(ing.type)>=0;
+    ctx.save();
+    ctx.globalAlpha=0.32;
+    drawIngShape(ctx, ing.type, ing.color, kw, 14,
+      isLong?cx:G.MX, G.MY, false);
+    ctx.restore();
+  }
+}
+
+// ===== 도마 배경 =====
+function drawBoard(){
+  ctx.save();
+  var bw=sz*1.05, bh=sz*1.05;
+  ctx.fillStyle='#cba87a';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(cx-bw/2,cy-bh/2,bw,bh,18) :
+    ctx.rect(cx-bw/2,cy-bh/2,bw,bh);
+  ctx.fill();
+  ctx.restore();
+}
+
+// 밥깔기 전용 8×3 그리드 (김 위 정확한 영역)
+function drawRiceGrid(){
+  var cols=8, rows=3;
+  var gw=sz*0.88, gh=sz*0.14*3; // 밥 영역: 가로 sz*0.88, 세로 3칸
+  var x0=cx-gw/2, y0=cy-gh/2;
+  var cw=gw/cols, ch=gh/rows;
+  ctx.save();
+  // 밥 영역으로 클리핑
+  ctx.beginPath();
+  ctx.rect(x0, y0, gw, gh);
+  ctx.clip();
+  ctx.strokeStyle='rgba(255,255,255,0.18)'; ctx.lineWidth=1;
+  // 세로선 (9개)
+  for(var ci=0;ci<=cols;ci++){
+    ctx.beginPath(); ctx.moveTo(x0+ci*cw,y0); ctx.lineTo(x0+ci*cw,y0+gh); ctx.stroke();
+  }
+  // 가로선 (4개)
+  for(var ri=0;ri<=rows;ri++){
+    ctx.beginPath(); ctx.moveTo(x0,y0+ri*ch); ctx.lineTo(x0+gw,y0+ri*ch); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ===== Stage4: 말기 스냅샷 =====
+function captureRollSnap(){
+  if(G.rollSnap) return;
+  var off = document.createElement('canvas');
+  off.width=W; off.height=H;
+  var oc=off.getContext('2d');
+  oc.drawImage(canvas,0,0);
+  G.rollSnap=off;
+}
+
+// Stage4 그리기
+function drawRoll(){
+  var p = G.rollProg; // 0~1
+
+  // 1. 도마 + 재료 + 밥 먼저 그리기 (제자리)
+  drawBoard();
+  drawKimWaved(false);
+  drawRiceLayer();
+  drawIngLayer();
+
+  // 2. 김 하단이 위로 접혀 올라오면서 재료를 덮음
+  // 김의 목표 영역: cx±sz*0.44, cy±sz*0.44
+  var kimL=cx-sz*0.44, kimR=cx+sz*0.44;
+  var kimTop=cy-sz*0.44, kimBot=cy+sz*0.44;
+  var kimW2=kimR-kimL, kimH2=kimBot-kimTop;
+
+  if(p>0.01){
+    // 접히는 높이 = p * kimH2 * 0.5 (하단 절반이 접힘)
+    var foldH = p * kimH2 * 0.52;
+    // 브러쉬 불규칙도
+    var std = G.brushStd||0;
+    if(!G.rollNoiseTable){
+      G.rollNoiseTable=[];
+      for(var ni=0;ni<20;ni++) G.rollNoiseTable.push((Math.random()-0.5)*2);
+    }
+    var segs=20, segW3=kimW2/segs;
+    ctx.save();
+    for(var i=0;i<segs;i++){
+      var noise=G.rollNoiseTable[i]*std*0.4*p;
+      var topY=kimBot-foldH+noise;
+      ctx.fillStyle='#1c1c1c';
+      ctx.fillRect(kimL+i*segW3, topY, segW3+1, kimBot-topY+1);
+    }
+    // 김 결
+    ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=1;
+    var step3=sz*0.08;
+    for(var xi4=kimL;xi4<kimR;xi4+=step3){
+      ctx.beginPath();ctx.moveTo(xi4,kimBot-foldH);ctx.lineTo(xi4,kimBot);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // 3. 가이드선 (고정 위치, 김 아래)
+  var pathY = cy + sz*0.52;
+  var pathL = cx - sz*0.44;
+  var pathR = cx + sz*0.44;
+  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(pathL,pathY); ctx.lineTo(pathR,pathY); ctx.stroke();
+  [pathL,pathR].forEach(function(px){
+    ctx.beginPath(); ctx.arc(px,pathY,7,0,Math.PI*2);
+    ctx.fillStyle='rgba(255,255,255,0.9)'; ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+  // 초록 브러쉬 자국
+  if(G.brushPts.length>1){
+    ctx.strokeStyle='rgba(34,197,94,0.8)'; ctx.lineWidth=3.5;
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(G.brushPts[0].x,G.brushPts[0].y);
+    for(var bi=1;bi<G.brushPts.length;bi++){
+      var prev=G.brushPts[bi-1],cur=G.brushPts[bi];
+      ctx.quadraticCurveTo(prev.x,prev.y,(prev.x+cur.x)/2,(prev.y+cur.y)/2);
+    }
+    ctx.stroke();
+  }
+}
+function updateRoll(mx,my){
+  if(!G.mdown) return;
+  var pathY = cy + sz*0.52;
+  if(Math.abs(my-pathY)<50){
+    if(G.rollPrevX>=0 && mx>G.rollPrevX){
+      var delta=(mx-G.rollPrevX)/(sz*0.88);
+      G.rollProg=Math.min(1,G.rollProg+delta*1.2);
+      G.brushPts.push({x:mx,y:my});
+      if(G.brushPts.length>60) G.brushPts.shift();
+    }
+    G.rollPrevX=mx;
+  } else {
+    G.rollPrevX=-1;
+  // 말기 완료 시 브러쉬 직선도 채점
+  if(G.stage===4 && G.rollProg>=0.95 && !G.rollDone){
+    G.rollDone=true;
+    if(G.brushPts.length>3){
+      var ys=G.brushPts.map(function(p){return p.y;});
+      var avgY=ys.reduce(function(a,b){return a+b;},0)/ys.length;
+      var brushStd2=Math.sqrt(ys.reduce(function(s,v){return s+Math.pow(v-avgY,2);},0)/ys.length);
+      G.scores.roll=Math.max(20,Math.min(100,Math.round(100-brushStd2*2)));
+    } else { G.scores.roll=50; }
+  }
+  }
+  if(G.rollProg>=0.95){ G.rollDone=true; G.rollScore=90+Math.round(G.rollProg*10); }
+}
+
+
+// ===== Stage5: 참깨 =====
+function dropSesame(mx,my){
+  var r=sz*0.075;
+  var ox=(Math.random()-0.5)*r*1.8;
+  var oy=(Math.random()-0.5)*r*0.6;
+  var landY = cy - r*0.95 + (Math.random()-0.5)*4;
+  // 원통 상면 착지
+  if(Math.hypot(ox,0)<r){
+    G.sesameList.push({x:mx+ox, y:cy-sz*0.15, landY:landY, vy:0,
+      r:2+Math.random()*1.5, a:Math.random()*Math.PI});
+  }
+}
+function updateSesame(){
+  G.sesameList.forEach(function(s){
+    if(s.y<s.landY){ s.vy+=1.2; s.y+=s.vy; if(s.y>s.landY){s.y=s.landY;s.vy=0;} }
+  });
+  // 바닥 참깨 제거
+  G.sesameList=G.sesameList.filter(function(s){return s.y<cy+sz*0.5;});
+}
+function drawSesame(){
+  G.sesameList.forEach(function(s){
+    ctx.save();
+    ctx.translate(s.x,s.y);
+    ctx.rotate(s.a);
+    ctx.beginPath();
+    ctx.ellipse(0,0,s.r,s.r*0.55,0,0,Math.PI*2);
+    ctx.fillStyle='#e8d5a0';
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+// ===== Stage5: 원통 김밥 =====
+function drawCylinder(){
+  if(!G.rollSnap) return;
+  var kLen=sz*0.88, r=sz*0.075;
+  ctx.save();
+  // 원통 측면
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();
+  ctx.rect(cx-kLen/2, cy-r, kLen, r*2);
+  ctx.fill();
+  // 원통 단면 (오른쪽)
+  ctx.beginPath();
+  ctx.ellipse(cx+kLen/2, cy, r*0.35, r, 0, 0, Math.PI*2);
+  ctx.fillStyle='#333';
+  ctx.fill();
+  // 참깨
+  drawSesame();
+  ctx.restore();
+}
+
+// ===== Stage6: 마이크 =====
+document.getElementById('micBtn').addEventListener('click', function(){
+  startMic();
+});
+function startMic(){
+  if(G.audioCtx) return;
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+    G.micStream=stream;
+    var ac=new (window.AudioContext||window.webkitAudioContext)();
+    G.audioCtx=ac;
+    var src=ac.createMediaStreamSource(stream);
+    var an=ac.createAnalyser();
+    an.fftSize=512;
+    src.connect(an);
+    G.analyser=an;
+    document.getElementById('volBar').style.display='flex';
+  }).catch(function(e){
+    alert('마이크 접근 실패: '+e.message);
+  });
+}
+function checkBlow(){
+  if(!G.analyser) return;
+  var buf=new Float32Array(G.analyser.fftSize);
+  G.analyser.getFloatTimeDomainData(buf);
+  var rms=0;
+  for(var i=0;i<buf.length;i++) rms+=buf[i]*buf[i];
+  rms=Math.sqrt(rms/buf.length);
+  var pct=Math.min(1,rms/0.16);
+  document.getElementById('volFill').style.width=(pct*100)+'%';
+  document.getElementById('volFill').style.background=
+    rms<0.025?'#aaa': rms<0.16?'#27ae60':'#e74c3c';
+  var label=rms<0.025?'너무 약해요 😶':rms<0.16?'딱 좋아요! 💨':'너무 강해요 😤';
+  document.getElementById('volLabel').textContent=label;
+  if(rms>=0.025&&rms<=0.16){
+    G.blowGoodTime+=(1/60);
+    if(G.blowGoodTime>=0.7&&!G.blowDone){
+      G.blowDone=true;
+      G.blowScore=85;
+      // 참깨 45% 날아감
+      var n=Math.floor(G.sesameList.length*0.45);
+      for(var i=0;i<n;i++){
+        var idx=Math.floor(Math.random()*G.sesameList.length);
+        if(G.sesameList[idx]) G.sesameList[idx].y-=sz*0.3+Math.random()*sz*0.2;
+      }
+      document.getElementById('volBar').style.display='none';
+    }
+  } else { G.blowGoodTime=0; }
+}
+
+// ===== Stage7: 썰기 =====
+function checkCut(x1,y1,x2,y2){
+  // 세로 방향 체크 (위→아래)
+  var dy=y2-y1;
+  var dx=x2-x1;
+  var kLen=sz*0.88, r=sz*0.075;
+  if(dy>sz*0.1 && Math.abs(dx)<sz*0.15){
+    var kx=cx-kLen/2; var ke=cx+kLen/2;
+    if(x1>kx&&x1<ke) return true;
+  }
+  return false;
+}
+function countType(types, t){ return types.filter(function(x){return x===t;}).length; }
+
+function getKimbapName(){
+  var types=G.ingPlaced.map(function(p){return p.type;});
+  var kinds=[...new Set(types)].length;
+  var total=types.length;
+  var score=calcFinalScore();
+
+  // ── 재료 조합 특별 컬렉션 (우선순위 높음)
+  var hasSpinach=types.indexOf('spinach')>=0;
+  var hasCheese=types.indexOf('cheese')>=0;
+  var hasBlob=types.indexOf('blob')>=0;
+  var hasEgg=types.indexOf('flat-wide')>=0;
+  var hasHam=types.indexOf('long-bar')>=0;
+  var hasCarrot=types.indexOf('long-dark')>=0; // 당근
+  var hasDanmuji=types.indexOf('long-green')>=0; // 단무지(실제론 long-green)
+  var hasCrab=types.indexOf('long-stripe')>=0;
+  var cCheese=countType(types,'cheese');
+  var cBlob=countType(types,'blob');
+  var cHam=countType(types,'long-bar');
+  var cSpinach=countType(types,'spinach');
+  var cCrab=countType(types,'long-stripe');
+
+  if(kinds>=10) return { name:'💎 만찬 김밥', desc:'욕심쟁이세요? 다 넣으셨군요' };
+  if(cCheese>=5) return { name:'🧈 치즈 천국', desc:'목 막히지 않나요' };
+  if(cBlob>=5) return { name:'🐟 참치마요 덕후', desc:'캔이 모자라겠는데요' };
+  if(cHam>=5) return { name:'🐷 햄덕 김밥', desc:'햄을 사랑하는 사람' };
+  if(cSpinach>=5) return { name:'🐛 초식 동물 김밥', desc:'풀밭 같아요' };
+  if(cCrab>=5) return { name:'🦀 게맛살 덕후', desc:'바다를 담았나요' };
+  if(hasCheese&&hasBlob) return { name:'🍕 퓨전 김밥', desc:'일본인이 만든 것 같아요' };
+  if(hasCheese&&hasHam) return { name:'🧀 치즈 폭탄', desc:'다이어트는 내일부터' };
+  if(hasSpinach&&hasCarrot&&hasDanmuji) return { name:'🌿 봄 소풍 김밥', desc:'건강미 넘쳐요' };
+  if(hasEgg&&hasHam&&hasCrab) return { name:'👩‍🍳 도시락 김밥', desc:'소풍 가고 싶다' };
+  if(hasCarrot&&hasDanmuji&&!hasCheese&&!hasBlob) return { name:'🏡 시골 할머니 김밥', desc:'정겨운 맛' };
+  if(hasBlob) return { name:'🐟 참치마요 김밥', desc:'고소하고 담백해요' };
+  if(hasCheese) return { name:'🧀 치즈 폭탄 김밥', desc:'진하고 고소해요' };
+  if(hasSpinach&&hasEgg) return { name:'🌿 봄나물 김밥', desc:'신선해요' };
+
+  // ── 망한 김밥 컬렉션 (점수/상태 기반)
+  var ricePct = G.scores.rice||0;
+  var sesameCnt = G.sesameCount||0;
+  var cutStd = G.scores.cut||0;
+
+  if(total<=2) return { name:'😶 심플이즘 김밥', desc:'철학이 있으신가요' };
+  if(ricePct<20) return { name:'💨 허공 김밥', desc:'밥이 어디 갔죠' };
+  if(ricePct>85&&G.riceGrains&&G.riceGrains.length>200) return { name:'🐘 코끼리 김밥', desc:'밥에 재료가 파묻혔어요' };
+  if(sesameCnt<5) return { name:'🏜️ 사막 김밥', desc:'고독합니다' };
+  if(cutStd<25) return { name:'✂️ 도살자 김밥', desc:'칼솜씨가 독특하네요' };
+
+  // ── 점수 등급 컬렉션
+  if(score>=95) return { name:'🏆 전설의 김밥', desc:'이 손으로 태어난 게 맞나요' };
+  if(score>=85) return { name:'⭐ 장인 김밥', desc:'연습의 흔적이 보여요' };
+  if(score>=75) return { name:'👑 엄마표 김밥', desc:'어릴 때 그 맛이 나요' };
+  if(score>=65) return { name:'😊 가정식 김밥', desc:'먹을 만은 해요' };
+  if(score>=50) return { name:'🥲 노력파 김밥', desc:'열심히 했는데...' };
+  if(score>=30) return { name:'😅 편의점 김밥', desc:'편의점 가는 게 나을 것 같아요' };
+  return { name:'💀 재료 낭비 김밥', desc:'죄송합니다 밥아' };
+}
+function drawCuts(){
+  var kLen=sz*0.88, r=sz*0.075;
+  // 원통
+  ctx.save();
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();
+  ctx.rect(cx-kLen/2,cy-r,kLen,r*2);
+  ctx.fill();
+  ctx.restore();
+  // 기존 칼자국
+  G.cuts.forEach(function(c){
+    ctx.save();
+    ctx.strokeStyle='rgba(200,200,220,0.6)';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(c.x1,c.y1);
+    ctx.lineTo(c.x2,c.y2);
+    ctx.stroke();
+    ctx.restore();
+  });
+  // 드래그 중인 칼
+  if(G.cutDragging&&G.cutStart){
+    ctx.save();
+    ctx.strokeStyle='rgba(180,180,200,0.8)';
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(G.cutStart.x,G.cutStart.y);
+    ctx.lineTo(G.MX,G.MY);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // 타이핑 이름
+  if(G.cuts.length>=6&&G.kimbapName){
+    ctx.save();
+    ctx.font='bold 22px Pretendard,sans-serif';
+    ctx.fillStyle='#c8773a';
+    ctx.textAlign='center';
+    ctx.fillText(G.kimbapName, cx, cy+r+36);
+    ctx.restore();
+  }
+}
+
+
+// ===== CLEAR! 이펙트 =====
+function showClear(cb){
+  var el=document.getElementById('clearEffect');
+  el.style.display='flex';
+  // 컨페티
+  G.confetti=[];
+  for(var i=0;i<90;i++){
+    G.confetti.push({
+      x:Math.random()*W, y:Math.random()*H*0.4,
+      vx:(Math.random()-0.5)*6, vy:Math.random()*4+2,
+      color:['#c8773a','#f5d96b','#8bc34a','#e74c3c','#3498db'][Math.floor(Math.random()*5)],
+      r:4+Math.random()*6, rot:Math.random()*Math.PI*2, rotV:(Math.random()-0.5)*0.2
+    });
+  }
+  G.clearShown=true;
+  setTimeout(function(){
+    el.style.display='none';
+    G.clearShown=false;
+    G.confetti=[];
+    if(cb) cb();
+  }, 2800);
+}
+function updateConfetti(){
+  G.confetti.forEach(function(c){
+    c.x+=c.vx; c.y+=c.vy; c.rot+=c.rotV;
+    if(c.y>H+20) c.y=-10;
+  });
+}
+function drawConfetti(){
+  G.confetti.forEach(function(c){
+    ctx.save();
+    ctx.translate(c.x,c.y);
+    ctx.rotate(c.rot);
+    ctx.fillStyle=c.color;
+    ctx.fillRect(-c.r/2,-c.r/2,c.r,c.r);
+    ctx.restore();
+  });
+}
+
+// ===== 채점 =====
+function calcFinalScore(){
+  var w={kim:0.12,rice:0.18,ing:0.22,roll:0.18,sesame:0.10,blow:0.06,cut:0.14};
+  G.scores.kim   = scoreKim();
+  G.scores.rice  = scoreRice();
+  G.scores.ing   = scoreIng();
+  G.scores.roll  = G.rollScore||0;
+  G.scores.sesame= Math.min(100,G.sesameList.length*2);
+  G.scores.blow  = G.blowScore||60;
+  G.scores.cut   = Math.min(100,G.cuts.length*16);
+  var total=0;
+  for(var k in w) total+=w[k]*(G.scores[k]||0);
+  return Math.round(total);
+}
+function showScoreScreen(){
+  var total=calcFinalScore();
+  var grade = total>=92?'🏆 김밥명인':total>=78?'👨‍🍳 프로주부':total>=60?'🍱 가정식김밥':'🏪 편의점김밥';
+  document.getElementById('gradeText').textContent=grade;
+  var labels={kim:'김 펴기',rice:'밥 깔기',ing:'재료',roll:'말기',sesame:'참깨',blow:'훅 불기',cut:'썰기'};
+  var rows='';
+  var w={kim:0.12,rice:0.18,ing:0.22,roll:0.18,sesame:0.10,blow:0.06,cut:0.14};
+  for(var k in labels){
+    var sc=G.scores[k]||0;
+    rows+='<div class="scoreRow"><span class="sLabel">'+labels[k]+'</span>'+
+      '<div class="scoreBar"><div class="sFill" style="width:0%" data-val="'+sc+'"></div></div>'+
+      '<span class="sNum">'+sc+'</span></div>';
+  }
+  document.getElementById('scoreRows').innerHTML=rows;
+  document.getElementById('scoreOverlay').style.display='flex';
+  // 애니메이션
+  setTimeout(function(){
+    document.querySelectorAll('.sFill').forEach(function(el){
+      el.style.width=el.getAttribute('data-val')+'%';
+    });
+  }, 100);
+}
+
+// ===== 컬렉션 =====
+function saveToCollection(){
+  var name=G.kimbapName||'나만의 김밥';
+  var thumb=document.createElement('canvas');
+  thumb.width=160; thumb.height=120;
+  var tc=thumb.getContext('2d');
+  tc.drawImage(canvas, cx-sz*0.5, cy-sz*0.25, sz, sz*0.5, 0,0,160,120);
+  G.collection.push({name:name, img:thumb.toDataURL(), score:calcFinalScore()});
+  renderCollection();
+}
+function renderCollection(){
+  var grid=document.getElementById('collGrid');
+  grid.innerHTML='';
+  G.collection.forEach(function(item){
+    var div=document.createElement('div');
+    div.className='collCard';
+    var img=document.createElement('img');
+    img.src=item.img; img.width=120; img.height=90;
+    img.style.borderRadius='8px';
+    var name=document.createElement('div');
+    name.className='cName';
+    name.textContent=item.name+' ('+item.score+'점)';
+    div.appendChild(img); div.appendChild(name);
+    grid.appendChild(div);
+  });
+}
+document.getElementById('collBtn').addEventListener('click', function(){
+  document.getElementById('collOverlay').style.display='flex';
+});
+document.getElementById('collClose').addEventListener('click', function(){
+  document.getElementById('collOverlay').style.display='none';
+});
+document.getElementById('saveBtn').addEventListener('click', function(){
+  saveToCollection();
+  var a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download='kimbap.png';
+  a.click();
+});
+
+// ===== 스테이지 전환 =====
+var STAGE_LABELS=['','Stage 1 — 김 펴기','Stage 2 — 밥 깔기','Stage 3 — 재료 올리기',
+  'Stage 4 — 말기','Stage 5 — 참깨 뿌리기','Stage 6 — 훅 불기','Stage 7 — 썰기','Stage 8 — 완성!'];
+var STAGE_HINTS=[
+  '',
+  '버텍스를 드래그해서 김을 펴주세요',
+  '클릭/Space로 밥을 깔아요 | 우클릭으로 회수',
+  '숫자키(1~0)로 재료 선택, 클릭으로 올려요',
+  '가이드선을 따라 왼→오른으로 드래그해서 마세요',
+  '꾹 눌러서 참깨를 쌓아요',
+  '마이크 버튼을 누르고 후~ 불어요',
+  '위→아래로 드래그해서 썰어요 (6번)',
+  '완성! 저장하거나 다시 만들어보세요'
+];
+
+function goStage(n){
+  G.stage=n;
+  updateDots();
+  document.getElementById('stageLabel').textContent=STAGE_LABELS[n]||'';
+  document.getElementById('hintText').textContent=STAGE_HINTS[n]||'';
+  // ENTER 힌트
+  var eHint=document.getElementById('enterHint');
+  if(n===8) eHint.textContent='';
+  else eHint.textContent='ENTER → 다음 단계';
+  // 패널 표시
+  document.getElementById('ingPanel').style.display=(n===3)?'flex':'none';
+  document.getElementById('micBtn').style.display=(n===6)?'block':'none';
+  document.getElementById('saveBtn').style.display=(n===8)?'block':'none';
+  if(n===3) updateIngPanel();
+  if(n===4){ setTimeout(captureRollSnap,50); }
+  if(n===5){ G.sesameList=[]; }
+  if(n===6){ G.blowDone=false; G.blowGoodTime=0; }
+  if(n===7){ G.cuts=[]; G.kimbapName=''; }
+  if(n===8){
+    showClear(function(){
+      setTimeout(showScoreScreen,1000);
+    });
+    var _kn=getKimbapName(); G.kimbapName=_kn.name; G.kimbapDesc=_kn.desc||'';
+  }
+}
+
+function restartGame(){
+  document.getElementById('scoreOverlay').style.display='none';
+  G.stage=1; G.kimScore=0; G.riceGrains=[];
+  G.ingPlaced=[]; G.rollSnap=null; G.rollProg=0; G.rollDone=false;
+  G.sesameList=[]; G.blowDone=false; G.blowScore=0;
+  G.cuts=[]; G.kimbapName=''; G.scores={};
+  G.brushPts=[]; G.rollPrevX=-1;
+  if(G.micStream){ G.micStream.getTracks().forEach(function(t){t.stop();}); }
+  G.micStream=null; G.audioCtx=null; G.analyser=null;
+  G.blowGoodTime=0;
+  document.getElementById('volBar').style.display='none';
+  initStageVisuals();
+  goStage(1);
+}
+
+
+// ===== 스테이지별 그리기 =====
+function drawStage3Content(){
+  var kw=sz*0.88, kh=sz*0.14*3, y0=cy-kh/2;
+  // 김
+  drawKimWaved(false);
+  // 밥 (클리핑 없음)
+  drawRiceLayer();
+  // 재료
+  drawIngLayer();
+  // 마우스 커서 (재료 선택 중)
+  if(G.stage===3){
+    var ing=INGS[G.ingIdx];
+    var isLong=['long-bar','long-dark','flat-wide','long-green','long-stripe','cheese'].indexOf(ing.type)>=0;
+    if(!isLong){
+      ctx.save();
+      ctx.strokeStyle='rgba(200,119,58,0.7)';
+      ctx.lineWidth=2;
+      ctx.beginPath(); ctx.arc(G.MX,G.MY,kw/11,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // stage4는 스냅샷이 배경+보드를 포함하므로 별도 배경/보드 생략
+  if(G.stage===4 && G.rollSnap){
+    drawRoll();
+    return;
+  }
+  // 배경
+  ctx.fillStyle='#fdf8f2';
+  ctx.fillRect(0,0,W,H);
+  drawBoard();
+  if(G.stage===1){
+    drawKimWaved();
+  } else if(G.stage===2){
+    drawKimWaved(false);
+    drawRiceLayer();
+    // 마우스 커서
+    ctx.save();
+    var kw=sz*0.88, kh=sz*0.14*3;
+    ctx.strokeStyle='rgba(200,119,58,0.6)';
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(G.MX,G.MY,kw/11,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+  } else if(G.stage===3){
+    drawStage3Content();
+  } else if(G.stage===4){
+    drawRoll();
+  } else if(G.stage===5){
+    if(G.rollSnap) ctx.drawImage(G.rollSnap,0,0);
+    drawCylinder();
+    // 상태
+    var cnt=G.sesameList.length;
+    var smsg=cnt<10?'꾹 눌러서 참깨를 쌓아요':cnt<40?'점점 많아지고 있어요!':'✅ 딱 적당해요 👍';
+    document.getElementById('statusMsg').textContent=smsg;
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=Math.min(100,cnt*2)+'점';
+  } else if(G.stage===6){
+    if(G.rollSnap) ctx.drawImage(G.rollSnap,0,0);
+    drawCylinder();
+    checkBlow();
+    if(G.blowDone){
+      document.getElementById('statusMsg').textContent='완벽해요! 🎉';
+      var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent='85점';
+    }
+  } else if(G.stage===7){
+    if(G.rollSnap) ctx.drawImage(G.rollSnap,0,0);
+    else drawStage3Content();
+    drawCuts();
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=Math.min(100,G.cuts.length*16)+'점';
+    var cmsg=['칼을 위→아래로 드래그하세요','한번!','두번!','세번!','네번!','다섯번!','완성! 🔪'][Math.min(6,G.cuts.length)];
+    document.getElementById('statusMsg').textContent=cmsg;
+  } else if(G.stage===8){
+    if(G.rollSnap) ctx.drawImage(G.rollSnap,0,0);
+    else drawStage3Content();
+    drawCuts();
+  }
+
+  // 컨페티
+  if(G.clearShown){
+    updateConfetti();
+    drawConfetti();
+  }
+
+  // Stage1 상태
+  if(G.stage===1){
+    var sc=scoreKim();
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=sc+'점';
+    var msg=sc<30?'이게 대체 뭐죠?':sc<55?'그럭저럭 볼만하네요':sc<80?'김밥을 쌀 마음가짐이 되셨군요!':'훌륭해요!';
+    document.getElementById('statusMsg').textContent=msg;
+  }
+  // Stage2 상태
+  if(G.stage===2){
+    var sc2=scoreRice();
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=sc2+'점';
+    var msg2=G.riceGrains.length<5?'이따는 그냥 깔아보자!':
+      G.riceGrains.length<20?'슬슬 시작해볼까요':
+      sc2>=80?'우와아아!':sc2>=60?'오 좋은데요?':'잔뜩 깔았어요';
+    document.getElementById('statusMsg').textContent=msg2;
+  }
+  // Stage3 상태
+  if(G.stage===3){
+    var sc3=scoreIng();
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=sc3+'점';
+    document.getElementById('statusMsg').textContent=
+      G.ingPlaced.length===0?'재료를 올려주세요':G.ingPlaced.length<3?'조금 더!':
+      G.ingPlaced.length<6?'풍성해지고 있어요':'재료가 가득해요!';
+  }
+  // Stage4 상태
+  if(G.stage===4){
+    var _sn=document.getElementById('scoreNum'); if(_sn) _sn.textContent=Math.round(G.rollProg*100)+'점';
+    document.getElementById('statusMsg').textContent=
+      G.rollDone?'완벽하게 마셨어요! 🎉':G.rollProg<0.3?'가이드선을 따라 밀어요':
+      G.rollProg<0.7?'계속 밀어주세요':'거의 다 됐어요!';
+    // 커서 색
+    if(G.stage===4){
+      var pathY2=cy+sz*0.44-G.rollProg*(sz*0.44+cy*0.5);
+      if(Math.abs(G.MY-pathY2)<50){ canvas.style.cursor='crosshair'; }
+      else canvas.style.cursor='default';
+    }
+  }
+}
+
+// ===== 업데이트 루프 =====
+function update(){
+  if(G.stage===2){ updateRice(); }
+  if(G.stage===3){ updateIngAnim(); }
+  if(G.stage===4 && G.mdown){ updateRoll(G.MX,G.MY); }
+  if(G.stage===5){ updateSesame(); }
+}
+
+function initStageVisuals(){
+  resize();
+  initKimVerts();
+}
+
+// ===== 이벤트 =====
+canvas.addEventListener('mousedown', function(e){
+  G.mdown=true;
+  startBGM();
+  var mx=e.clientX, my=e.clientY;
+  if(G.stage===1) startKimDrag(mx,my);
+  if(G.stage===2) dropRice(mx,my);
+  if(G.stage===3) dropIng(mx,my);
+  if(G.stage===5){ dropSesame(mx,my); G.sesameLastDrop=Date.now(); }
+  if(G.stage===7){
+    G.cutDragging=true;
+    G.cutStart={x:mx,y:my};
+  }
+});
+canvas.addEventListener('contextmenu', function(e){
+  e.preventDefault();
+  if(G.stage===2) removeRice(e.clientX,e.clientY);
+});
+canvas.addEventListener('mousemove', function(e){
+  G.MX=e.clientX; G.MY=e.clientY;
+  if(G.stage===1 && G.mdown) flattenKim(e.clientX,e.clientY);
+  if(G.stage===5 && G.mdown){
+    var now5=Date.now();
+    if(!G.sesameLastDrop||now5-G.sesameLastDrop>60){
+      dropSesame(e.clientX,e.clientY);
+      G.sesameLastDrop=now5;
+    }
+  }
+  if(G.stage===2 && G.mdown){
+    var now=Date.now();
+    if(!G.riceHoldTimer) G.riceHoldTimer=now;
+    if(now-G.riceHoldTimer>2000 && now-G.riceLastDrop>500){
+      dropRice(e.clientX,e.clientY);
+      G.riceLastDrop=now;
+    }
+  }
+  if(G.stage===3 && G.mdown){
+    var now3=Date.now();
+    if(!G.ingHoldTimer) G.ingHoldTimer=now3;
+    var ing=INGS[G.ingIdx];
+    var isShort=(ing.type==='spinach'||ing.type==='blob');
+    if(isShort && now3-G.ingHoldTimer>2000 && now3-G.ingLastDrop>400){
+      dropIng(e.clientX,e.clientY);
+      G.ingLastDrop=now3;
+    }
+  }
+});
+canvas.addEventListener('mouseup', function(e){
+  G.mdown=false;
+  G.kimDragging=-1;
+  G.riceHoldTimer=0;
+  G.ingHoldTimer=0;
+  if(G.stage===7 && G.cutDragging && G.cutStart){
+    var ex=e.clientX, ey=e.clientY;
+    if(checkCut(G.cutStart.x,G.cutStart.y,ex,ey)){
+      G.cuts.push({x1:G.cutStart.x,y1:G.cutStart.y,x2:ex,y2:ey});
+      if(G.cuts.length===6){ var _kn=getKimbapName(); G.kimbapName=_kn.name; G.kimbapDesc=_kn.desc||''; }
+    }
+    G.cutDragging=false; G.cutStart=null;
+  }
+  if(G.stage===4) G.rollPrevX=-1;
+});
+
+// Space: 밥 드롭
+window.addEventListener('keydown', function(e){
+  startBGM();
+  if(e.code==='Space'){ e.preventDefault(); if(G.stage===2) dropRice(G.MX,G.MY); }
+  // 재료 숫자키
+  if(G.stage===3){
+    var keys={'Digit1':0,'Digit2':1,'Digit3':2,'Digit4':3,'Digit5':4,
+              'Digit6':5,'Digit7':6,'Digit8':7,'Digit9':8,'Digit0':9};
+    if(keys[e.code]!==undefined){ G.ingIdx=keys[e.code]; updateIngPanel(); }
+    if(e.code==='ArrowLeft'){ e.preventDefault(); G.ingIdx=(G.ingIdx+INGS.length-1)%INGS.length; updateIngPanel(); }
+    if(e.code==='ArrowRight'){ e.preventDefault(); G.ingIdx=(G.ingIdx+1)%INGS.length; updateIngPanel(); }
+  }
+  // ENTER
+  if(e.code==='Enter'){
+    var s=G.stage;
+    if(s===1||s===2||s===3) goStage(s+1);
+    else if(s===4&&G.rollDone) goStage(5);
+    else if(s===5&&G.sesameList.length>=40) goStage(6);
+    else if(s===6&&G.blowDone) goStage(7);
+    else if(s===7&&G.cuts.length>=6) goStage(8);
+  }
+});
+window.addEventListener('keyup', function(e){
+  if(G.stage===5) G.sesameHold=false;
+});
+
+// Stage5 참깨: mousemove/mousedown 핸들러 위에 통합됨
+
+// ===== 메인 루프 =====
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+initStageVisuals();
+goStage(1);
+loop();
+</script>
+</body>
+</html>
