@@ -212,7 +212,7 @@ function doGamble() {
             playSfxLose();
             document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>욕심 을 부리다 모든 것 을 잃다..';
             document.getElementById("result").className = "result l";
-            setTimeout(gameOver, 600);
+            setTimeout(function(){gameOver('trap');}, 600);
             busy = false;
         }, 200);
         return;
@@ -241,9 +241,9 @@ function doGamble() {
             document.getElementById("result").className = "result l";
 
             if (money <= 0) {
-                setTimeout(gameOver, 600);
+                setTimeout(function(){gameOver('zero');}, 600);
             } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
-                setTimeout(gameOver, 600);
+                setTimeout(function(){gameOver('checkpoint');}, 600);
             }
         }
         update();
@@ -310,14 +310,24 @@ function animateCoinInsert(callback) {
     }, 500);
 }
 
-function gameOver() {
+function gameOver(reason) {
     bought = [];
     money = 10;
     streak = 0;
     reachedCheckpoint = -1;
+    var msg = "";
+    if (reason === "checkpoint") {
+        msg = "GAME OVER<br><br>하한선 이하 로 떨어졌다..<br><br>한번 올라간 자 는 떨어지면 끝 이다..<br>다시 처음 부터 시작 하라<br><br><span>클릭 하라</span>";
+    } else if (reason === "zero") {
+        msg = "GAME OVER<br><br>0원 이 되었다..<br><br>무일푼.. 다시 시작 하라<br><br><span>클릭 하라</span>";
+    } else if (reason === "trap") {
+        msg = "GAME OVER<br><br>욕심 을 부리다 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
+    } else {
+        msg = "GAME OVER<br><br>사기 를 당해 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
+    }
     var d = document.createElement("div");
     d.className = "overlay go";
-    d.innerHTML = "GAME OVER<br><br>사기 를 당해 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
+    d.innerHTML = msg;
     d.onclick = function() { d.remove(); update(); };
     document.body.appendChild(d);
     playSfxLose();
