@@ -267,11 +267,6 @@ function buy(idx) {
         playSfxWin();
         update();
         checkGameClear();
-        if (money <= 0) {
-            setTimeout(gameOver, 600);
-        } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
-            setTimeout(gameOver, 600);
-        }
     });
 }
 
