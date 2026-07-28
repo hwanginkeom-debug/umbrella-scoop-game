@@ -268,7 +268,7 @@ function gameOver() {
     hasReached100k = false;
     var d = document.createElement("div");
     d.className = "overlay go";
-    d.innerHTML = "GAME OVER<br>모든 것 을 잃다<span>10만원 이하 로 떨어졌다...<br>100원 부터 다시 시작 하다<br><br>클릭 하라</span>";
+    d.innerHTML = "GAME OVER<br><br>사기 를 당해 모든 것 을 잃다..<br><br>정정당당 하게 일해서 버는 것 이다..<br><br><span>클릭 하라</span>";
     d.onclick = function() { d.remove(); update(); };
     document.body.appendChild(d);
     playSfxLose();
