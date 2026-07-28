@@ -240,7 +240,9 @@ function doGamble() {
             document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>소 - 50% 잃었어요 (-' + fmt(lost) + ')';
             document.getElementById("result").className = "result l";
 
-            if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
+            if (money <= 0) {
+                setTimeout(gameOver, 600);
+            } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
                 setTimeout(gameOver, 600);
             }
         }
@@ -262,7 +264,9 @@ function buy(idx) {
     playSfxWin();
     update();
     checkGameClear();
-    if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
+    if (money <= 0) {
+        setTimeout(gameOver, 600);
+    } else if (reachedCheckpoint >= 0 && money < checkpoints[reachedCheckpoint]) {
         setTimeout(gameOver, 600);
     }
 }
