@@ -210,7 +210,7 @@ function doGamble() {
         setTimeout(function() {
             spawnLoseEffect();
             playSfxLose();
-            document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>함정 이다!! 즉사 하다!!';
+            document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>욕심 을 부리다 모든 것 을 잃다..';
             document.getElementById("result").className = "result l";
             setTimeout(gameOver, 600);
             busy = false;
