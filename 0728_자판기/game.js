@@ -31,8 +31,8 @@ var BET_OPTIONS=[
 {pct:25,mult:5,label:"25%"},
 {pct:10,mult:10,label:"10%"},
 {pct:5,mult:100,label:"5%"},
-{pct:1,mult:10000,label:"1%",trap:true},
-{pct:0.5,mult:10000000,label:"0.5%",trap:true},
+{pct:1,mult:10000,label:"1%"},
+{pct:0.5,mult:10000000,label:"0.5%"},
 ];
 
 var money = 10;
@@ -204,19 +204,7 @@ function doGamble() {
     if (busy || gameClear) return;
     var opt = BET_OPTIONS[curBet];
 
-    // 1%와 0.5%는 바로 게임오버
-    if (opt.trap) {
-        busy = true;
-        setTimeout(function() {
-            spawnLoseEffect();
-            playSfxLose();
-            document.getElementById("result").innerHTML = '<span style="font-size:18px">대 - NO!</span><br>욕심 을 부리다 모든 것 을 잃다..';
-            document.getElementById("result").className = "result l";
-            setTimeout(function(){gameOver('trap');}, 600);
-            busy = false;
-        }, 200);
-        return;
-    }
+
 
     var chance = opt.pct / 100;
     busy = true;
