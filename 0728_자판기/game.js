@@ -227,7 +227,7 @@ function doGamble() {
             spawnCoins(Math.min(streak * 3 + 5, 40));
             playSfxWin();
         } else {
-            var lost = Math.round(money * opt.loseRate);
+            var lost = Math.max(1, Math.round(money * opt.loseRate));
             money -= lost;
             streak = 0;
             spawnLoseEffect();
