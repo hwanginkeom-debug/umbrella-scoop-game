@@ -86,23 +86,25 @@ function spawnBean(x, y, z) {
   var m = new THREE.Mesh(BEAN_GEO, makeBeanMat(Math.floor(Math.random()*6)));
   m.scale.set(sc, sc*0.65, sc);
   m.castShadow = true;
-  m.position.set(x, y, z);
+  m.position.set(x, Math.max(y, sc*0.4), z);
   scene.add(m);
+  // y가 낮으면 바로 onGround, 높으면 떨어지게
+  var isLow = (y < 0.3);
   beans.push({ mesh:m, sc:sc,
-    vx:(Math.random()-0.5)*0.04, vy:-0.01, vz:(Math.random()-0.5)*0.04,
+    vx:isLow?0:(Math.random()-0.5)*0.04, vy:isLow?0:-0.01, vz:isLow?0:(Math.random()-0.5)*0.04,
     rx:Math.random()*0.04, ry:Math.random()*0.04,
-    onGround:false, aiOwner:null, _basketFloor:undefined
+    onGround:isLow, aiOwner:null, _basketFloor:undefined
   });
 }
 for (var bi = 0; bi < 80; bi++) {
-  spawnBean((Math.random()-0.5)*7, 0.5+Math.random()*2.5, (Math.random()-0.5)*7);
+  // 절반은 바닥에 바로 안착, 절반은 떨어지게
+  var isFloor = bi < 40;
+  spawnBean(
+    (Math.random()-0.5)*(isFloor?10:7),
+    isFloor ? 0.05 : 0.5+Math.random()*2,
+    (Math.random()-0.5)*(isFloor?10:7)
+  );
 }
-// 초기 원두는 정착 상태로 강제 설정 (딜레이 후)
-setTimeout(function(){
-  for(var k=0;k<beans.length;k++){
-    if(beans[k].mesh.position.y<0.5){beans[k].onGround=true;beans[k].vy=0;beans[k].vx=0;beans[k].vz=0;}
-  }
-},3000);
 
 // 그라인더
 var grinderGroup = new THREE.Group();
@@ -287,19 +289,9 @@ spawnFig( 2.5, 2.0, Math.PI,'operator');
 // 겹침 방지
 var OBSTACLES = [{x:0,z:0,r:1.2},{x:2.5,z:2.5,r:0.9}];
 function isBlocked(nx,nz,self){
-  var i;
-  for(i=0;i<OBSTACLES.length;i++){
-    var o=OBSTACLES[i];
-    var dx=nx-o.x,dz=nz-o.z;
-    if(Math.sqrt(dx*dx+dz*dz)<o.r) return true;
-  }
-  for(i=0;i<figures.length;i++){
-    var f=figures[i];
-    if(f===self) continue;
-    var dx2=nx-f.parts.root.position.x,dz2=nz-f.parts.root.position.z;
-    if(Math.sqrt(dx2*dx2+dz2*dz2)<0.7) return true;
-  }
-  return false;
+  // 그라인더만 막기 (피규어간 겹침은 허용)
+  var dx=nx-0,dz=nz-0;
+  return Math.sqrt(dx*dx+dz*dz)<1.0;
 }
 
 // 픽셀 커서
@@ -518,7 +510,7 @@ function animate(){
       var farBean=null,maxD=0,j,bd;
       for(j=0;j<beans.length;j++){
         b=beans[j];
-        if(b.aiOwner||(!b.onGround&&Math.abs(b.vy)>0.02)) continue;
+        if(b.aiOwner) continue;
         bd=p.root.position.distanceTo(b.mesh.position);
         if(bd>maxD){maxD=bd;farBean=b;}
       }
