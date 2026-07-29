@@ -134,7 +134,7 @@ var coffeeAmt=0, coffeeObj=null, coffeeAutoTimer=0;
 function spawnCoffee(){
   if(coffeeObj)scene.remove(coffeeObj);
   coffeeObj=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.15,0.1,12),new THREE.MeshPhysicalMaterial({color:0x2a1008,roughness:0.85}));
-  coffeeObj.position.set(0.9,0.18,1.4); coffeeObj.castShadow=true;
+  coffeeObj.position.set(-1.2,0.2,1.5); coffeeObj.castShadow=true;
   scene.add(coffeeObj);
   coffeeAmt=0; drawerMesh.scale.x=0.01;
 }
@@ -174,9 +174,10 @@ var woodLight2 = new THREE.MeshPhysicalMaterial({color:0x9a6a3a,roughness:0.85})
     basketGroup.add(wm);
   }
 })();
-basketGroup.position.set(-2.2,0,0.5);
+// 바구니 — 그라인더 앞쪽 뷰에서 보이는 위치로
+basketGroup.position.set(2.5,0,2.5);
 scene.add(basketGroup);
-var BASKET_POS = new THREE.Vector3(-2.2,0,0.5);
+var BASKET_POS = new THREE.Vector3(2.5,0,2.5);
 var basketStackH = 0.3;
 
 // 연기
@@ -284,7 +285,7 @@ spawnFig( 0.0, 2.5, Math.PI, 'worker');
 spawnFig( 2.5, 2.0, Math.PI,'operator');
 
 // 겹침 방지
-var OBSTACLES = [{x:0,z:0,r:1.2},{x:-2.2,z:0.5,r:0.9}];
+var OBSTACLES = [{x:0,z:0,r:1.2},{x:2.5,z:2.5,r:0.9}];
 function isBlocked(nx,nz,self){
   var i;
   for(i=0;i<OBSTACLES.length;i++){
@@ -403,7 +404,7 @@ function blastBeans(cx,cy){
   for(var i=0;i<beans.length;i++){
     var b=beans[i];
     var d=b.mesh.position.distanceTo(pt);
-    if(d<2.0){
+    if(d<3.5){
       var dir=b.mesh.position.clone().sub(pt).normalize();
       var str=(2-d)/2*0.22;
       b.vx+=dir.x*str+(Math.random()-0.5)*0.08;
