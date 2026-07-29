@@ -121,10 +121,11 @@ var handleGroup = new THREE.Group();
 handleGroup.position.set(0,3.2,0);
 grinderGroup.add(handleGroup);
 var armMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.5,10),darkM);
-armMesh.rotation.z=Math.PI/2; armMesh.position.set(0.75,0,0); armMesh.castShadow=true;
+armMesh.rotation.z=Math.PI/2; armMesh.position.set(0,0,0.75);
+armMesh.rotation.x=Math.PI/2; armMesh.castShadow=true;
 handleGroup.add(armMesh);
-var knobMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.07,0.35,12),woodM);
-knobMesh.position.set(1.5,-0.1,0); knobMesh.castShadow=true;
+var knobMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.09,0.4,12),woodM);
+knobMesh.position.set(0,-0.1,1.5); knobMesh.castShadow=true;
 handleGroup.add(knobMesh);
 var drawerMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.03,0.4),new THREE.MeshStandardMaterial({color:0x2a1208,roughness:0.9}));
 drawerMesh.position.set(0,0.2,0.85); drawerMesh.scale.x=0.01;
@@ -136,7 +137,7 @@ var coffeeAmt=0, coffeeObj=null, coffeeAutoTimer=0;
 function spawnCoffee(){
   if(coffeeObj)scene.remove(coffeeObj);
   coffeeObj=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.15,0.1,12),new THREE.MeshPhysicalMaterial({color:0x2a1008,roughness:0.85}));
-  coffeeObj.position.set(-1.2,0.2,1.5); coffeeObj.castShadow=true;
+  coffeeObj.position.set(-0.5,0.2,1.8); coffeeObj.castShadow=true;
   scene.add(coffeeObj);
   coffeeAmt=0; drawerMesh.scale.x=0.01;
 }
@@ -176,10 +177,10 @@ var woodLight2 = new THREE.MeshPhysicalMaterial({color:0x9a6a3a,roughness:0.85})
     basketGroup.add(wm);
   }
 })();
-// 바구니 — 그라인더 앞쪽 뷰에서 보이는 위치로
-basketGroup.position.set(2.5,0,2.5);
+// 바구니 — 뷰에서 오른쪽 앞에 보이게
+basketGroup.position.set(2.2,0,2.8);
 scene.add(basketGroup);
-var BASKET_POS = new THREE.Vector3(2.5,0,2.5);
+var BASKET_POS = new THREE.Vector3(2.2,0,2.8);
 var basketStackH = 0.3;
 
 // 연기
