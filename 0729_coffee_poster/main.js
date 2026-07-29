@@ -134,10 +134,16 @@ grinderGroup.position.set(0,0,0);
 scene.add(grinderGroup);
 
 var coffeeAmt=0, coffeeObj=null, coffeeAutoTimer=0;
+var coffeePos = {x:-0.5, y:0.2, z:1.8}; // 키보드로 조절 가능
 function spawnCoffee(){
   if(coffeeObj)scene.remove(coffeeObj);
-  coffeeObj=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.15,0.1,12),new THREE.MeshPhysicalMaterial({color:0x2a1008,roughness:0.85}));
-  coffeeObj.position.set(-0.5,0.2,1.8); coffeeObj.castShadow=true;
+  // 그라인더 박스(1.5x1.6x1.5) 절반 크기 = 0.75x0.8x0.75
+  coffeeObj=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.55,0.45,0.5,16),
+    new THREE.MeshPhysicalMaterial({color:0x3a1a06,roughness:0.7,metalness:0.05})
+  );
+  coffeeObj.position.set(coffeePos.x, coffeePos.y, coffeePos.z);
+  coffeeObj.castShadow=true;
   scene.add(coffeeObj);
   coffeeAmt=0; drawerMesh.scale.x=0.01;
 }
@@ -366,10 +372,24 @@ function moveCursor(cx,cy){cursor2d.style.left=cx+'px';cursor2d.style.top=cy+'px
 function setCursorHold(h){drawPixelCursor(h);}
 document.addEventListener('mousemove',function(e){moveCursor(e.clientX,e.clientY);});
 
+// 커피 위치 키보드 조절 (IJKL + UO + P=출력)
+document.addEventListener('keydown', function(e) {
+  var step = 0.2;
+  if(e.key==='i'||e.key==='I') coffeePos.z-=step;
+  if(e.key==='k'||e.key==='K') coffeePos.z+=step;
+  if(e.key==='j'||e.key==='J') coffeePos.x-=step;
+  if(e.key==='l'||e.key==='L') coffeePos.x+=step;
+  if(e.key==='u'||e.key==='U') coffeePos.y+=step;
+  if(e.key==='o'||e.key==='O') coffeePos.y-=step;
+  if(coffeeObj) coffeeObj.position.set(coffeePos.x, coffeePos.y, coffeePos.z);
+  if(e.key==='p'||e.key==='P') console.log('coffeePos:', JSON.stringify(coffeePos));
+});
+
 // 인터랙션
 var ray=new THREE.Raycaster(),mv=new THREE.Vector2();
 var dragPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0),dHit=new THREE.Vector3();
 var dragFig=null,isDragHandle=false,lastHA=0,dragCoffee=false,holdIv=null;
+var dragBean=null; // 단일 원두 드래그
 
 function showBubble(wp,txt){
   var v=wp.clone().project(camera);
@@ -413,6 +433,16 @@ renderer.domElement.addEventListener('pointerdown',function(e){
   if(getCoffee(e)){dragCoffee=true;return;}
   var fig=getFig(e);
   if(fig){dragFig=fig;fig.held=true;return;}
+  // 단일 원두 드래그 클릭
+  setRay(e);
+  var bMeshes=beans.map(function(b){return b.mesh;});
+  var bHits=ray.intersectObjects(bMeshes);
+  if(bHits.length>0){
+    var bIdx=bMeshes.indexOf(bHits[0].object);
+    dragBean=beans[bIdx];
+    dragBean.onGround=false;
+    return;
+  }
   blastBeans(e.clientX,e.clientY);
   holdIv=setInterval(function(){blastBeans(e.clientX,e.clientY);},100);
 });
@@ -429,7 +459,16 @@ renderer.domElement.addEventListener('pointermove',function(e){
   if(dragCoffee&&coffeeObj){
     setRay(e);dragPlane.constant=-0.3;
     ray.ray.intersectPlane(dragPlane,dHit);
-    coffeeObj.position.set(dHit.x,0.5,dHit.z); return;
+    coffeeObj.position.set(dHit.x,0.5,dHit.z);
+    coffeePos.x=dHit.x; coffeePos.y=0.5; coffeePos.z=dHit.z;
+    return;
+  }
+  if(dragBean){
+    setRay(e); dragPlane.constant=-0.1;
+    ray.ray.intersectPlane(dragPlane,dHit);
+    dragBean.mesh.position.set(dHit.x, 0.15, dHit.z);
+    dragBean.vx=0; dragBean.vy=0; dragBean.vz=0;
+    return;
   }
   if(dragFig){
     setRay(e);dragPlane.constant=0;
@@ -441,6 +480,7 @@ renderer.domElement.addEventListener('pointermove',function(e){
 renderer.domElement.addEventListener('pointerup',function(e){
   setCursorHold(false);
   if(isDragHandle){isDragHandle=false;return;}
+  if(dragBean){dragBean.onGround=true;dragBean=null;return;}
   if(dragCoffee&&coffeeObj){
     dragCoffee=false;
     var near=null,minD=2.5;
