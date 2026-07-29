@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Bean World</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a0f0a; overflow: hidden; cursor: none; font-family: monospace; }
+  #c { display: block; }
+  .back-btn { position: fixed; top: 12px; left: 12px; z-index: 999; color: #8a6a50; font-size: 10px; text-decoration: none; opacity: 0.6; }
+  .back-btn:hover { opacity: 1; }
+  #bubbles { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 100; }
+  .bubble {
+    position: absolute;
+    background: #fff;
+    border-radius: 10px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #333;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    transform: translateX(-50%) translateY(-120%);
+    animation: pop 0.3s cubic-bezier(0.17,0.67,0.83,0.67);
+    pointer-events: none;
+  }
+  .bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -6px; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #fff;
+    border-bottom: none;
+  }
+  @keyframes pop {
+    0% { transform: translateX(-50%) translateY(-80%) scale(0.5); opacity: 0; }
+    100% { transform: translateX(-50%) translateY(-120%) scale(1); opacity: 1; }
+  }
+  #hint {
+    position: fixed; bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    color: rgba(180,140,100,0.6); font-size: 11px;
+    letter-spacing: 1px; pointer-events: none;
+    animation: fh 5s forwards;
+  }
+  @keyframes fh { 0%,70%{opacity:1} 100%{opacity:0} }
+
+  /* 2D 커서 */
+  #cursor2d {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-4px, -2px);
+    image-rendering: pixelated;
+  }
+  #cursor2d canvas {
+    display: block;
+  }
+
+  /* 카메라 리모컨 */
+  #cam-ctrl {
+    position: fixed;
+    bottom: 20px;
+    right: 16px;
+    background: rgba(30,15,5,0.85);
+    border: 1px solid rgba(180,120,60,0.4);
+    border-radius: 12px;
+    padding: 12px;
+    z-index: 200;
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 130px;
+  }
+  #cam-ctrl .label {
+    color: rgba(200,160,80,0.8);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+  #cam-ctrl .row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  #cam-ctrl .row span {
+    color: rgba(180,140,80,0.6);
+    font-size: 8px;
+    width: 28px;
+  }
+  #cam-ctrl input[type=range] {
+    flex: 1;
+    height: 3px;
+    accent-color: #c17a3a;
+    cursor: pointer;
+  }
+  #cam-ctrl .val {
+    color: rgba(200,160,80,0.8);
+    font-size: 8px;
+    width: 28px;
+    text-align: right;
+  }
+  #cam-reset {
+    background: rgba(180,100,30,0.5);
+    border: 1px solid rgba(180,120,60,0.5);
+    color: rgba(220,160,80,0.9);
+    font-size: 9px;
+    padding: 5px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: monospace;
+    letter-spacing: 0.5px;
+    transition: background 0.2s;
+  }
+  #cam-reset:hover { background: rgba(180,100,30,0.8); }
+</style>
+</head>
+<body>
+<a href="../bridge.html" class="back-btn">← BACK</a>
+<canvas id="c"></canvas>
+<div id="bubbles"></div>
+<div id="hint">☕ 원두를 클릭 · 피규어를 잡아 방해해보세요 · 핸들을 돌리면 커피가 나와요</div>
+<div id="cursor2d"><canvas id="cursor-canvas" width="32" height="32"></canvas></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="./main.js"></script>
+</body>
+</html>

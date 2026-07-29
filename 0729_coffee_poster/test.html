@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;background:#000;">
+<canvas id="c"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+  console.log('Three version:', THREE.REVISION);
+  const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c') });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x334455);
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(0, 2, 5);
+  scene.add(new THREE.AmbientLight(0xffffff, 1));
+  const box = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshStandardMaterial({ color: 0xff6633 }));
+  scene.add(box);
+  function loop() {
+    requestAnimationFrame(loop);
+    box.rotation.y += 0.01;
+    renderer.render(scene, camera);
+  }
+  loop();
+  console.log('렌더링 시작!');
+</script>
+</body>
+</html>
