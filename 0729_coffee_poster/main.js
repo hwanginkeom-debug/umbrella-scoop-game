@@ -134,17 +134,39 @@ grinderGroup.position.set(0,0,0);
 scene.add(grinderGroup);
 
 var coffeeAmt=0, coffeeObj=null, coffeeAutoTimer=0;
-var coffeePos = {x:-0.5, y:0.2, z:1.8}; // 키보드로 조절 가능
+var coffeePos = {x:0, y:0.22, z:1.9};
 function spawnCoffee(){
-  if(coffeeObj)scene.remove(coffeeObj);
-  // 그라인더 박스(1.5x1.6x1.5) 절반 크기 = 0.75x0.8x0.75
-  coffeeObj=new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55,0.45,0.5,16),
-    new THREE.MeshPhysicalMaterial({color:0x3a1a06,roughness:0.7,metalness:0.05})
-  );
-  coffeeObj.position.set(coffeePos.x, coffeePos.y, coffeePos.z);
-  coffeeObj.castShadow=true;
-  scene.add(coffeeObj);
+  if(coffeeObj) scene.remove(coffeeObj);
+  var cupGroup = new THREE.Group();
+  // 컵 외벽
+  var cupMat = new THREE.MeshPhysicalMaterial({color:0xf5e8d0,roughness:0.5,metalness:0.1});
+  var cup = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.35,0.55,20,1,true), cupMat);
+  cup.castShadow=true; cupGroup.add(cup);
+  // 컵 바닥
+  var bottom = new THREE.Mesh(new THREE.CircleGeometry(0.35,20), cupMat);
+  bottom.rotation.x=-Math.PI/2; bottom.position.y=-0.275;
+  cupGroup.add(bottom);
+  // 컵 테두리
+  var rim = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.03,8,20), cupMat);
+  rim.position.y=0.275; cupGroup.add(rim);
+  // 커피 액체 (표면)
+  var coffeeLiqMat = new THREE.MeshStandardMaterial({color:0x2a1008,roughness:0.3});
+  var liq = new THREE.Mesh(new THREE.CircleGeometry(0.38,20), coffeeLiqMat);
+  liq.rotation.x=-Math.PI/2; liq.position.y=0.22;
+  cupGroup.add(liq);
+  // 커피 파티클 (김 / 향)
+  var steamGeo = new THREE.BufferGeometry();
+  var sp = new Float32Array(12*3);
+  for(var si2=0;si2<12;si2++){sp[si2*3]=(Math.random()-0.5)*0.3;sp[si2*3+1]=0.3+Math.random()*0.3;sp[si2*3+2]=(Math.random()-0.5)*0.3;}
+  steamGeo.setAttribute('position',new THREE.BufferAttribute(sp,3));
+  var steamPts = new THREE.Points(steamGeo, new THREE.PointsMaterial({color:0xddccaa,size:0.06,transparent:true,opacity:0.5}));
+  cupGroup.add(steamPts);
+  cupGroup._steamGeo = steamGeo;
+  cupGroup._steamArr = sp;
+  cupGroup.position.set(coffeePos.x, coffeePos.y, coffeePos.z);
+  cupGroup.castShadow=true;
+  scene.add(cupGroup);
+  coffeeObj = cupGroup;
   coffeeAmt=0; drawerMesh.scale.x=0.01;
 }
 
@@ -409,7 +431,7 @@ function getFig(e){
   return null;
 }
 function getHandle(e){setRay(e);return ray.intersectObjects(handleGroup.children,true).length>0;}
-function getCoffee(e){if(!coffeeObj)return false;setRay(e);return ray.intersectObject(coffeeObj).length>0;}
+function getCoffee(e){if(!coffeeObj)return false;setRay(e);return ray.intersectObjects(coffeeObj.children,true).length>0;}
 function hAngle(e){return Math.atan2(e.clientY-window.innerHeight/2,e.clientX-window.innerWidth/2);}
 function blastBeans(cx,cy){
   mv.x=(cx/window.innerWidth)*2-1;mv.y=-(cy/window.innerHeight)*2+1;ray.setFromCamera(mv,camera);
@@ -419,10 +441,10 @@ function blastBeans(cx,cy){
     var d=b.mesh.position.distanceTo(pt);
     if(d<3.5){
       var dir=b.mesh.position.clone().sub(pt).normalize();
-      var str=(2-d)/2*0.22;
-      b.vx+=dir.x*str+(Math.random()-0.5)*0.08;
-      b.vy+=0.12+Math.random()*0.15;
-      b.vz+=dir.z*str+(Math.random()-0.5)*0.08;
+      var str=(2-d)/2*0.5;
+      b.vx+=dir.x*str+(Math.random()-0.5)*0.2;
+      b.vy+=0.25+Math.random()*0.3;
+      b.vz+=dir.z*str+(Math.random()-0.5)*0.2;
       b.onGround=false;
     }
   }
@@ -540,6 +562,16 @@ function animate(){
   for(var si=0;si<60;si++){sp[si*3+1]+=smokeVels[si];if(sp[si*3+1]>9){sp[si*3]=(Math.random()-0.5)*1.5;sp[si*3+1]=3;sp[si*3+2]=(Math.random()-0.5)*1.5;}}
   smokeGeo.attributes.position.needsUpdate=true;
   fillLight.intensity=0.7+Math.sin(t*3.5)*0.15;
+  // 커피 김 파티클 애니메이션
+  if(coffeeObj && coffeeObj._steamGeo) {
+    var sa = coffeeObj._steamArr;
+    for(var ss=0;ss<12;ss++){
+      sa[ss*3+1] += 0.008;
+      sa[ss*3] += Math.sin(t*2+ss)*0.002;
+      if(sa[ss*3+1] > 0.8) { sa[ss*3]=(Math.random()-0.5)*0.3; sa[ss*3+1]=0.3; sa[ss*3+2]=(Math.random()-0.5)*0.3; }
+    }
+    coffeeObj._steamGeo.attributes.position.needsUpdate=true;
+  }
 
   // 피규어 AI
   for(i=0;i<figures.length;i++){
@@ -548,17 +580,42 @@ function animate(){
     if(fig.drinkingCoffee){p.head.rotation.x=-0.3+Math.sin(t*4)*0.1;p.armR.rotation.x=-2.0;p.armR.rotation.z=0.3;continue;}
 
     if(!fig.aiBean){
-      var farBean=null,maxD=0,j,bd;
-      for(j=0;j<beans.length;j++){
-        b=beans[j];
-        if(b.aiOwner) continue;
-        bd=p.root.position.distanceTo(b.mesh.position);
-        if(bd>maxD){maxD=bd;farBean=b;}
+      // 그라인더 근처에 있으면 핸들 돌리기 모드
+      var distToGrinder = p.root.position.distanceTo(new THREE.Vector3(0,0,0));
+      if(distToGrinder < 2.0 && !coffeeObj) {
+        fig.aiPhase = 'grind';
+      } else if(fig.aiPhase !== 'grind') {
+        // 랜덤 배회
+        if(!fig.wanderTarget || p.root.position.distanceTo(fig.wanderTarget) < 0.5) {
+          fig.wanderTarget = new THREE.Vector3((Math.random()-0.5)*7, 0, (Math.random()-0.5)*7);
+        }
+        var wDir = fig.wanderTarget.clone().sub(p.root.position); wDir.y=0;
+        if(wDir.length()>0.3){
+          wDir.normalize();
+          p.root.position.x += wDir.x*0.008;
+          p.root.position.z += wDir.z*0.008;
+          p.root.rotation.y = Math.atan2(wDir.x, wDir.z);
+          p.legLG.rotation.x = Math.sin(t*2.5)*0.3;
+          p.legRG.rotation.x = -Math.sin(t*2.5)*0.3;
+        }
       }
-      if(farBean){farBean.aiOwner=fig;fig.aiBean=farBean;fig.aiPhase='go';}
     }
 
-    if(fig.aiBean){
+    if(fig.aiPhase === 'grind') {
+      // 그라인더 핸들 돌리기 애니메이션
+      p.armR.rotation.z = -0.4 + Math.sin(t*3.0)*0.8;
+      p.armR.rotation.x = -0.8 + Math.cos(t*3.0)*0.8;
+      p.root.rotation.y = Math.PI; // 그라인더 향해
+      // 핸들도 실제로 돌리기
+      handleGroup.rotation.y += 0.05;
+      coffeeAmt = Math.min(coffeeAmt + 0.008, 1);
+      drawerMesh.scale.x = Math.max(coffeeAmt, 0.01);
+      if(coffeeAmt >= 1 && !coffeeObj) {
+        spawnCoffee();
+        fig.aiPhase = null;
+        fig.wanderTarget = null;
+      }
+    } else if(fig.aiBean){
       var bP=fig.aiBean.mesh.position;
       if(fig.aiPhase==='go'){
         var dir=bP.clone().sub(p.root.position);dir.y=0;
