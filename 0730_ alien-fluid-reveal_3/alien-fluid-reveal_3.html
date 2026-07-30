@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluid Reveal — Alien</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; }
+  #stage { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .hint {
+    position: fixed; left: 50%; bottom: 32px; transform: translateX(-50%);
+    color: rgba(180, 205, 240, 0.55); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase;
+    pointer-events: none; user-select: none; transition: opacity 0.6s;
+  }
+  .title {
+    position: fixed; left: 32px; top: 28px;
+    color: rgba(180, 205, 240, 0.4); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    pointer-events: none; user-select: none;
+  }
+</style>
+</head>
+<body>
+<canvas id="stage"></canvas>
+<div class="title">Fluid Reveal / practice</div>
+<div class="hint" id="hint">move cursor to reveal what's underneath</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const canvas = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+// ── 유체 시뮬레이션용 핑퐁 렌더 타깃 ──────────────────────────
+// 마우스가 지나간 자리를 텍스처에 누적하고, 매 프레임 확산·감쇠시킨다.
+const SIM = 256;
+const rtOpts = {
+  minFilter: THREE.LinearFilter,
+  magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat,
+  type: THREE.FloatType,
+};
+let rtA = new THREE.WebGLRenderTarget(SIM, SIM, rtOpts);
+let rtB = new THREE.WebGLRenderTarget(SIM, SIM, rtOpts);
+
+const simScene = new THREE.Scene();
+const simCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+// 유체 갱신 셰이더: 이전 상태를 이웃과 섞어 번지게 하고(확산),
+// 마우스 위치에 힘을 주입한 뒤, 서서히 감쇠시킨다.
+const simMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uPrev:    { value: null },
+    uMouse:   { value: new THREE.Vector2(-1, -1) },
+    uVel:     { value: new THREE.Vector2(0, 0) },
+    uDown:    { value: 0 },
+    uTexel:   { value: new THREE.Vector2(1 / SIM, 1 / SIM) },
+    uAspect:  { value: 1 },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+  `,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+    uniform sampler2D uPrev;
+    uniform vec2 uMouse;
+    uniform vec2 uVel;
+    uniform float uDown;
+    uniform vec2 uTexel;
+    uniform float uAspect;
+
+    // UFO 실루엣 SDF (음수=안쪽). s=전체 크기
+    float ufoShape(vec2 q, float s){
+      q /= s;
+      // 납작한 접시 본체
+      float body = length(q / vec2(1.0, 0.42)) - 1.0;
+      // 위에 얹힌 돔(반구)
+      vec2 dq = q - vec2(0.0, 0.28);
+      float dome = length(dq / vec2(0.5, 0.62)) - 1.0;
+      // 돔은 본체 위쪽만
+      dome = max(dome, -q.y + 0.05);
+      return min(body, dome) * s;
+    }
+
+    void main(){
+      // 4방향 이웃 평균 → 확산(번짐)
+      vec4 c = texture2D(uPrev, vUv);
+      vec4 l = texture2D(uPrev, vUv - vec2(uTexel.x, 0.0));
+      vec4 r = texture2D(uPrev, vUv + vec2(uTexel.x, 0.0));
+      vec4 d = texture2D(uPrev, vUv - vec2(0.0, uTexel.y));
+      vec4 u = texture2D(uPrev, vUv + vec2(0.0, uTexel.y));
+      vec4 blur = (l + r + d + u) * 0.25;
+
+      // 확산과 원본을 섞고, 매 프레임 조금씩 감쇠(아무는 효과)
+      vec4 state = mix(c, blur, 0.10);
+      state *= 0.994;
+
+      // 마우스 힘 주입: 커서 위치에 UFO 모양 브러시
+      vec2 uvA = vUv; uvA.x *= uAspect;
+      vec2 mA  = uMouse; mA.x *= uAspect;
+      vec2 q = uvA - mA;
+      float ufo = ufoShape(q, 0.14);
+      // SDF 경계에서 안쪽으로 부드럽게(가장자리 blur)
+      float brush = smoothstep(0.02, -0.03, ufo) * uDown;
+
+      // r 채널: 리빌 강도 / gb 채널: 마우스 속도(유체 흐름 방향)
+      state.r += brush * 0.9;
+      state.gb += uVel * brush * 3.0;
+
+      state.r = clamp(state.r, 0.0, 1.0);
+      gl_FragColor = state;
+    }
+  `,
+});
+const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), simMat);
+simScene.add(quad);
+
+// ── 최종 렌더 셰이더 ─────────────────────────────────────────
+// 겉(X-ray 두개골)과 속(외계인)을 모두 프래그먼트에서 프로시저럴하게 그리고,
+// 유체 마스크(uSim.r)를 기준으로 두 레이어를 섞는다.
+const drawMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uSim:    { value: null },
+    uTime:   { value: 0 },
+    uRes:    { value: new THREE.Vector2(1, 1) },
+  },
+  vertexShader: `
+    varying vec2 vUv;
+    void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+  `,
+  fragmentShader: `
+    precision highp float;
+    varying vec2 vUv;
+    uniform sampler2D uSim;
+    uniform float uTime;
+    uniform vec2 uRes;
+
+    // ── 노이즈 유틸 ──
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float noise(vec2 p){
+      vec2 i = floor(p), f = fract(p);
+      vec2 u = f*f*(3.0-2.0*f);
+      return mix(mix(hash(i), hash(i+vec2(1,0)), u.x),
+                 mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), u.x), u.y);
+    }
+    float fbm(vec2 p){
+      float v = 0.0, a = 0.5;
+      for(int i=0;i<5;i++){ v += a*noise(p); p *= 2.0; a *= 0.5; }
+      return v;
+    }
+
+    // 부드러운 타원 SDF
+    float sdEllipse(vec2 p, vec2 r){ return (length(p/r) - 1.0) * min(r.x, r.y); }
+
+    // ── 겉 레이어: X-ray 정면 얼굴 외곽 ──
+    // 정면 두상+목+어깨 실루엣 SDF 근사(음수=안쪽)
+    float profile(vec2 p){
+      float y = p.y;
+      // 얼굴형: 광대에서 넓고 턱으로 갈수록 갸름 (좌우 대칭)
+      float w = 0.245;
+      w -= smoothstep(0.18, 0.44, y) * 0.05;    // 이마 위로 살짝 좁게
+      w -= smoothstep(-0.02, -0.40, y) * 0.13;  // 턱으로 갈수록 좁게
+      vec2 hp = vec2(p.x / (w / 0.245), y - 0.04);
+      float face = sdEllipse(hp, vec2(0.245, 0.36));
+      // 목
+      float neck = sdEllipse(p - vec2(0.0, -0.40), vec2(0.11, 0.13));
+      // 어깨
+      float shoulder = sdEllipse(p - vec2(0.0, -0.66), vec2(0.55, 0.22));
+      return min(min(face, neck), shoulder);
+    }
+
+    // ── 속 레이어: 외계인 얼굴 ──
+    float alien(vec2 p){
+      // 위로 갈수록 넓고 아래(턱)로 갈수록 좁은 물방울형 두상
+      float taper = 1.0 - p.y * 0.55;
+      vec2 hp = vec2(p.x / max(taper, 0.35), p.y - 0.02);
+      float head = sdEllipse(hp, vec2(0.26, 0.40));
+      return head;
+    }
+    // 외계인의 크고 비스듬한 검은 눈
+    float alienEye(vec2 p, float side){
+      vec2 e = p - vec2(side * 0.135, 0.06);
+      // 안쪽으로 기울인 아몬드형
+      float ang = side * 0.5;
+      mat2 rot = mat2(cos(ang), -sin(ang), sin(ang), cos(ang));
+      e = rot * e;
+      return sdEllipse(e, vec2(0.055, 0.115));
+    }
+
+    void main(){
+      // 화면 종횡비 보정 좌표(중앙 원점)
+      // 짧은 변을 기준으로 정규화 → 어떤 화면비든 얼굴이 정중앙·정비율로 유지
+      vec2 uv = vUv;
+      float aspect = uRes.x / uRes.y;
+      vec2 p = (uv - 0.5);
+      if(aspect > 1.0) p.x *= aspect;   // 가로 화면: 가로로 여유
+      else             p.y /= aspect;   // 세로 화면: 세로로 여유
+      p /= 1.15;                         // 정면 얼굴+어깨가 담기도록
+      p.y += 0.06;                       // 얼굴을 화면 중앙으로 살짝 올림
+
+      float sim = texture2D(uSim, uv).r;
+      vec2 flow = texture2D(uSim, uv).gb;
+
+      // 유체 흐름으로 좌표를 왜곡 → 경계가 유체처럼 일렁인다
+      vec2 pd = p + flow * 0.10;
+      pd += (fbm(p * 4.0 + uTime * 0.05) - 0.5) * 0.03;
+
+      // ── 배경: 어두운 남색(X-ray 판) ──
+      float bgn = fbm(p * 2.2 + vec2(uTime * 0.02, 0.0));
+      vec3 col = mix(vec3(0.03, 0.04, 0.10), vec3(0.05, 0.07, 0.16), bgn);
+      // 두상 뒤 은은한 후광
+      col += vec3(0.04, 0.06, 0.12) * smoothstep(0.55, -0.05, length(p - vec2(0.05, 0.05)));
+
+      // ── 겉 레이어: X-ray 옆모습(안에서 배어나오는 발광) ──
+      float pf = profile(pd);
+      float inside = -pf;   // 안쪽일수록 큼
+      // 경계에서 안으로 부드럽게 밝아지는 발광 + 중심부 코어
+      float glow = clamp(inside / 0.06, 0.0, 1.0);
+      float core = clamp(inside / 0.30, 0.0, 1.0);
+      float lum = clamp(glow * 0.42 + core * 0.82, 0.0, 1.0);
+      // 살짝의 내부 질감(불균일한 발광)
+      lum *= 0.92 + fbm(pd * 8.0) * 0.16;
+      // 청백색 머리 톤
+      vec3 headCol = mix(vec3(0.03, 0.04, 0.10), vec3(0.66, 0.74, 0.88), lum);
+      // 경계 근처를 살짝 더 차갑고 밝게(림 라이트)
+      float rimGlow = smoothstep(0.055, 0.0, abs(pf)) * (1.0 - core);
+      headCol += rimGlow * vec3(0.10, 0.14, 0.20);
+      // 두상 영역만 합성(경계는 넓게 블러 처리해 부드럽게)
+      float faceMask = smoothstep(0.05, -0.02, pf);
+      col = mix(col, headCol, faceMask);
+
+      // ── 속 레이어: 외계인 ──
+      float al = alien(pd);
+      float alienMask = smoothstep(0.015, -0.015, al);
+      float aTissue = fbm(pd * 7.0 + 3.0) * 0.5 + 0.5;
+      // 창백한 청록빛 피부
+      vec3 alienCol = mix(vec3(0.20, 0.42, 0.42), vec3(0.55, 0.80, 0.74), aTissue);
+      float aEdge = smoothstep(0.035, 0.0, abs(al));
+      alienCol += aEdge * vec3(0.3, 0.6, 0.55);
+      // 검은 눈
+      float eyeL = smoothstep(0.008, -0.008, alienEye(pd, -1.0));
+      float eyeR = smoothstep(0.008, -0.008, alienEye(pd,  1.0));
+      float eyes = max(eyeL, eyeR);
+      // 눈 속 하이라이트
+      float glintL = smoothstep(0.02, 0.0, distance(pd, vec2(-0.115, 0.10)));
+      float glintR = smoothstep(0.02, 0.0, distance(pd, vec2( 0.155, 0.10)));
+      alienCol = mix(alienCol, vec3(0.02, 0.05, 0.07), eyes);
+      alienCol += (glintL + glintR) * vec3(0.4, 0.7, 0.7);
+
+      // ── 유체 마스크로 리빌 ──
+      // sim 자국(UFO 모양)의 강도
+      float reveal = smoothstep(0.15, 0.55, sim);
+      float ring = smoothstep(0.1, 0.3, sim) - smoothstep(0.3, 0.6, sim);
+
+      // 외계인 영역: 자국을 따라 외계인이 드러남
+      col = mix(col, alienCol, reveal * alienMask);
+      col += ring * vec3(0.2, 0.45, 0.5) * alienMask;
+
+      // 외계인 바깥 얼굴·배경: UFO 자국이 은은한 실루엣으로 지나감
+      float outside = 1.0 - alienMask;
+      float trail = smoothstep(0.08, 0.5, sim);          // 지나간 자국
+      col += trail * outside * vec3(0.12, 0.28, 0.34);    // 청록빛 발광
+      col += ring * outside * vec3(0.15, 0.35, 0.42);     // 앞선 가장자리 강조
+
+      // ── 후처리: 가로 스캔라인 + 비네팅 + 그레인 ──
+      float scan = (sin(uv.y * 340.0) * 0.5 + 0.5);
+      col *= 1.0 - scan * 0.10;                 // 뚜렷한 가로줄
+      float vig = smoothstep(1.05, 0.30, length(p - vec2(0.05, 0.0)));
+      col *= vig;
+      float grain = (hash(uv * uRes + uTime) - 0.5) * 0.04;
+      col += grain;
+
+      gl_FragColor = vec4(col, 1.0);
+    }
+  `,
+});
+const drawQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), drawMat);
+scene.add(drawQuad);
+
+// ── 마우스 입력 ──────────────────────────────────────────────
+const mouse = new THREE.Vector2(-1, -1);
+const prevMouse = new THREE.Vector2(-1, -1);
+const vel = new THREE.Vector2(0, 0);
+let down = 0;
+let moved = false;
+
+function setMouse(x, y) {
+  const nx = x / window.innerWidth;
+  const ny = 1.0 - y / window.innerHeight;
+  prevMouse.copy(mouse);
+  mouse.set(nx, ny);
+  vel.set(mouse.x - prevMouse.x, mouse.y - prevMouse.y);
+  down = 1;
+  if (!moved) { moved = true; document.getElementById('hint').style.opacity = '0'; }
+}
+window.addEventListener('pointermove', (e) => setMouse(e.clientX, e.clientY));
+window.addEventListener('pointerleave', () => { down = 0; });
+
+// ── 리사이즈 ────────────────────────────────────────────────
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, true);
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  drawMat.uniforms.uRes.value.set(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
+  simMat.uniforms.uAspect.value = w / h;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── 렌더 루프 ───────────────────────────────────────────────
+const clock = new THREE.Clock();
+function loop() {
+  requestAnimationFrame(loop);
+  const t = clock.getElapsedTime();
+
+  // 1) 유체 상태 갱신 (rtA → rtB)
+  simMat.uniforms.uPrev.value = rtA.texture;
+  simMat.uniforms.uMouse.value.copy(mouse);
+  simMat.uniforms.uVel.value.copy(vel);
+  simMat.uniforms.uDown.value = down;
+  renderer.setRenderTarget(rtB);
+  renderer.render(simScene, simCamera);
+
+  // 핑퐁 스왑
+  const tmp = rtA; rtA = rtB; rtB = tmp;
+
+  // 속도는 매 프레임 감쇠(움직임 멈추면 흐름도 잦아듦)
+  vel.multiplyScalar(0.9);
+  down *= 0.96;
+
+  // 2) 최종 화면 렌더
+  drawMat.uniforms.uSim.value = rtA.texture;
+  drawMat.uniforms.uTime.value = t;
+  renderer.setRenderTarget(null);
+  renderer.render(scene, camera);
+}
+loop();
+</script>
+</body>
+</html>
