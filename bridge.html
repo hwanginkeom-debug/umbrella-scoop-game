@@ -460,7 +460,31 @@ renderer.domElement.addEventListener('wheel', function(e) {
 var MIN_X = 0, MAX_X = projects.length - 1;
 
 var clk = new THREE.Clock();
-// 글리치 — 카드 버텍스 랜덤 틱
+// 이스터에그 — 굿바이 키로 카드 3초 호버
+var easterEggTimer = 0;
+var easterEggShown = false;
+var easterEggEl = null;
+var KIRO_IDX = 0; // 굿바이 키로는 첫 번째 카드
+
+function showEasterEgg() {
+  if (easterEggShown) return;
+  easterEggShown = true;
+  var el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#fff;color:#111;font-size:11px;font-family:monospace;line-height:1.7;padding:16px 20px;border-radius:12px;max-width:320px;text-align:left;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.5s;';
+  el.innerHTML = '키로야 너 진짜 못하더라,, 속이 터져 죽는줄 알았다 솔직히..<br>너는 다시 관짝행이다......가끔 위키쓰고 싶을때나 꺼낼께..<br>그래도 많이 연습했어,, 근데 요즘은 그냥 내가 연습하는거보다<br>좋은 AI쓰는게 낫더라.. 고마웠고.. 안녕';
+  // 말풍선 꼬리
+  var tail = document.createElement('div');
+  tail.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:10px solid #fff;';
+  el.appendChild(tail);
+  document.body.appendChild(el);
+  easterEggEl = el;
+  setTimeout(function(){ el.style.opacity='1'; }, 50);
+  // 10초 후 사라짐
+  setTimeout(function(){
+    el.style.opacity='0';
+    setTimeout(function(){ el.remove(); easterEggEl=null; easterEggShown=false; }, 500);
+  }, 10000);
+}
 var glitchTimer = 2000 + Math.random() * 3000;
 var glitchActive = false;
 var glitchCardIdx = -1;
@@ -515,7 +539,13 @@ function animate() {
   currentX += (targetX - currentX) * 0.1;
   layoutCards(currentX);
 
-  // 글리치 타이머
+  // 이스터에그 타이머 — 굿바이 키로 카드 3초 호버
+  if (hoverGroup && hoverGroup.userData.idx === KIRO_IDX) {
+    easterEggTimer += 16;
+    if (easterEggTimer > 3000) showEasterEgg();
+  } else {
+    easterEggTimer = 0;
+  }
   glitchTimer -= 16;
   if (glitchTimer <= 0 && !glitchActive) {
     glitchTimer = 2500 + Math.random() * 4000;
