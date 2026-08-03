@@ -7,7 +7,7 @@
 <link rel="icon" href="./파비콘.jpg" type="image/jpeg">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#111111; overflow:hidden; font-family:-apple-system,sans-serif; }
+  body { background:#111111; overflow:hidden; font-family:-apple-system,sans-serif; cursor:none; }
 
   /* 레트로 필터 오버레이 */
   body::before {
@@ -267,6 +267,56 @@ var hoverMv = new THREE.Vector2();
 var hoverGroup = null;
 var hoverTarget = 0;
 
+// 픽셀 커서 생성
+function makePxCursor(type) {
+  var c = document.createElement('canvas');
+  var S = 3;
+  c.width = 24*S; c.height = 24*S;
+  var cx = c.getContext('2d');
+  cx.imageSmoothingEnabled = false;
+  // 화살표 패턴
+  var arrow = [
+    [1,0,0,0,0,0,0],
+    [1,1,0,0,0,0,0],
+    [1,1,1,0,0,0,0],
+    [1,1,1,1,0,0,0],
+    [1,1,1,1,1,0,0],
+    [1,1,1,1,1,1,0],
+    [1,1,1,1,0,0,0],
+    [1,1,0,1,1,0,0],
+    [1,0,0,0,1,1,0],
+    [0,0,0,0,0,1,1],
+  ];
+  // 포인터 (클릭)
+  var pointer = [
+    [0,1,0,0,0,0,0],
+    [0,1,0,0,0,0,0],
+    [0,1,1,1,0,0,0],
+    [0,1,0,1,1,0,0],
+    [0,1,0,0,1,1,0],
+    [1,1,0,0,0,1,0],
+    [1,0,0,0,0,1,0],
+    [1,0,0,0,0,1,0],
+    [1,0,0,0,1,0,0],
+    [0,1,1,1,0,0,0],
+  ];
+  var pat = (type==='click') ? pointer : arrow;
+  var col = (type==='click') ? '#aaffdd' : '#ffffff';
+  // 그림자
+  cx.fillStyle='rgba(0,0,0,0.5)';
+  for(var r=0;r<pat.length;r++){for(var cc=0;cc<pat[r].length;cc++){if(pat[r][cc]){cx.fillRect((cc+1)*S,(r+1)*S,S,S);}}}
+  // 외곽
+  cx.fillStyle='#000';
+  for(var r=0;r<pat.length;r++){for(var cc=0;cc<pat[r].length;cc++){if(pat[r][cc]){cx.fillRect((cc-1)*S-1,(r-1)*S-1,S+2,S+2);}}}
+  // 본체
+  cx.fillStyle=col;
+  for(var r=0;r<pat.length;r++){for(var cc=0;cc<pat[r].length;cc++){if(pat[r][cc]){cx.fillRect(cc*S,r*S,S,S);}}}
+  return 'url('+c.toDataURL()+') 0 0, auto';
+}
+var CUR_NORMAL = makePxCursor('normal');
+var CUR_CLICK  = makePxCursor('click');
+document.body.style.cursor = CUR_NORMAL;
+
 renderer.domElement.addEventListener('mousemove', function(e) {
   hoverMv.x = (e.clientX/W)*2-1;
   hoverMv.y = -(e.clientY/H)*2+1;
@@ -277,17 +327,17 @@ renderer.domElement.addEventListener('mousemove', function(e) {
   if (hits.length > 0) {
     hoverGroup = hits[0].object.parent;
     hoverTarget = 1;
-    document.body.style.cursor = 'pointer';
+    document.body.style.cursor = CUR_CLICK;
   } else {
     hoverGroup = null;
     hoverTarget = 0;
-    document.body.style.cursor = 'default';
+    document.body.style.cursor = CUR_NORMAL;
   }
 });
 
 renderer.domElement.addEventListener('mouseleave', function() {
   hoverGroup = null; hoverTarget = 0;
-  document.body.style.cursor = 'default';
+  document.body.style.cursor = CUR_NORMAL;
 });
 
 var lastMouseX = 0;
