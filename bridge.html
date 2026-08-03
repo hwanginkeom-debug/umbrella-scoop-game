@@ -203,6 +203,39 @@ renderer.domElement.addEventListener('mouseleave', function() {
 });
 
 var lastMouseX = 0;
+
+renderer.domElement.addEventListener('pointerdown', function(e) {
+  dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
+  lastMouseX = e.clientX;
+  targetX = currentX;
+});
+renderer.domElement.addEventListener('pointermove', function(e) {
+  if (!dragging) return;
+  var dx = e.clientX - lastMouseX;
+  targetX -= dx * 0.015;
+  targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
+  lastMouseX = e.clientX;
+  dragDeltaX = Math.abs(e.clientX - dragStartX);
+});
+renderer.domElement.addEventListener('pointerup', function(e) {
+  dragging = false;
+  if (dragDeltaX < 8) {
+    var mouse2 = new THREE.Vector2((e.clientX/W)*2-1, -(e.clientY/H)*2+1);
+    var ray2 = new THREE.Raycaster();
+    ray2.setFromCamera(mouse2, camera);
+    var meshes2 = [];
+    cards.forEach(function(g){ g.children.forEach(function(m){ if(m.isMesh) meshes2.push(m); }); });
+    var hits2 = ray2.intersectObjects(meshes2);
+    if (hits2.length > 0) {
+      window.location.href = hits2[0].object.parent.userData.project.path;
+    }
+  }
+  targetX = Math.round(currentX);
+});
+renderer.domElement.addEventListener('wheel', function(e) {
+  targetX += (e.deltaY + e.deltaX) * 0.004;
+  targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
+}, {passive:true});
   dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
   lastMouseX = e.clientX;
   targetX = currentX; // 현재 위치에서 시작
