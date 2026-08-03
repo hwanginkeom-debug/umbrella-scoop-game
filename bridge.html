@@ -202,8 +202,9 @@
         function renderProjects() {
             const grid = document.getElementById('projectGrid');
             let html = '';
-
-            projects.forEach((project) => {
+            // 최신순 정렬 (날짜 내림차순)
+            const sorted = projects.slice().sort((a, b) => b.date.localeCompare(a.date));
+            sorted.forEach((project) => {
                 html += `
                     <a class="card" href="${project.path}">
                         <h2>${project.title}</h2>
