@@ -130,10 +130,15 @@ function shadeHex(hex, amt) {
 projects.forEach(function(p, i) {
   var geo = new THREE.PlaneGeometry(CARD_W, CARD_H, 1, 1);
   var tex = makeTexture(p);
-  var mat = new THREE.MeshStandardMaterial({map:tex, side:THREE.FrontSide});
+  var mat = new THREE.MeshStandardMaterial({map:tex, side:THREE.FrontSide, emissive:new THREE.Color(0,0,0), emissiveIntensity:0});
   var mesh = new THREE.Mesh(geo, mat);
-  // 뒷면 (약간 어둡게)
-  var backMat = new THREE.MeshStandardMaterial({color:0x111111});
+  // 뒷면 (무지갯빛 반짝이)
+  var backMat = new THREE.MeshStandardMaterial({
+    color: 0x111111,
+    emissive: new THREE.Color(0.1, 0.05, 0.2),
+    roughness: 0.1,
+    metalness: 0.9
+  });
   var backGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
   var back = new THREE.Mesh(backGeo, backMat);
   back.rotation.y = Math.PI;
@@ -178,7 +183,7 @@ scene.add(hoverLight);
 var hoverRay = new THREE.Raycaster();
 var hoverMv = new THREE.Vector2();
 var hoverGroup = null;
-var hoverTarget = 0; // 0=없음, 1=호버
+var hoverTarget = 0;
 
 renderer.domElement.addEventListener('mousemove', function(e) {
   hoverMv.x = (e.clientX/W)*2-1;
@@ -287,21 +292,68 @@ function animate() {
   currentX += (targetX - currentX) * 0.1;
   layoutCards(currentX);
 
-  // 호버 효과 — 살짝 커지기 + 포인트 라이트
+  // 호버 효과 — 무지갯빛 이미시브 + 포인트 라이트
+  var rainbowT = Date.now() * 0.002;
   cards.forEach(function(g) {
     var isHov = (g === hoverGroup);
-    var targetSc = isHov ? 1.06 : null; // null이면 layoutCards가 제어
     if (isHov) {
       g.scale.x += (1.06 - g.scale.x) * 0.12;
       g.scale.y += (1.06 - g.scale.y) * 0.12;
       g.scale.z += (1.06 - g.scale.z) * 0.12;
+      // 앞면 무지갯빛 이미시브
+      g.children.forEach(function(m) {
+        if (!m.isMesh) return;
+        if (m.rotation.y === 0) {
+          // 앞면
+          if (m.material.emissive) {
+            var r = (Math.sin(rainbowT) * 0.5 + 0.5) * 0.25;
+            var gv = (Math.sin(rainbowT + Math.PI*2/3) * 0.5 + 0.5) * 0.25;
+            var b = (Math.sin(rainbowT + Math.PI*4/3) * 0.5 + 0.5) * 0.25;
+            m.material.emissive.setRGB(r, gv, b);
+            m.material.emissiveIntensity = 1.0;
+          }
+        } else {
+          // 뒷면 — 빠른 무지갯빛
+          if (m.material.emissive) {
+            var r2 = (Math.sin(rainbowT*2) * 0.5 + 0.5) * 0.6;
+            var g2 = (Math.sin(rainbowT*2 + Math.PI*2/3) * 0.5 + 0.5) * 0.6;
+            var b2 = (Math.sin(rainbowT*2 + Math.PI*4/3) * 0.5 + 0.5) * 0.6;
+            m.material.emissive.setRGB(r2, g2, b2);
+            m.material.emissiveIntensity = 1.5;
+          }
+        }
+      });
+    } else {
+      // 비호버 — 이미시브 서서히 끔
+      g.children.forEach(function(m) {
+        if (!m.isMesh) return;
+        if (m.material.emissive) {
+          m.material.emissive.r *= 0.85;
+          m.material.emissive.g *= 0.85;
+          m.material.emissive.b *= 0.85;
+        }
+        if (m.rotation.y !== 0) {
+          // 뒷면은 항상 살짝 반짝
+          if (m.material.emissive) {
+            var bt = Date.now()*0.001 + g.userData.idx;
+            m.material.emissive.setRGB(
+              (Math.sin(bt)*0.5+0.5)*0.08,
+              (Math.sin(bt+2)*0.5+0.5)*0.08,
+              (Math.sin(bt+4)*0.5+0.5)*0.15
+            );
+          }
+        }
+      });
     }
   });
   // 라이트 따라가기
   if (hoverGroup) {
     hoverLight.position.set(hoverGroup.position.x, hoverGroup.position.y+0.5, hoverGroup.position.z+2);
-    hoverLight.intensity += (2.5 - hoverLight.intensity) * 0.1;
-    hoverLight.color.setHex(0xffffff);
+    var hr = (Math.sin(rainbowT+0.5)*0.5+0.5);
+    var hg = (Math.sin(rainbowT+2.5)*0.5+0.5);
+    var hb = (Math.sin(rainbowT+4.5)*0.5+0.5);
+    hoverLight.color.setRGB(hr, hg, hb);
+    hoverLight.intensity += (3.5 - hoverLight.intensity) * 0.1;
   } else {
     hoverLight.intensity += (0 - hoverLight.intensity) * 0.1;
   }
