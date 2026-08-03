@@ -136,23 +136,19 @@ projects.forEach(function(p, i) {
 
 // 카드 위치 계산
 function layoutCards(offset) {
-  var centerF = -offset / SPREAD;
   cards.forEach(function(g, i) {
-    var relF = i - centerF;
+    var relF = i - offset; // offset이 커지면 카드들이 왼쪽으로
     var angle = relF * 0.38;
     var tx = relF * SPREAD;
     var tz = -Math.abs(relF) * 1.2;
-    var ty = 0;
     g.position.x += (tx - g.position.x) * 0.1;
     g.position.z += (tz - g.position.z) * 0.1;
-    g.position.y += (ty - g.position.y) * 0.1;
+    g.position.y += (0 - g.position.y) * 0.1;
     g.rotation.y += (-angle - g.rotation.y) * 0.1;
-    // 스케일 — 중앙에 가까울수록 크게
     var sc = 1 - Math.min(Math.abs(relF) * 0.08, 0.3);
     g.scale.setScalar(sc + (g.scale.x - sc) * 0.9);
   });
-  // 포커스 카드 찾기
-  var fi = Math.round(centerF);
+  var fi = Math.round(offset);
   fi = Math.max(0, Math.min(projects.length-1, fi));
   if (fi !== hoveredIdx) {
     hoveredIdx = fi;
@@ -168,11 +164,13 @@ var lastMouseX = 0;
 renderer.domElement.addEventListener('pointerdown', function(e) {
   dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
   lastMouseX = e.clientX;
+  targetX = currentX; // 현재 위치에서 시작
 });
 renderer.domElement.addEventListener('pointermove', function(e) {
   if (!dragging) return;
   var dx = e.clientX - lastMouseX;
-  targetX += dx * 0.012;
+  targetX -= dx * 0.015;
+  targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
   lastMouseX = e.clientX;
   dragDeltaX = Math.abs(e.clientX - dragStartX);
 });
@@ -198,7 +196,8 @@ renderer.domElement.addEventListener('pointerup', function(e) {
   targetX = Math.round(currentX);
 });
 renderer.domElement.addEventListener('wheel', function(e) {
-  targetX += e.deltaY * 0.004 + e.deltaX * 0.004;
+  targetX += e.deltaY * 0.005 + e.deltaX * 0.005;
+  targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
 }, {passive:true});
 
 // 경계
