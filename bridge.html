@@ -54,9 +54,9 @@
     position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
     text-align:center; pointer-events:none; transition:opacity 0.3s;
   }
-  #label .title { color:#fff; font-size:16px; font-weight:600; letter-spacing:0.5px; }
-  #label .desc  { color:rgba(255,255,255,0.5); font-size:11px; margin-top:4px; }
-  #label .date  { color:rgba(255,255,255,0.25); font-size:9px; margin-top:6px; letter-spacing:1px; }
+  #label .title { color:#fff; font-size:clamp(12px,4vw,16px); font-weight:600; letter-spacing:0.5px; }
+  #label .desc  { color:rgba(255,255,255,0.5); font-size:clamp(9px,2.5vw,11px); margin-top:4px; }
+  #label .date  { color:rgba(255,255,255,0.25); font-size:clamp(7px,2vw,9px); margin-top:6px; letter-spacing:1px; }
 </style>
 </head>
 <body>
@@ -159,6 +159,8 @@ scene.add(rimLight);
 
 var CARD_W = 2.8, CARD_H = 1.75;
 var SPREAD = 3.2;
+// 모바일에서 카드 더 크게, 간격 줄이기
+if (W < 768) { CARD_W = 2.2; CARD_H = 1.4; SPREAD = 2.4; }
 var cards = [];
 var targetX = 0, currentX = 0;
 var dragging = false, dragStartX = 0, dragDeltaX = 0;
@@ -341,6 +343,35 @@ renderer.domElement.addEventListener('mouseleave', function() {
 });
 
 var lastMouseX = 0;
+
+// 터치 지원
+renderer.domElement.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  dragging=true; dragStartX=e.touches[0].clientX; dragDeltaX=0; lastMouseX=e.touches[0].clientX; targetX=currentX;
+},{passive:false});
+renderer.domElement.addEventListener('touchmove', function(e) {
+  e.preventDefault();
+  if(!dragging) return;
+  var dx=e.touches[0].clientX-lastMouseX;
+  targetX-=dx*0.015; targetX=Math.max(MIN_X,Math.min(MAX_X,targetX));
+  lastMouseX=e.touches[0].clientX; dragDeltaX=Math.abs(e.touches[0].clientX-dragStartX);
+},{passive:false});
+renderer.domElement.addEventListener('touchend', function(e) {
+  dragging=false;
+  if(dragDeltaX<10){
+    var tx=e.changedTouches[0].clientX,ty=e.changedTouches[0].clientY;
+    var m2=new THREE.Vector2((tx/W)*2-1,-(ty/H)*2+1);
+    var r2=new THREE.Raycaster(); r2.setFromCamera(m2,camera);
+    var ms2=[]; cards.forEach(function(g){g.children.forEach(function(m){if(m.isMesh)ms2.push(m);});});
+    var h2=r2.intersectObjects(ms2);
+    if(h2.length>0){
+      var ci=h2[0].object.parent.userData.idx, cen=Math.round(currentX);
+      if(Math.abs(ci-cen)<0.5) window.location.href=h2[0].object.parent.userData.project.path;
+      else{targetX=ci;setTimeout(function(){window.location.href=h2[0].object.parent.userData.project.path;},650);}
+    }
+  }
+  targetX=Math.round(currentX);
+},{passive:false});
 
 renderer.domElement.addEventListener('pointerdown', function(e) {
   dragging = true; dragStartX = e.clientX; dragDeltaX = 0;

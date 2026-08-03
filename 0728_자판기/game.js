@@ -26,7 +26,7 @@ var ITEMS=[
 ];
 
 var BET_OPTIONS=[
-{pct:75,mult:0.005,label:"75%",loseRate:0.5},
+{pct:75,mult:1.3,label:"75%",loseRate:0.5},
 {pct:50,mult:2,label:"50%",loseRate:0.5},
 {pct:25,mult:5,label:"25%",loseRate:0.6},
 {pct:10,mult:10,label:"10%",loseRate:0.7},
