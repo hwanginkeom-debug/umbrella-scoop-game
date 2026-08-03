@@ -286,7 +286,18 @@ renderer.domElement.addEventListener('pointerup', function(e) {
     cards.forEach(function(g){ g.children.forEach(function(m){ if(m.isMesh) meshes2.push(m); }); });
     var hits2 = ray2.intersectObjects(meshes2);
     if (hits2.length > 0) {
-      window.location.href = hits2[0].object.parent.userData.project.path;
+      var clickedGroup = hits2[0].object.parent;
+      var clickedIdx = clickedGroup.userData.idx;
+      var centerIdx = Math.round(currentX);
+      if (Math.abs(clickedIdx - centerIdx) < 0.5) {
+        // 이미 중앙 → 바로 이동
+        window.location.href = clickedGroup.userData.project.path;
+      } else {
+        // 중앙 아님 → 먼저 스냅 후 0.6초 후 이동
+        targetX = clickedIdx;
+        var dest = clickedGroup.userData.project.path;
+        setTimeout(function() { window.location.href = dest; }, 650);
+      }
     }
   }
   targetX = Math.round(currentX);
@@ -339,11 +350,29 @@ renderer.domElement.addEventListener('wheel', function(e) {
 var MIN_X = 0, MAX_X = projects.length - 1;
 
 var clk = new THREE.Clock();
+// 글리치 — 카드 위치 랜덤 틱
+var glitchTimer = 0;
+var glitchCard = -1;
+var glitchOffX = 0;
+
 function animate() {
   requestAnimationFrame(animate);
+  var now = Date.now();
   targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
   currentX += (targetX - currentX) * 0.1;
   layoutCards(currentX);
+
+  // 글리치 효과 — 가끔 랜덤 카드 x 위치 살짝 틱
+  glitchTimer -= 16;
+  if (glitchTimer <= 0) {
+    glitchTimer = 2000 + Math.random() * 4000; // 2~6초 간격
+    glitchCard = Math.floor(Math.random() * cards.length);
+    glitchOffX = (Math.random() - 0.5) * 0.15;
+    setTimeout(function() { glitchCard = -1; glitchOffX = 0; }, 60 + Math.random() * 80);
+  }
+  if (glitchCard >= 0 && cards[glitchCard]) {
+    cards[glitchCard].position.x += glitchOffX;
+  }
 
   // 카드 뒤에서 빛이 새어나오는 효과 — 앞면 명도 변화 없음
   var bt2 = Date.now() * 0.0015;
