@@ -178,12 +178,24 @@ renderer.domElement.addEventListener('pointermove', function(e) {
 });
 renderer.domElement.addEventListener('pointerup', function(e) {
   dragging = false;
-  // 짧은 클릭이면 이동
-  if (dragDeltaX < 8 && hoveredIdx >= 0) {
-    window.location.href = projects[hoveredIdx].path;
+  // 짧은 클릭이면 레이캐스팅으로 실제 카드 찾아 이동
+  if (dragDeltaX < 8) {
+    var mouse = new THREE.Vector2(
+      (e.clientX/W)*2-1,
+      -(e.clientY/H)*2+1
+    );
+    var ray = new THREE.Raycaster();
+    ray.setFromCamera(mouse, camera);
+    var meshes = [];
+    cards.forEach(function(g){ g.children.forEach(function(m){ if(m.isMesh) meshes.push(m); }); });
+    var hits = ray.intersectObjects(meshes);
+    if (hits.length > 0) {
+      var hitGroup = hits[0].object.parent;
+      window.location.href = hitGroup.userData.project.path;
+    }
   }
   // 스냅
-  targetX = Math.round(targetX);
+  targetX = Math.round(currentX);
 });
 renderer.domElement.addEventListener('wheel', function(e) {
   targetX += e.deltaY * 0.004 + e.deltaX * 0.004;
