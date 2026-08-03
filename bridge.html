@@ -82,6 +82,35 @@ function updateNoise(){
   setTimeout(updateNoise,50);
 }
 updateNoise();
+
+// 인트로 글리치
+var introGlitch=document.createElement('canvas');
+introGlitch.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;';
+document.body.appendChild(introGlitch);
+var igCtx=introGlitch.getContext('2d');
+introGlitch.width=window.innerWidth; introGlitch.height=window.innerHeight;
+var introStart=Date.now(), INTRO_DUR=1800;
+function drawIG(){
+  var p=Math.min((Date.now()-introStart)/INTRO_DUR,1), it=1-p;
+  var iw=introGlitch.width, ih=introGlitch.height;
+  igCtx.clearRect(0,0,iw,ih);
+  igCtx.fillStyle='rgba(17,17,17,'+(it*0.92)+')'; igCtx.fillRect(0,0,iw,ih);
+  for(var i=0;i<Math.floor(18*it)+2;i++){
+    var ly=Math.random()*ih,lr=Math.random();
+    if(lr<0.3)igCtx.fillStyle='rgba(255,255,255,'+(Math.random()*0.25)+')';
+    else if(lr<0.6)igCtx.fillStyle='rgba(0,230,180,'+(Math.random()*0.18)+')';
+    else igCtx.fillStyle='rgba(255,40,40,'+(Math.random()*0.14)+')';
+    igCtx.fillRect((Math.random()-0.5)*50*it,ly,iw,Math.random()*7+1);
+  }
+  for(var j=0;j<Math.floor(6*it);j++){
+    igCtx.fillStyle='rgba('+Math.floor(Math.random()*40)+','+Math.floor(Math.random()*40)+','+Math.floor(Math.random()*70)+','+(Math.random()*0.35)+')';
+    igCtx.fillRect(Math.random()*iw,0,Math.random()*25+2,ih);
+  }
+  if(Math.random()<0.12*it){igCtx.fillStyle='rgba(255,255,255,'+(Math.random()*0.07)+')';igCtx.fillRect(0,0,iw,ih);}
+  if(p<1)requestAnimationFrame(drawIG);
+  else{introGlitch.style.transition='opacity 0.3s';introGlitch.style.opacity='0';setTimeout(function(){introGlitch.remove();},300);}
+}
+drawIG();
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
