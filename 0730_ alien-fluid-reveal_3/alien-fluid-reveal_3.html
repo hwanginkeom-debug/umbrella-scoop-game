@@ -306,6 +306,17 @@ function setMouse(x, y) {
 window.addEventListener('pointermove', (e) => setMouse(e.clientX, e.clientY));
 window.addEventListener('pointerleave', () => { down = 0; });
 
+// 모바일 오디오 unlock
+document.addEventListener('touchstart', function(){
+  if(window.AudioContext&&!window._audioUnlocked){
+    window._audioUnlocked=true;
+    var ac=new AudioContext();
+    var b=ac.createBuffer(1,1,22050);
+    var s=ac.createBufferSource();
+    s.buffer=b; s.connect(ac.destination); s.start(0); ac.close();
+  }
+},{once:true});
+
 // ── 리사이즈 ────────────────────────────────────────────────
 function resize() {
   const w = window.innerWidth, h = window.innerHeight;
