@@ -9,41 +9,6 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#111111; overflow:hidden; font-family:-apple-system,sans-serif; cursor:none; }
 
-  /* 레트로 필터 오버레이 */
-  body::before {
-    content:'';
-    position:fixed; inset:0; z-index:9998; pointer-events:none;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.08) 2px,
-      rgba(0,0,0,0.08) 4px
-    );
-  }
-  body::after {
-    content:'';
-    position:fixed; inset:0; z-index:9997; pointer-events:none;
-    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.55) 100%);
-  }
-  #retro-overlay {
-    position:fixed; inset:0; z-index:9996; pointer-events:none;
-    opacity:0.04;
-    animation:grain .12s steps(1) infinite;
-  }
-  @keyframes grain {
-    0%  { transform:translate(0,0); }
-    10% { transform:translate(-2%,-3%); }
-    20% { transform:translate(3%,1%); }
-    30% { transform:translate(-1%,4%); }
-    40% { transform:translate(4%,-2%); }
-    50% { transform:translate(-3%,3%); }
-    60% { transform:translate(2%,-4%); }
-    70% { transform:translate(-4%,2%); }
-    80% { transform:translate(3%,-1%); }
-    90% { transform:translate(-2%,4%); }
-    100%{ transform:translate(1%,-3%); }
-  }
   #hint {
     position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
     color:rgba(255,255,255,0.3); font-size:10px; letter-spacing:2px;
@@ -67,50 +32,9 @@
   <div class="date" id="lbl-date"></div>
 </div>
 
-<!-- 레트로 노이즈 오버레이 -->
-<canvas id="retro-overlay"></canvas>
 
-<script>
-var noiseC = document.getElementById('retro-overlay');
-noiseC.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:0.04;z-index:9996;';
-var noiseCtx = noiseC.getContext('2d');
-var NW=256,NH=256; noiseC.width=NW; noiseC.height=NH;
-function updateNoise(){
-  var img=noiseCtx.createImageData(NW,NH);
-  for(var i=0;i<img.data.length;i+=4){var v=Math.random()*255;img.data[i]=img.data[i+1]=img.data[i+2]=v;img.data[i+3]=255;}
-  noiseCtx.putImageData(img,0,0);
-  setTimeout(updateNoise,50);
-}
-updateNoise();
 
-// 인트로 글리치
-var introGlitch=document.createElement('canvas');
-introGlitch.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:9999;pointer-events:none;';
-document.body.appendChild(introGlitch);
-var igCtx=introGlitch.getContext('2d');
-introGlitch.width=window.innerWidth; introGlitch.height=window.innerHeight;
-var introStart=Date.now(), INTRO_DUR=1800;
-function drawIG(){
-  var p=Math.min((Date.now()-introStart)/INTRO_DUR,1), it=1-p;
-  var iw=introGlitch.width, ih=introGlitch.height;
-  igCtx.clearRect(0,0,iw,ih);
-  igCtx.fillStyle='rgba(17,17,17,'+(it*0.92)+')'; igCtx.fillRect(0,0,iw,ih);
-  for(var i=0;i<Math.floor(18*it)+2;i++){
-    var ly=Math.random()*ih,lr=Math.random();
-    if(lr<0.3)igCtx.fillStyle='rgba(255,255,255,'+(Math.random()*0.25)+')';
-    else if(lr<0.6)igCtx.fillStyle='rgba(0,230,180,'+(Math.random()*0.18)+')';
-    else igCtx.fillStyle='rgba(255,40,40,'+(Math.random()*0.14)+')';
-    igCtx.fillRect((Math.random()-0.5)*50*it,ly,iw,Math.random()*7+1);
-  }
-  for(var j=0;j<Math.floor(6*it);j++){
-    igCtx.fillStyle='rgba('+Math.floor(Math.random()*40)+','+Math.floor(Math.random()*40)+','+Math.floor(Math.random()*70)+','+(Math.random()*0.35)+')';
-    igCtx.fillRect(Math.random()*iw,0,Math.random()*25+2,ih);
-  }
-  if(Math.random()<0.12*it){igCtx.fillStyle='rgba(255,255,255,'+(Math.random()*0.07)+')';igCtx.fillRect(0,0,iw,ih);}
-  if(p<1)requestAnimationFrame(drawIG);
-  else{introGlitch.style.transition='opacity 0.3s';introGlitch.style.opacity='0';setTimeout(function(){introGlitch.remove();},300);}
-}
-drawIG();
+
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -464,6 +388,14 @@ var clk = new THREE.Clock();
 var easterEggTimer = 0;
 var easterEggShown = false;
 var easterEggEl = null;
+var KIRO_IDX = 0;
+
+var glitchTimer = 2500 + Math.random() * 4000;
+var glitchActive = false;
+var glitchCardIdx = -1;
+var glitchStartPositions = null;
+var easterEggShown = false;
+var easterEggEl = null;
 var KIRO_IDX = 0; // 굿바이 키로는 첫 번째 카드
 
 function showEasterEgg() {
@@ -490,7 +422,23 @@ var glitchActive = false;
 var glitchCardIdx = -1;
 var glitchStartPositions = null;
 
-function triggerGlitch() {
+function showEasterEgg() {
+  if (easterEggShown) return;
+  easterEggShown = true;
+  var el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#fff;color:#111;font-size:11px;font-family:monospace;line-height:1.7;padding:16px 20px;border-radius:12px;max-width:320px;text-align:left;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.5s;';
+  el.innerHTML = '키로야 너 진짜 못하더라,, 속이 터져 죽는줄 알았다 솔직히..<br>너는 다시 관짝행이다......가끔 위키쓰고 싶을때나 꺼낼께..<br>그래도 많이 연습했어,, 근데 요즘은 그냥 내가 연습하는거보다<br>좋은 AI쓰는게 낫더라.. 고마웠고.. 안녕';
+  var tail = document.createElement('div');
+  tail.style.cssText = 'position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:10px solid #fff;';
+  el.appendChild(tail);
+  document.body.appendChild(el);
+  easterEggEl = el;
+  setTimeout(function(){ el.style.opacity='1'; }, 50);
+  setTimeout(function(){
+    el.style.opacity='0';
+    setTimeout(function(){ el.remove(); easterEggEl=null; easterEggShown=false; }, 500);
+  }, 10000);
+}
   glitchCardIdx = Math.floor(Math.random() * cards.length);
   var mesh = cards[glitchCardIdx].children[0];
   if (!mesh || !mesh.geometry) return;
