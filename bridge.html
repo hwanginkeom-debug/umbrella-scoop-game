@@ -11,10 +11,17 @@
   #label {
     position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
     text-align:center; pointer-events:none; transition:opacity 0.3s;
+    z-index:10;
   }
   #label .title { color:#fff; font-size:clamp(12px,4vw,16px); font-weight:600; letter-spacing:0.5px; }
   #label .desc  { color:rgba(255,255,255,0.5); font-size:clamp(9px,2.5vw,11px); margin-top:4px; }
   #label .date  { color:rgba(255,255,255,0.25); font-size:clamp(7px,2vw,9px); margin-top:6px; letter-spacing:1px; }
+  #label .insta { display:inline-block; margin-top:14px; pointer-events:auto;
+    color:rgba(255,255,255,0.55); font-size:11px; text-decoration:none; letter-spacing:0.5px;
+    padding:6px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.2);
+    background:rgba(0,0,0,0.6); transition:color 0.2s, border-color 0.2s; }
+  #label .insta:hover { color:#fff; border-color:rgba(255,255,255,0.5); }
+  #insta-btn { display:none; }
 </style>
 </head>
 <body>
@@ -23,7 +30,12 @@
   <div class="title" id="lbl-title"></div>
   <div class="desc"  id="lbl-desc"></div>
   <div class="date"  id="lbl-date"></div>
+  <a class="insta" href="https://www.instagram.com/hohooan_/" target="_blank" rel="noopener">📷 @hohooan_</a>
 </div>
+
+<a id="insta-btn" href="https://www.instagram.com/hohooan_/" target="_blank" rel="noopener">
+  📷 @hohooan_
+</a>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
@@ -45,7 +57,10 @@ var W = window.innerWidth, H = window.innerHeight;
 var renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(W, H);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-document.body.appendChild(renderer.domElement);
+// 캔버스를 label 바로 앞에 삽입 → label과 insta-btn이 캔버스보다 DOM 후순위 = 위에 그려짐
+var labelEl = document.getElementById('label');
+document.body.insertBefore(renderer.domElement, labelEl);
+renderer.domElement.style.cssText = 'position:fixed;top:0;left:0;isolation:isolate;';
 
 var scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
