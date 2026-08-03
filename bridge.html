@@ -171,8 +171,38 @@ function layoutCards(offset) {
 }
 
 // 입력
+// 호버 포인트 라이트
+var hoverLight = new THREE.PointLight(0xffffff, 0, 8);
+scene.add(hoverLight);
+var hoverRay = new THREE.Raycaster();
+var hoverMv = new THREE.Vector2();
+var hoverGroup = null;
+var hoverTarget = 0; // 0=없음, 1=호버
+
+renderer.domElement.addEventListener('mousemove', function(e) {
+  hoverMv.x = (e.clientX/W)*2-1;
+  hoverMv.y = -(e.clientY/H)*2+1;
+  hoverRay.setFromCamera(hoverMv, camera);
+  var meshes = [];
+  cards.forEach(function(g){ g.children.forEach(function(m){ if(m.isMesh) meshes.push(m); }); });
+  var hits = hoverRay.intersectObjects(meshes);
+  if (hits.length > 0) {
+    hoverGroup = hits[0].object.parent;
+    hoverTarget = 1;
+    document.body.style.cursor = 'pointer';
+  } else {
+    hoverGroup = null;
+    hoverTarget = 0;
+    document.body.style.cursor = 'default';
+  }
+});
+
+renderer.domElement.addEventListener('mouseleave', function() {
+  hoverGroup = null; hoverTarget = 0;
+  document.body.style.cursor = 'default';
+});
+
 var lastMouseX = 0;
-renderer.domElement.addEventListener('pointerdown', function(e) {
   dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
   lastMouseX = e.clientX;
   targetX = currentX; // 현재 위치에서 시작
@@ -220,6 +250,26 @@ function animate() {
   targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
   currentX += (targetX - currentX) * 0.1;
   layoutCards(currentX);
+
+  // 호버 효과 — 살짝 커지기 + 포인트 라이트
+  cards.forEach(function(g) {
+    var isHov = (g === hoverGroup);
+    var targetSc = isHov ? 1.06 : null; // null이면 layoutCards가 제어
+    if (isHov) {
+      g.scale.x += (1.06 - g.scale.x) * 0.12;
+      g.scale.y += (1.06 - g.scale.y) * 0.12;
+      g.scale.z += (1.06 - g.scale.z) * 0.12;
+    }
+  });
+  // 라이트 따라가기
+  if (hoverGroup) {
+    hoverLight.position.set(hoverGroup.position.x, hoverGroup.position.y+0.5, hoverGroup.position.z+2);
+    hoverLight.intensity += (2.5 - hoverLight.intensity) * 0.1;
+    hoverLight.color.setHex(0xffffff);
+  } else {
+    hoverLight.intensity += (0 - hoverLight.intensity) * 0.1;
+  }
+
   renderer.render(scene, camera);
 }
 
