@@ -237,6 +237,8 @@ renderer.domElement.addEventListener('wheel', function(e) {
   targetX += (e.deltaY + e.deltaX) * 0.004;
   targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
 }, {passive:true});
+
+renderer.domElement.addEventListener('pointerdown', function(e) {
   dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
   lastMouseX = e.clientX;
   targetX = currentX; // 현재 위치에서 시작
