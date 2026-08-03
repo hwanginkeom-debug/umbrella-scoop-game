@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>자유 — Pixel Voxel Drop</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0b0f14; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; touch-action: none; }
+  .back-btn { position: fixed; top: 10px; left: 12px; z-index: 9999; color: rgba(200,230,220,0.5); font-size: 9px; font-family: monospace; text-decoration: none; }
+  .back-btn:hover { color: #fff; }
+  .err {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    text-align: center; color: #d6efec; font-size: 14px; line-height: 1.7; padding: 24px;
+    font-family: "Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  }
+</style>
+</head>
+<body>
+  <a href="../bridge.html" class="back-btn">← BACK</a>
+  <div id="app"></div>
+  <div id="err" class="err">Three.js 로드에 실패했습니다.<br>네트워크 연결을 확인하거나, 이 HTML 파일을 다운로드해 브라우저에서 직접 열어 주세요.</div>
+
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"
+    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <script>
+  (function () {
+    if (typeof THREE === 'undefined') { document.getElementById('err').style.display = 'flex'; return; }
+
+    const FF = '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif';
+    const CONTENTS = [
+      '자유',
+      '진정한 의미에서 자유는 거저 주어지는 것이 아니며, 노력을 통해 쟁취해야 하는 것이다',
+      '훌륭하고 영감 있는 모든 것은 자유로운 상태에서 열심히 노력하는 사람에 의해 창조된다',
+      '나는 자유가 부족해서 오는 불편함보다는 자유가 넘쳐나서 오는 불편함을 겪겠다.',
+      '타인의 자유를 부인하는 자는 그 자신도 자유를 누릴 가치가 없다.'
+    ];
+
+    // ---- 기본 세팅 --------------------------------------------------------
+    const container = document.getElementById('app');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#0b0f14');
+    scene.fog = new THREE.Fog('#0b0f14', 34, 74);
+
+    const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 200);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // ---- 환경 상수 --------------------------------------------------------
+    const Y0 = 0.5, ENV_W = 13, ENV_H = 6.5;
+    const DVS = 0.11, VS = DVS * 0.9, HALF = VS / 2;
+    const floorY = -7;
+
+    // ---- 간이 궤도 카메라 (드래그 회전만) ---------------------------------
+    let radius = 18, azimuth = 0, polar = 1.46;
+    function fitRadius() {
+      const vh = Math.tan((45 * Math.PI / 180) / 2);
+      const dH = (ENV_H / 2 + 0.6) / vh;
+      const dW = (ENV_W / 2 + 0.6) / (vh * camera.aspect);
+      radius = Math.max(dH, dW) * 1.12;
+    }
+    function updateCam() {
+      const p = Math.max(0.2, Math.min(Math.PI * 0.9, polar));
+      camera.position.set(
+        radius * Math.sin(p) * Math.sin(azimuth),
+        radius * Math.cos(p) + Y0,
+        radius * Math.sin(p) * Math.cos(azimuth));
+      camera.lookAt(0, Y0, 0);
+    }
+    fitRadius(); updateCam();
+
+    const el = renderer.domElement;
+    let dragging = false, lx = 0, ly = 0, moved = 0, pressed = false;
+    el.addEventListener('pointerdown', e => { dragging = true; pressed = true; moved = 0; lx = e.clientX; ly = e.clientY; });
+    addEventListener('pointermove', e => {
+      if (!dragging) return;
+      const dx = e.clientX - lx, dy = e.clientY - ly;
+      moved += Math.abs(dx) + Math.abs(dy);
+      azimuth -= dx * 0.005; polar -= dy * 0.005;
+      lx = e.clientX; ly = e.clientY; updateCam();
+    });
+    addEventListener('pointerup', () => {
+      dragging = false;
+      if (pressed && moved < 6) toggle();
+      pressed = false;
+    });
+
+    // ---- 조명 / 바닥 ------------------------------------------------------
+    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 1.15); key.position.set(6, 12, 8); scene.add(key);
+    const fill = new THREE.DirectionalLight(0x88ccff, 0.4); fill.position.set(-8, -2, 5); scene.add(fill);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(160, 160),
+      new THREE.MeshStandardMaterial({ color: '#0e141b', roughness: 1, metalness: 0 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = floorY; scene.add(floor);
+
+    const dummy = new THREE.Object3D();
+
+    // ---- 콘텐츠 -> 픽셀 좌표 ----------------------------------------------
+    function wrapText(g, text, maxW) {
+      const lines = []; let line = '';
+      for (const ch of text) {
+        const test = line + ch;
+        if (g.measureText(test).width > maxW && line) { lines.push(line); line = ch; }
+        else line = test;
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    function rasterize(text, isWord) {
+      const font = 100, lineH = font * 1.24;
+      let c = document.createElement('canvas');
+      let g = c.getContext('2d'); g.font = '900 ' + font + 'px ' + FF;
+      let lines, contentW;
+      if (isWord) { lines = [text]; contentW = g.measureText(text).width; }
+      else {
+        const len = [...text].length;
+        const linesTarget = Math.min(4, Math.max(2, Math.round(len / 15)));
+        const maxChars = Math.ceil(len / linesTarget);
+        lines = wrapText(g, text, font * maxChars * 1.02);
+        contentW = 0; lines.forEach(l => contentW = Math.max(contentW, g.measureText(l).width));
+      }
+      const pad = font * 0.18;
+      const W = Math.ceil(contentW + pad * 2), H = Math.ceil(lines.length * lineH + pad * 2);
+      c.width = W; c.height = H;
+      g = c.getContext('2d');
+      g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = '900 ' + font + 'px ' + FF;
+      for (let i = 0; i < lines.length; i++) g.fillText(lines[i], W / 2, pad + lineH * (i + 0.5));
+
+      const s = Math.min(ENV_W / W, ENV_H / H);
+      const stepPx = Math.max(1, DVS / s);
+      const d = g.getImageData(0, 0, W, H).data;
+      const positions = [];
+      for (let y = 0; y < H; y += stepPx) {
+        const yi = Math.floor(y);
+        for (let x = 0; x < W; x += stepPx) {
+          const xi = Math.floor(x);
+          if (d[(yi * W + xi) * 4] > 128)
+            positions.push([(xi - W / 2) * s, (H / 2 - yi) * s + Y0]);
+        }
+      }
+      return positions;
+    }
+
+    const layouts = CONTENTS.map((t, i) => rasterize(t, i === 0));
+    const capacity = Math.max.apply(null, layouts.map(a => a.length));
+
+    const geo = new THREE.BoxGeometry(VS, VS, VS);
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.06 });
+    const mesh = new THREE.InstancedMesh(geo, mat, capacity);
+    mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    scene.add(mesh);
+
+    const voxels = [];
+    for (let k = 0; k < capacity; k++) {
+      voxels.push({
+        pos: new THREE.Vector3(0, Y0, 0), vel: new THREE.Vector3(),
+        ang: new THREE.Vector3(), quat: new THREE.Quaternion(),
+        target: new THREE.Vector3(0, Y0, 0), scale: 0.001, targetScale: 0,
+        active: false, delay: 0, released: false, sleeping: false
+      });
+    }
+
+    const CTOP = new THREE.Color('#8bf7f0'), CBOT = new THREE.Color('#12938e'), tmpCol = new THREE.Color();
+
+    function applyContent(idx, instant) {
+      const P = layouts[idx];
+      let minY = Infinity, maxY = -Infinity;
+      for (const p of P) { minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }
+      const rng = Math.max(1e-4, maxY - minY);
+      for (let k = 0; k < capacity; k++) {
+        const v = voxels[k];
+        if (k < P.length) {
+          if (!v.active && !instant) {
+            v.pos.set((Math.random() - 0.5) * 18, floorY + Math.random() * 3, (Math.random() - 0.5) * 7);
+            v.quat.setFromEuler(new THREE.Euler(Math.random() * 6, Math.random() * 6, Math.random() * 6));
+            v.scale = 0.001;
+          }
+          v.active = true;
+          v.target.set(P[k][0], P[k][1], (Math.random() - 0.5) * 0.05);
+          v.targetScale = 1;
+          const t = (P[k][1] - minY) / rng;
+          tmpCol.copy(CBOT).lerp(CTOP, t);
+          mesh.setColorAt(k, tmpCol);
+          if (instant) { v.pos.copy(v.target); v.scale = 1; v.quat.identity(); }
+        } else {
+          v.active = false; v.targetScale = 0; v.target.copy(v.pos);
+          if (instant) v.scale = 0.001;
+        }
+        dummy.position.copy(v.pos); dummy.quaternion.copy(v.quat);
+        dummy.scale.setScalar(Math.max(0.0001, v.scale)); dummy.updateMatrix();
+        mesh.setMatrixAt(k, dummy.matrix);
+      }
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+
+    // ---- 상태 -------------------------------------------------------------
+    const clock = new THREE.Clock();
+    const G = 22, REST = 0.3, FRIC = 0.86, AIR = 0.995, STIFF = 60;
+    const PATTERNS = ['center', 'ltr', 'btu', 'random'];
+    const HOLD_WORD = 1.0;   // 단어("자유")는 약 1초 뒤 자동으로 부서짐
+    let phase = 'idle', mode = 'formed', tStart = 0, asmStart = 0;
+    let currentIsWord = true, autoAt = HOLD_WORD;
+
+    function nextIdx() {
+      if (currentIsWord) { currentIsWord = false; return 1 + Math.floor(Math.random() * (CONTENTS.length - 1)); }
+      currentIsWord = true; return 0;
+    }
+
+    function startBreak() {
+      const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)], spread = 0.9;
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      for (const v of voxels) if (v.active) {
+        minX = Math.min(minX, v.pos.x); maxX = Math.max(maxX, v.pos.x);
+        minY = Math.min(minY, v.pos.y); maxY = Math.max(maxY, v.pos.y);
+      }
+      const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2, maxDist = Math.hypot(maxX - cx, maxY - cy) || 1;
+      for (const v of voxels) {
+        if (!v.active) continue;
+        let f = 0;
+        if (pattern === 'center') f = Math.hypot(v.pos.x - cx, v.pos.y - cy) / maxDist;
+        else if (pattern === 'ltr') f = (v.pos.x - minX) / Math.max(1e-4, maxX - minX);
+        else if (pattern === 'btu') f = (v.pos.y - minY) / Math.max(1e-4, maxY - minY);
+        else f = Math.random();
+        v.delay = f * spread + Math.random() * 0.1;
+        v.released = false; v.sleeping = false; v.scale = 1;
+        v.vel.set(0, 0, 0); v.ang.set(0, 0, 0);
+      }
+      phase = 'falling'; tStart = clock.getElapsedTime();
+      autoAt = Infinity;   // 자동으로 다시 모으지 않음 (클릭 필요)
+    }
+
+    function startAssemble() { applyContent(nextIdx(), false); phase = 'assembling'; asmStart = clock.getElapsedTime(); autoAt = Infinity; }
+
+    function toggle() {
+      if (mode === 'formed') { mode = 'broken'; startBreak(); }
+      else { mode = 'formed'; startAssemble(); }
+    }
+
+    // ---- 애니메이션 -------------------------------------------------------
+    const dq = new THREE.Quaternion(), eu = new THREE.Euler(), IDENT = new THREE.Quaternion(), tmp = new THREE.Vector3();
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 1 / 30);
+      const now = clock.getElapsedTime();
+
+      // 단어일 때만 자동으로 부서짐 (재조립은 클릭 필요)
+      if (now >= autoAt && phase === 'idle') { mode = 'broken'; startBreak(); }
+
+      if (phase === 'falling') {
+        const t0 = now - tStart;
+        for (let k = 0; k < capacity; k++) {
+          const v = voxels[k];
+          if (!v.active || v.sleeping) continue;
+          if (!v.released) {
+            if (t0 >= v.delay) {
+              v.released = true;
+              v.vel.set(v.pos.x * 0.15 + (Math.random() - 0.5) * 1.2, (Math.random() - 0.15) * 0.9, (Math.random() - 0.5) * 1.9);
+              v.ang.set((Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8);
+            } else continue;
+          }
+          v.vel.y -= G * dt; v.vel.multiplyScalar(AIR);
+          v.pos.addScaledVector(v.vel, dt);
+          eu.set(v.ang.x * dt, v.ang.y * dt, v.ang.z * dt); dq.setFromEuler(eu); v.quat.multiply(dq);
+          if (v.pos.y < floorY + HALF) {
+            v.pos.y = floorY + HALF;
+            if (v.vel.y < 0) v.vel.y = -v.vel.y * REST;
+            v.vel.x *= FRIC; v.vel.z *= FRIC; v.ang.multiplyScalar(FRIC);
+            if (Math.abs(v.vel.y) < 0.4 && Math.hypot(v.vel.x, v.vel.z) < 0.3) { v.vel.set(0, 0, 0); v.ang.set(0, 0, 0); v.sleeping = true; }
+          }
+          dummy.position.copy(v.pos); dummy.quaternion.copy(v.quat); dummy.scale.setScalar(v.scale); dummy.updateMatrix();
+          mesh.setMatrixAt(k, dummy.matrix);
+        }
+        mesh.instanceMatrix.needsUpdate = true;
+
+      } else if (phase === 'assembling') {
+        const t0 = now - asmStart;
+        const damp = Math.exp(-7 * dt), st = 1 - Math.exp(-9 * dt), sc = 1 - Math.exp(-11 * dt);
+        let done = true;
+        for (let k = 0; k < capacity; k++) {
+          const v = voxels[k];
+          tmp.copy(v.target).sub(v.pos);
+          v.vel.addScaledVector(tmp, STIFF * dt); v.vel.multiplyScalar(damp);
+          v.pos.addScaledVector(v.vel, dt);
+          v.quat.slerp(IDENT, st);
+          v.scale += (v.targetScale - v.scale) * sc;
+          if (v.active && (tmp.lengthSq() > 2.5e-4 || v.vel.lengthSq() > 6e-3 || Math.abs(v.scale - 1) > 0.02)) done = false;
+          if (!v.active && v.scale > 0.03) done = false;
+          dummy.position.copy(v.pos); dummy.quaternion.copy(v.quat);
+          dummy.scale.setScalar(Math.max(0.0001, v.scale)); dummy.updateMatrix();
+          mesh.setMatrixAt(k, dummy.matrix);
+        }
+        mesh.instanceMatrix.needsUpdate = true;
+        if (done || t0 > 3.4) {
+          for (let k = 0; k < capacity; k++) {
+            const v = voxels[k];
+            if (v.active) { v.pos.copy(v.target); v.scale = 1; } else { v.scale = 0.001; }
+            v.vel.set(0, 0, 0); v.ang.set(0, 0, 0); v.quat.copy(IDENT);
+            dummy.position.copy(v.pos); dummy.quaternion.identity();
+            dummy.scale.setScalar(Math.max(0.0001, v.scale)); dummy.updateMatrix();
+            mesh.setMatrixAt(k, dummy.matrix);
+          }
+          mesh.instanceMatrix.needsUpdate = true;
+          phase = 'idle';
+          autoAt = currentIsWord ? now + HOLD_WORD : Infinity;   // 단어만 자동 붕괴, 문장은 유지
+        }
+      }
+      renderer.render(scene, camera);
+    }
+
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix();
+      fitRadius(); renderer.setSize(innerWidth, innerHeight); updateCam();
+    });
+
+    applyContent(0, true);
+    animate();
+  })();
+  </script>
+</body>
+</html>
