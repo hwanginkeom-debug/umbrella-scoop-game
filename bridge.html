@@ -210,7 +210,7 @@ function shadeHex(hex, amt) {
 
 // 카드 메쉬 생성
 projects.forEach(function(p, i) {
-  var geo = new THREE.PlaneGeometry(CARD_W, CARD_H, 1, 1);
+  var geo = new THREE.PlaneGeometry(CARD_W, CARD_H, 20, 14);
   var tex = makeTexture(p);
   var mat = new THREE.MeshStandardMaterial({map:tex, side:THREE.FrontSide});
   var mesh = new THREE.Mesh(geo, mat);
@@ -221,7 +221,7 @@ projects.forEach(function(p, i) {
     roughness: 0.1,
     metalness: 0.9
   });
-  var backGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
+  var backGeo = new THREE.PlaneGeometry(CARD_W, CARD_H, 20, 14);
   var back = new THREE.Mesh(backGeo, backMat);
   back.rotation.y = Math.PI;
   back.position.z = -0.005;
@@ -379,10 +379,53 @@ renderer.domElement.addEventListener('wheel', function(e) {
 var MIN_X = 0, MAX_X = projects.length - 1;
 
 var clk = new THREE.Clock();
-// 글리치 — 카드 위치 랜덤 틱
-var glitchTimer = 0;
-var glitchCard = -1;
-var glitchOffX = 0;
+// 글리치 — 카드 버텍스 랜덤 틱
+var glitchTimer = 2000 + Math.random() * 3000;
+var glitchActive = false;
+var glitchCardIdx = -1;
+var glitchStartPositions = null;
+
+function triggerGlitch() {
+  glitchCardIdx = Math.floor(Math.random() * cards.length);
+  var mesh = cards[glitchCardIdx].children[0];
+  if (!mesh || !mesh.geometry) return;
+  var pos = mesh.geometry.attributes.position;
+  // 원본 저장
+  glitchStartPositions = new Float32Array(pos.array);
+  glitchActive = true;
+  var phases = Math.floor(Math.random()*3)+2;
+  var phase = 0;
+  function doPhase() {
+    if (!glitchActive || phase >= phases) {
+      // 복원
+      if (glitchStartPositions && mesh.geometry) {
+        var p2 = mesh.geometry.attributes.position;
+        for(var i=0;i<p2.count;i++){p2.setX(i, glitchStartPositions[i*3]);}
+        p2.needsUpdate=true;
+      }
+      glitchActive=false; glitchCardIdx=-1; glitchStartPositions=null;
+      return;
+    }
+    // 랜덤 수평 슬라이스 띠 흔들기
+    var p3 = mesh.geometry.attributes.position;
+    var bandCount = Math.floor(Math.random()*5)+2;
+    for(var b=0;b<bandCount;b++){
+      var bandY = (Math.random()-0.5)*CARD_H;
+      var bandH = Math.random()*0.25+0.04;
+      var offset = (Math.random()-0.5)*0.25;
+      for(var v=0;v<p3.count;v++){
+        var vy = glitchStartPositions[v*3+1];
+        if(Math.abs(vy-bandY)<bandH){
+          p3.setX(v, glitchStartPositions[v*3]+offset);
+        }
+      }
+    }
+    p3.needsUpdate=true;
+    phase++;
+    setTimeout(doPhase, 40+Math.random()*60);
+  }
+  doPhase();
+}
 
 function animate() {
   requestAnimationFrame(animate);
@@ -391,16 +434,11 @@ function animate() {
   currentX += (targetX - currentX) * 0.1;
   layoutCards(currentX);
 
-  // 글리치 효과 — 가끔 랜덤 카드 x 위치 살짝 틱
+  // 글리치 타이머
   glitchTimer -= 16;
-  if (glitchTimer <= 0) {
-    glitchTimer = 2000 + Math.random() * 4000; // 2~6초 간격
-    glitchCard = Math.floor(Math.random() * cards.length);
-    glitchOffX = (Math.random() - 0.5) * 0.15;
-    setTimeout(function() { glitchCard = -1; glitchOffX = 0; }, 60 + Math.random() * 80);
-  }
-  if (glitchCard >= 0 && cards[glitchCard]) {
-    cards[glitchCard].position.x += glitchOffX;
+  if (glitchTimer <= 0 && !glitchActive) {
+    glitchTimer = 2500 + Math.random() * 4000;
+    triggerGlitch();
   }
 
   // 카드 뒤에서 빛이 새어나오는 효과 — 앞면 명도 변화 없음
