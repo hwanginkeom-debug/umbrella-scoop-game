@@ -121,11 +121,10 @@ var handleGroup = new THREE.Group();
 handleGroup.position.set(0,3.2,0);
 grinderGroup.add(handleGroup);
 var armMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,1.5,10),darkM);
-armMesh.rotation.z=Math.PI/2; armMesh.position.set(0,0,0.75);
-armMesh.rotation.x=Math.PI/2; armMesh.castShadow=true;
+armMesh.rotation.z=Math.PI/2; armMesh.position.set(0.75,0,0); armMesh.castShadow=true;
 handleGroup.add(armMesh);
-var knobMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12,0.09,0.4,12),woodM);
-knobMesh.position.set(0,-0.1,1.5); knobMesh.castShadow=true;
+var knobMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.07,0.35,12),woodM);
+knobMesh.position.set(1.5,-0.1,0); knobMesh.castShadow=true;
 handleGroup.add(knobMesh);
 var drawerMesh = new THREE.Mesh(new THREE.BoxGeometry(0.4,0.03,0.4),new THREE.MeshStandardMaterial({color:0x2a1208,roughness:0.9}));
 drawerMesh.position.set(0,0.2,0.85); drawerMesh.scale.x=0.01;
@@ -134,39 +133,37 @@ grinderGroup.position.set(0,0,0);
 scene.add(grinderGroup);
 
 var coffeeAmt=0, coffeeObj=null, coffeeAutoTimer=0;
-var coffeePos = {x:0, y:0.22, z:1.9};
+var coffeePos = {x:1.1, y:0.18, z:-1.1}; // 그라인더 동북 모서리
 function spawnCoffee(){
   if(coffeeObj) scene.remove(coffeeObj);
   var cupGroup = new THREE.Group();
-  // 컵 외벽
-  var cupMat = new THREE.MeshPhysicalMaterial({color:0xf5e8d0,roughness:0.5,metalness:0.1});
-  var cup = new THREE.Mesh(new THREE.CylinderGeometry(0.42,0.35,0.55,20,1,true), cupMat);
+  var cupMat = new THREE.MeshPhysicalMaterial({color:0xf0e8d8,roughness:0.4,metalness:0.05,clearcoat:0.3});
+  // 머그컵 몸통 (작게 — 지름 0.22)
+  var cup = new THREE.Mesh(new THREE.CylinderGeometry(0.13,0.11,0.18,16), cupMat);
   cup.castShadow=true; cupGroup.add(cup);
   // 컵 바닥
-  var bottom = new THREE.Mesh(new THREE.CircleGeometry(0.35,20), cupMat);
-  bottom.rotation.x=-Math.PI/2; bottom.position.y=-0.275;
-  cupGroup.add(bottom);
-  // 컵 테두리
-  var rim = new THREE.Mesh(new THREE.TorusGeometry(0.42,0.03,8,20), cupMat);
-  rim.position.y=0.275; cupGroup.add(rim);
-  // 커피 액체 (표면)
-  var coffeeLiqMat = new THREE.MeshStandardMaterial({color:0x2a1008,roughness:0.3});
-  var liq = new THREE.Mesh(new THREE.CircleGeometry(0.38,20), coffeeLiqMat);
-  liq.rotation.x=-Math.PI/2; liq.position.y=0.22;
+  cupGroup.add((function(){var m=new THREE.Mesh(new THREE.CircleGeometry(0.11,16),cupMat);m.rotation.x=-Math.PI/2;m.position.y=-0.09;return m;})());
+  // 손잡이 (토러스 잘라서 옆면에)
+  var handleMat = new THREE.MeshPhysicalMaterial({color:0xf0e8d8,roughness:0.4,metalness:0.05});
+  var handle = new THREE.Mesh(new THREE.TorusGeometry(0.07,0.018,8,12,Math.PI), handleMat);
+  handle.rotation.y = Math.PI/2;
+  handle.position.set(0.13, 0, 0);
+  cupGroup.add(handle);
+  // 커피 액체
+  var liq = new THREE.Mesh(new THREE.CircleGeometry(0.11,16), new THREE.MeshStandardMaterial({color:0x2a1008,roughness:0.2}));
+  liq.rotation.x=-Math.PI/2; liq.position.y=0.07;
   cupGroup.add(liq);
-  // 커피 파티클 (김 / 향)
+  // 김 파티클
   var steamGeo = new THREE.BufferGeometry();
-  var sp = new Float32Array(12*3);
-  for(var si2=0;si2<12;si2++){sp[si2*3]=(Math.random()-0.5)*0.3;sp[si2*3+1]=0.3+Math.random()*0.3;sp[si2*3+2]=(Math.random()-0.5)*0.3;}
+  var sp = new Float32Array(8*3);
+  for(var ss=0;ss<8;ss++){sp[ss*3]=(Math.random()-0.5)*0.08;sp[ss*3+1]=0.1+Math.random()*0.12;sp[ss*3+2]=(Math.random()-0.5)*0.08;}
   steamGeo.setAttribute('position',new THREE.BufferAttribute(sp,3));
-  var steamPts = new THREE.Points(steamGeo, new THREE.PointsMaterial({color:0xddccaa,size:0.06,transparent:true,opacity:0.5}));
+  var steamPts = new THREE.Points(steamGeo, new THREE.PointsMaterial({color:0xddccaa,size:0.04,transparent:true,opacity:0.4}));
   cupGroup.add(steamPts);
-  cupGroup._steamGeo = steamGeo;
-  cupGroup._steamArr = sp;
+  cupGroup._steamGeo=steamGeo; cupGroup._steamArr=sp;
   cupGroup.position.set(coffeePos.x, coffeePos.y, coffeePos.z);
-  cupGroup.castShadow=true;
   scene.add(cupGroup);
-  coffeeObj = cupGroup;
+  coffeeObj=cupGroup;
   coffeeAmt=0; drawerMesh.scale.x=0.01;
 }
 
@@ -318,9 +315,9 @@ spawnFig( 2.5, 2.0, Math.PI,'operator');
 // 겹침 방지
 var OBSTACLES = [{x:0,z:0,r:1.2},{x:2.5,z:2.5,r:0.9}];
 function isBlocked(nx,nz,self){
-  // 그라인더만 막기 (피규어간 겹침은 허용)
-  var dx=nx-0,dz=nz-0;
-  return Math.sqrt(dx*dx+dz*dz)<1.0;
+  // 그라인더 박스 (0,0) 반경 1.2
+  var dx=nx,dz=nz;
+  return Math.sqrt(dx*dx+dz*dz)<1.4;
 }
 
 // 픽셀 커서
@@ -441,7 +438,7 @@ function blastBeans(cx,cy){
     var d=b.mesh.position.distanceTo(pt);
     if(d<3.5){
       var dir=b.mesh.position.clone().sub(pt).normalize();
-      var str=(2-d)/2*0.5;
+      var str=(3.5-d)/3.5*0.5;
       b.vx+=dir.x*str+(Math.random()-0.5)*0.2;
       b.vy+=0.25+Math.random()*0.3;
       b.vz+=dir.z*str+(Math.random()-0.5)*0.2;
