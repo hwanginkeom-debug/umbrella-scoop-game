@@ -207,7 +207,7 @@
     const clock = new THREE.Clock();
     const G = 22, REST = 0.3, FRIC = 0.86, AIR = 0.995, STIFF = 60;
     const PATTERNS = ['center', 'ltr', 'btu', 'random'];
-    const HOLD_WORD = 1.0;   // 단어("자유")는 약 1초 뒤 자동으로 부서짐
+    const HOLD_WORD = 0.6;   // 단어("자유")는 약 0.6초 뒤 자동으로 부서짐
     let phase = 'idle', mode = 'formed', tStart = 0, asmStart = 0;
     let currentIsWord = true, autoAt = HOLD_WORD;
 
