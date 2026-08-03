@@ -5,226 +5,271 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>바이브코딩 Lab</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin:0; padding:0; box-sizing:border-box; }
 
         body {
-            background: #f5f5f5;
-            color: #1a1a1a;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f2f0eb;
+            color: #111;
+            font-family: -apple-system, 'Helvetica Neue', sans-serif;
             min-height: 100vh;
         }
 
-        .header {
-            position: relative;
-            z-index: 10;
-            padding: 48px 40px 24px;
+        /* 헤더 */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 32px 32px 24px;
+            border-bottom: 1px solid #ccc;
         }
 
-        .header-title {
-            font-size: 1.1rem;
-            font-weight: 700;
+        .site-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #111;
+        }
+
+        .site-meta {
+            font-size: 10px;
+            color: #888;
             letter-spacing: 1px;
         }
 
-        .grid {
-            position: relative;
-            z-index: 10;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 16px;
-            padding: 24px 40px 60px;
-            max-width: 1100px;
+        /* 매거진 그리드 */
+        .magazine {
+            padding: 0 32px 80px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
+        /* 첫 번째 행 — 큰 카드 2개 */
+        .row-hero {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr;
+            gap: 1px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* 두 번째 행 — 3개 균등 */
+        .row-three {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* 세 번째 행 — 작은 4개 */
+        .row-four {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        /* 카드 기본 */
         .card {
-            background: #fff;
-            padding: 28px;
-            cursor: pointer;
-            transition: background 0.2s, box-shadow 0.2s;
             text-decoration: none;
             color: inherit;
             display: flex;
             flex-direction: column;
-            min-height: 180px;
-            border: 1px solid #eee;
-            border-radius: 8px;
+            background: #f2f0eb;
+            overflow: hidden;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .card:hover {
-            background: #fafafa;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        .card:hover { background: #ebe9e3; }
+        .card:hover .thumb { transform: scale(1.02); }
+
+        /* 썸네일 */
+        .thumb-wrap {
+            overflow: hidden;
+            width: 100%;
         }
 
-        .card-category {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #999;
-            border: 1px solid #ddd;
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 2px;
-            margin-bottom: 16px;
-            align-self: flex-start;
+        .thumb {
+            width: 100%;
+            aspect-ratio: 16/10;
+            display: block;
+            transition: transform 0.5s ease;
+            object-fit: cover;
         }
 
-        .card h2 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            letter-spacing: -0.3px;
+        /* 히어로 카드 썸네일 — 더 높게 */
+        .row-hero .card:first-child .thumb {
+            aspect-ratio: 4/3;
         }
 
-        .card p {
-            font-size: 0.82rem;
+        /* Canvas 플레이스홀더 */
+        canvas.thumb {
+            display: block;
+        }
+
+        /* 카드 정보 */
+        .card-info {
+            padding: 14px 16px 18px;
+            border-top: 1px solid #ccc;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .card-info .left { flex: 1; }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            line-height: 1.3;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 11px;
             color: #666;
             line-height: 1.5;
-            flex: 1;
-        }
-
-        .card-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 16px;
-            padding-top: 12px;
-            border-top: 1px solid #f0f0f0;
         }
 
         .card-date {
-            font-size: 0.72rem;
+            font-size: 9px;
             color: #aaa;
-            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            padding-top: 2px;
         }
 
-        .card-arrow {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
+        /* 구분선 역할의 세로선 */
+        .row-hero .card:first-child {
+            border-right: 1px solid #ccc;
+        }
+        .row-three .card:not(:last-child),
+        .row-four .card:not(:last-child) {
+            border-right: 1px solid #ccc;
         }
 
-        .card:hover .card-arrow {
-            transform: translate(3px, -3px);
-        }
-
-        .card-arrow svg {
-            width: 14px;
-            height: 14px;
-            fill: none;
-            stroke: #1a1a1a;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
+        /* 반응형 */
         @media (max-width: 768px) {
-            .header { padding: 32px 20px 16px; }
-            .grid { 
-                padding: 16px 20px 40px; 
-                grid-template-columns: 1fr; 
-            }
+            header { padding: 20px 16px 16px; }
+            .magazine { padding: 0 0 60px; }
+            .row-hero { grid-template-columns: 1fr; }
+            .row-three { grid-template-columns: 1fr 1fr; }
+            .row-four { grid-template-columns: 1fr 1fr; }
+            .row-hero .card:first-child { border-right: none; border-bottom: 1px solid #ccc; }
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-title">바이브코딩 Lab</div>
-    </header>
 
-    <div class="grid" id="projectGrid"></div>
+<header>
+    <div class="site-title">바이브코딩 Lab</div>
+    <div class="site-meta">2026</div>
+</header>
 
-    <script>
-        const projects = [
-            {
-                title: '집샌물샌',
-                description: '클릭하여 비에 잠기는 집을 구하라',
-                path: './index.html',
-                date: '2026.07.16'
-            },
-            {
-                title: '어금니 과일',
-                description: '누구나 어금니에 조금씩 과일을 숨겨둔다',
-                path: './0723_vibe3/index.html',
-                date: '2026.07.23'
-            },
-            {
-                title: '비상',
-                description: '오늘도 똑같은 하루였다',
-                path: './0724_interactive_movie/index.html',
-                date: '2026.07.24'
-            },
-            {
-                title: '김밥천국',
-                description: '무슨 김밥을 좋아해?',
-                path: './0727_kimbap/index3d.html',
-                date: '2026.07.27'
-            },
-            {
-                title: '$$$인생역전드루와$$$',
-                description: '집에서도 할 수 있는 부업입니다 다들 몇억씩 벌어가세요',
-                path: './0728_자판기/index.html',
-                date: '2026.07.28'
-            },
-            {
-                title: '원두 인터랙션',
-                description: '커피를 볶고 원두 향을 상상하세요',
-                path: './0729_coffee_poster/index.html',
-                date: '2026.07.29'
-            },
-            {
-                title: '인간은 에일리언',
-                description: '외계인의 입장에서 지구인들을 바라보세요',
-                path: './0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html',
-                date: '2026.07.30'
-            },
-            {
-                title: '굿바이 키로',
-                description: '할루시네이션과의 전쟁을 경험하세요',
-                path: './0730_fluid-icon/index.html',
-                date: '2026.07.30'
-            },
-            {
-                title: '자유',
-                description: '구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.',
-                path: './0803_free/jayu-voxel-drop_2.html',
-                date: '2026.08.03'
-            }
-        ];
+<div class="magazine" id="magazine"></div>
 
-        function renderProjects() {
-            const grid = document.getElementById('projectGrid');
-            let html = '';
-            // 최신순 정렬 (날짜 내림차순)
-            const sorted = projects.slice().sort((a, b) => b.date.localeCompare(a.date));
-            sorted.forEach((project) => {
-                html += `
-                    <a class="card" href="${project.path}">
-                        <h2>${project.title}</h2>
-                        <p>${project.description}</p>
-                        <div class="card-footer">
-                            <span class="card-date">${project.date}</span>
-                            <div class="card-arrow">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M7 17L17 7M17 7H7M17 7V17"/>
-                                </svg>
-                            </div>
-                        </div>
-                    </a>
-                `;
-            });
+<script>
+// 프로젝트 데이터 — 최신순
+var projects = [
+    { title:'자유', desc:'구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.', path:'./0803_free/jayu-voxel-drop_2.html', date:'2026.08.03', color:'#1a1a2e', color2:'#e8e0ff' },
+    { title:'굿바이 키로', desc:'할루시네이션과의 전쟁을 경험하세요', path:'./0730_fluid-icon/index.html', date:'2026.07.30', color:'#0a0010', color2:'#cc88ff' },
+    { title:'인간은 에일리언', desc:'외계인의 입장에서 지구인들을 바라보세요', path:'./0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html', date:'2026.07.30', color:'#050a18', color2:'#4aefcc' },
+    { title:'원두 인터랙션', desc:'커피를 볶고 원두 향을 상상하세요', path:'./0729_coffee_poster/index.html', date:'2026.07.29', color:'#5c2a08', color2:'#c47a3a' },
+    { title:'$$$인생역전드루와$$$', desc:'집에서도 할 수 있는 부업입니다 다들 몇억씩 벌어가세요', path:'./0728_자판기/index.html', date:'2026.07.28', color:'#0a0a14', color2:'#ffdd44' },
+    { title:'김밥천국', desc:'무슨 김밥을 좋아해?', path:'./0727_kimbap/index3d.html', date:'2026.07.27', color:'#1a0f08', color2:'#66cc44' },
+    { title:'비상', desc:'오늘도 똑같은 하루였다', path:'./0724_interactive_movie/index.html', date:'2026.07.24', color:'#0a0a14', color2:'#ffffff' },
+    { title:'어금니 과일', desc:'누구나 어금니에 조금씩 과일을 숨겨둔다', path:'./0723_vibe3/index.html', date:'2026.07.23', color:'#0a0a0a', color2:'#cc1133' },
+    { title:'집샌물샌', desc:'클릭하여 비에 잠기는 집을 구하라', path:'./index.html', date:'2026.07.16', color:'#1a1a2e', color2:'#3388ff' },
+];
 
-            grid.innerHTML = html;
-        }
+// Canvas 플레이스홀더 생성
+function makePlaceholder(w, h, bg, accent, title) {
+    var c = document.createElement('canvas');
+    c.className = 'thumb';
+    c.width = w; c.height = h;
+    c.style.width = '100%';
+    c.style.height = 'auto';
+    c.style.aspectRatio = w+'/'+h;
+    var ctx = c.getContext('2d');
+    // 배경 그라디언트
+    var grd = ctx.createLinearGradient(0, 0, w, h);
+    grd.addColorStop(0, bg);
+    grd.addColorStop(1, shadeColor(bg, 20));
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+    // 노이즈 텍스처 느낌
+    for (var i = 0; i < 80; i++) {
+        ctx.fillStyle = 'rgba(255,255,255,0.02)';
+        ctx.fillRect(Math.random()*w, Math.random()*h, Math.random()*60+10, Math.random()*60+10);
+    }
+    // 악센트 원
+    var rad = ctx.createRadialGradient(w*0.6, h*0.4, 0, w*0.6, h*0.4, w*0.5);
+    rad.addColorStop(0, accent+'44');
+    rad.addColorStop(1, 'transparent');
+    ctx.fillStyle = rad;
+    ctx.fillRect(0, 0, w, h);
+    // 악센트 작은 원 (하이라이트)
+    ctx.beginPath();
+    ctx.arc(w*0.62, h*0.38, w*0.06, 0, Math.PI*2);
+    ctx.fillStyle = accent+'33';
+    ctx.fill();
+    // 제목 텍스트 (희미하게)
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
+    ctx.font = 'bold '+Math.floor(h*0.12)+'px -apple-system,sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(title, w*0.06, h*0.75);
+    return c;
+}
 
-        renderProjects();
-    </script>
+function shadeColor(hex, amt) {
+    var r = parseInt(hex.slice(1,3)||'00',16);
+    var g = parseInt(hex.slice(3,5)||'00',16);
+    var b = parseInt(hex.slice(5,7)||'00',16);
+    return '#'+[r,g,b].map(function(v){return Math.min(255,v+amt).toString(16).padStart(2,'0');}).join('');
+}
+
+function makeCard(p, thumbW, thumbH) {
+    var a = document.createElement('a');
+    a.className = 'card';
+    a.href = p.path;
+    // 썸네일
+    var wrap = document.createElement('div');
+    wrap.className = 'thumb-wrap';
+    var ph = makePlaceholder(thumbW, thumbH, p.color, p.color2, p.title);
+    wrap.appendChild(ph);
+    a.appendChild(wrap);
+    // 정보
+    var info = document.createElement('div');
+    info.className = 'card-info';
+    info.innerHTML = '<div class="left"><div class="card-title">'+p.title+'</div><div class="card-desc">'+p.desc+'</div></div><div class="card-date">'+p.date+'</div>';
+    a.appendChild(info);
+    return a;
+}
+
+var mag = document.getElementById('magazine');
+
+// 행 1 — 히어로 2개
+var r1 = document.createElement('div'); r1.className='row-hero';
+r1.appendChild(makeCard(projects[0], 640, 480));
+r1.appendChild(makeCard(projects[1], 480, 320));
+mag.appendChild(r1);
+
+// 행 2 — 3개
+var r2 = document.createElement('div'); r2.className='row-three';
+r2.appendChild(makeCard(projects[2], 400, 280));
+r2.appendChild(makeCard(projects[3], 400, 280));
+r2.appendChild(makeCard(projects[4], 400, 280));
+mag.appendChild(r2);
+
+// 행 3 — 4개
+var r3 = document.createElement('div'); r3.className='row-four';
+r3.appendChild(makeCard(projects[5], 300, 200));
+r3.appendChild(makeCard(projects[6], 300, 200));
+r3.appendChild(makeCard(projects[7], 300, 200));
+r3.appendChild(makeCard(projects[8], 300, 200));
+mag.appendChild(r3);
+</script>
 </body>
 </html>
