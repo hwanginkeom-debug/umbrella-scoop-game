@@ -1,275 +1,255 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>바이브코딩 Lab</title>
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-
-        body {
-            background: #f2f0eb;
-            color: #111;
-            font-family: -apple-system, 'Helvetica Neue', sans-serif;
-            min-height: 100vh;
-        }
-
-        /* 헤더 */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            padding: 32px 32px 24px;
-            border-bottom: 1px solid #ccc;
-        }
-
-        .site-title {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: #111;
-        }
-
-        .site-meta {
-            font-size: 10px;
-            color: #888;
-            letter-spacing: 1px;
-        }
-
-        /* 매거진 그리드 */
-        .magazine {
-            padding: 0 32px 80px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* 첫 번째 행 — 큰 카드 2개 */
-        .row-hero {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            gap: 1px;
-            border-bottom: 1px solid #ccc;
-        }
-
-        /* 두 번째 행 — 3개 균등 */
-        .row-three {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            border-bottom: 1px solid #ccc;
-        }
-
-        /* 세 번째 행 — 작은 4개 */
-        .row-four {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1px;
-            border-bottom: 1px solid #ccc;
-        }
-
-        /* 카드 기본 */
-        .card {
-            text-decoration: none;
-            color: inherit;
-            display: flex;
-            flex-direction: column;
-            background: #f2f0eb;
-            overflow: hidden;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .card:hover { background: #ebe9e3; }
-        .card:hover .thumb { transform: scale(1.02); }
-
-        /* 썸네일 */
-        .thumb-wrap {
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .thumb {
-            width: 100%;
-            aspect-ratio: 16/10;
-            display: block;
-            transition: transform 0.5s ease;
-            object-fit: cover;
-        }
-
-        /* 히어로 카드 썸네일 — 더 높게 */
-        .row-hero .card:first-child .thumb {
-            aspect-ratio: 4/3;
-        }
-
-        /* Canvas 플레이스홀더 */
-        canvas.thumb {
-            display: block;
-        }
-
-        /* 카드 정보 */
-        .card-info {
-            padding: 14px 16px 18px;
-            border-top: 1px solid #ccc;
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .card-info .left { flex: 1; }
-
-        .card-title {
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: -0.2px;
-            line-height: 1.3;
-            margin-bottom: 4px;
-        }
-
-        .card-desc {
-            font-size: 11px;
-            color: #666;
-            line-height: 1.5;
-        }
-
-        .card-date {
-            font-size: 9px;
-            color: #aaa;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-            padding-top: 2px;
-        }
-
-        /* 구분선 역할의 세로선 */
-        .row-hero .card:first-child {
-            border-right: 1px solid #ccc;
-        }
-        .row-three .card:not(:last-child),
-        .row-four .card:not(:last-child) {
-            border-right: 1px solid #ccc;
-        }
-
-        /* 반응형 */
-        @media (max-width: 768px) {
-            header { padding: 20px 16px 16px; }
-            .magazine { padding: 0 0 60px; }
-            .row-hero { grid-template-columns: 1fr; }
-            .row-three { grid-template-columns: 1fr 1fr; }
-            .row-four { grid-template-columns: 1fr 1fr; }
-            .row-hero .card:first-child { border-right: none; border-bottom: 1px solid #ccc; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>바이브코딩 Lab</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0d0d0d; overflow:hidden; font-family:-apple-system,sans-serif; }
+  #hint {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    color:rgba(255,255,255,0.3); font-size:10px; letter-spacing:2px;
+    pointer-events:none; animation:fh 4s forwards;
+  }
+  @keyframes fh{0%,60%{opacity:1}100%{opacity:0}}
+  #label {
+    position:fixed; bottom:60px; left:50%; transform:translateX(-50%);
+    text-align:center; pointer-events:none; transition:opacity 0.3s;
+  }
+  #label .title { color:#fff; font-size:16px; font-weight:600; letter-spacing:0.5px; }
+  #label .desc  { color:rgba(255,255,255,0.5); font-size:11px; margin-top:4px; }
+  #label .date  { color:rgba(255,255,255,0.25); font-size:9px; margin-top:6px; letter-spacing:1px; }
+</style>
 </head>
 <body>
+<div id="hint">← 드래그 →</div>
+<div id="label" style="opacity:0">
+  <div class="title" id="lbl-title"></div>
+  <div class="desc" id="lbl-desc"></div>
+  <div class="date" id="lbl-date"></div>
+</div>
 
-<header>
-    <div class="site-title">바이브코딩 Lab</div>
-    <div class="site-meta">2026</div>
-</header>
-
-<div class="magazine" id="magazine"></div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-// 프로젝트 데이터 — 최신순
 var projects = [
-    { title:'자유', desc:'구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.', path:'./0803_free/jayu-voxel-drop_2.html', date:'2026.08.03', color:'#1a1a2e', color2:'#e8e0ff' },
-    { title:'굿바이 키로', desc:'할루시네이션과의 전쟁을 경험하세요', path:'./0730_fluid-icon/index.html', date:'2026.07.30', color:'#0a0010', color2:'#cc88ff' },
-    { title:'인간은 에일리언', desc:'외계인의 입장에서 지구인들을 바라보세요', path:'./0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html', date:'2026.07.30', color:'#050a18', color2:'#4aefcc' },
-    { title:'원두 인터랙션', desc:'커피를 볶고 원두 향을 상상하세요', path:'./0729_coffee_poster/index.html', date:'2026.07.29', color:'#5c2a08', color2:'#c47a3a' },
-    { title:'$$$인생역전드루와$$$', desc:'집에서도 할 수 있는 부업입니다 다들 몇억씩 벌어가세요', path:'./0728_자판기/index.html', date:'2026.07.28', color:'#0a0a14', color2:'#ffdd44' },
-    { title:'김밥천국', desc:'무슨 김밥을 좋아해?', path:'./0727_kimbap/index3d.html', date:'2026.07.27', color:'#1a0f08', color2:'#66cc44' },
-    { title:'비상', desc:'오늘도 똑같은 하루였다', path:'./0724_interactive_movie/index.html', date:'2026.07.24', color:'#0a0a14', color2:'#ffffff' },
-    { title:'어금니 과일', desc:'누구나 어금니에 조금씩 과일을 숨겨둔다', path:'./0723_vibe3/index.html', date:'2026.07.23', color:'#0a0a0a', color2:'#cc1133' },
-    { title:'집샌물샌', desc:'클릭하여 비에 잠기는 집을 구하라', path:'./index.html', date:'2026.07.16', color:'#1a1a2e', color2:'#3388ff' },
+  { title:'자유', desc:'구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.', path:'./0803_free/jayu-voxel-drop_2.html', date:'2026.08.03', bg:'#1a1a2e', accent:'#e8e0ff', thumb:'./0803_free/thumb.png' },
+  { title:'굿바이 키로', desc:'할루시네이션과의 전쟁을 경험하세요', path:'./0730_fluid-icon/index.html', date:'2026.07.30', bg:'#0a0010', accent:'#cc88ff', thumb:'./0730_fluid-icon/thumb.png' },
+  { title:'인간은 에일리언', desc:'외계인의 입장에서 지구인들을 바라보세요', path:'./0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html', date:'2026.07.30', bg:'#050a18', accent:'#4aefcc', thumb:'./0730_ alien-fluid-reveal_3/thumb.png' },
+  { title:'원두 인터랙션', desc:'커피를 볶고 원두 향을 상상하세요', path:'./0729_coffee_poster/index.html', date:'2026.07.29', bg:'#5c2a08', accent:'#c47a3a', thumb:'./0729_coffee_poster/thumb.png' },
+  { title:'$$$인생역전드루와$$$', desc:'집에서도 할 수 있는 부업입니다', path:'./0728_자판기/index.html', date:'2026.07.28', bg:'#0a0a14', accent:'#ffdd44', thumb:'./0728_자판기/thumb.png' },
+  { title:'김밥천국', desc:'무슨 김밥을 좋아해?', path:'./0727_kimbap/index3d.html', date:'2026.07.27', bg:'#1a0f08', accent:'#66cc44', thumb:'./0727_kimbap/thumb.png' },
+  { title:'비상', desc:'오늘도 똑같은 하루였다', path:'./0724_interactive_movie/index.html', date:'2026.07.24', bg:'#0a0a14', accent:'#ffffff', thumb:'./0724_interactive_movie/thumb.png' },
+  { title:'어금니 과일', desc:'누구나 어금니에 조금씩 과일을 숨겨둔다', path:'./0723_vibe3/index.html', date:'2026.07.23', bg:'#0a0a0a', accent:'#cc1133', thumb:'./0723_vibe3/thumb.png' },
+  { title:'집샌물샌', desc:'클릭하여 비에 잠기는 집을 구하라', path:'./index.html', date:'2026.07.16', bg:'#1a1a2e', accent:'#3388ff', thumb:'./thumb.png' },
 ];
 
-// Canvas 플레이스홀더 생성
-function makePlaceholder(w, h, bg, accent, title) {
-    var c = document.createElement('canvas');
-    c.className = 'thumb';
-    c.width = w; c.height = h;
-    c.style.width = '100%';
-    c.style.height = 'auto';
-    c.style.aspectRatio = w+'/'+h;
-    var ctx = c.getContext('2d');
-    // 배경 그라디언트
-    var grd = ctx.createLinearGradient(0, 0, w, h);
-    grd.addColorStop(0, bg);
-    grd.addColorStop(1, shadeColor(bg, 20));
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, w, h);
-    // 노이즈 텍스처 느낌
-    for (var i = 0; i < 80; i++) {
-        ctx.fillStyle = 'rgba(255,255,255,0.02)';
-        ctx.fillRect(Math.random()*w, Math.random()*h, Math.random()*60+10, Math.random()*60+10);
-    }
-    // 악센트 원
-    var rad = ctx.createRadialGradient(w*0.6, h*0.4, 0, w*0.6, h*0.4, w*0.5);
-    rad.addColorStop(0, accent+'44');
-    rad.addColorStop(1, 'transparent');
-    ctx.fillStyle = rad;
-    ctx.fillRect(0, 0, w, h);
-    // 악센트 작은 원 (하이라이트)
-    ctx.beginPath();
-    ctx.arc(w*0.62, h*0.38, w*0.06, 0, Math.PI*2);
-    ctx.fillStyle = accent+'33';
-    ctx.fill();
-    // 제목 텍스트 (희미하게)
-    ctx.fillStyle = 'rgba(255,255,255,0.08)';
-    ctx.font = 'bold '+Math.floor(h*0.12)+'px -apple-system,sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(title, w*0.06, h*0.75);
-    return c;
+var W = window.innerWidth, H = window.innerHeight;
+var renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(50, W/H, 0.1, 100);
+camera.position.set(0, 0, 7);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+var dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(3, 5, 5);
+scene.add(dirLight);
+var rimLight = new THREE.DirectionalLight(0xaabbff, 0.3);
+rimLight.position.set(-4, 2, -3);
+scene.add(rimLight);
+
+var CARD_W = 2.8, CARD_H = 1.75;
+var SPREAD = 3.2;
+var cards = [];
+var targetX = 0, currentX = 0;
+var dragging = false, dragStartX = 0, dragDeltaX = 0;
+var hoveredIdx = -1;
+
+// 플레이스홀더 텍스처 생성
+function makeTexture(p) {
+  var c = document.createElement('canvas');
+  c.width = 800; c.height = 500;
+  var ctx = c.getContext('2d');
+  // 배경
+  var grd = ctx.createLinearGradient(0,0,800,500);
+  grd.addColorStop(0, p.bg);
+  grd.addColorStop(1, shadeHex(p.bg, 30));
+  ctx.fillStyle = grd;
+  ctx.fillRect(0,0,800,500);
+  // 글로우
+  var rad = ctx.createRadialGradient(500,200,0,500,200,400);
+  rad.addColorStop(0, p.accent+'55');
+  rad.addColorStop(1, 'transparent');
+  ctx.fillStyle = rad;
+  ctx.fillRect(0,0,800,500);
+  // 노이즈
+  for(var i=0;i<120;i++){ctx.fillStyle='rgba(255,255,255,0.015)';ctx.fillRect(Math.random()*800,Math.random()*500,Math.random()*80+5,Math.random()*80+5);}
+  // 제목
+  ctx.fillStyle = 'rgba(255,255,255,0.12)';
+  ctx.font = 'bold 64px -apple-system,sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(p.title, 48, 420);
+  // 날짜
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  ctx.font = '18px monospace';
+  ctx.fillText(p.date, 48, 460);
+  // 악센트 라인
+  ctx.fillStyle = p.accent;
+  ctx.fillRect(48, 48, 3, 80);
+  var tex = new THREE.CanvasTexture(c);
+  // 실제 썸네일 있으면 덮어쓰기
+  var img = new Image();
+  img.onload = function(){tex.image=img;tex.needsUpdate=true;};
+  img.src = p.thumb;
+  return tex;
 }
 
-function shadeColor(hex, amt) {
-    var r = parseInt(hex.slice(1,3)||'00',16);
-    var g = parseInt(hex.slice(3,5)||'00',16);
-    var b = parseInt(hex.slice(5,7)||'00',16);
-    return '#'+[r,g,b].map(function(v){return Math.min(255,v+amt).toString(16).padStart(2,'0');}).join('');
+function shadeHex(hex, amt) {
+  var r=parseInt(hex.slice(1,3)||'00',16),g=parseInt(hex.slice(3,5)||'00',16),b=parseInt(hex.slice(5,7)||'00',16);
+  return '#'+[r,g,b].map(function(v){return Math.min(255,v+amt).toString(16).padStart(2,'0');}).join('');
 }
 
-function makeCard(p, thumbW, thumbH) {
-    var a = document.createElement('a');
-    a.className = 'card';
-    a.href = p.path;
-    // 썸네일
-    var wrap = document.createElement('div');
-    wrap.className = 'thumb-wrap';
-    var ph = makePlaceholder(thumbW, thumbH, p.color, p.color2, p.title);
-    wrap.appendChild(ph);
-    a.appendChild(wrap);
-    // 정보
-    var info = document.createElement('div');
-    info.className = 'card-info';
-    info.innerHTML = '<div class="left"><div class="card-title">'+p.title+'</div><div class="card-desc">'+p.desc+'</div></div><div class="card-date">'+p.date+'</div>';
-    a.appendChild(info);
-    return a;
+// 카드 메쉬 생성
+projects.forEach(function(p, i) {
+  var geo = new THREE.PlaneGeometry(CARD_W, CARD_H, 1, 1);
+  var tex = makeTexture(p);
+  var mat = new THREE.MeshStandardMaterial({map:tex, side:THREE.FrontSide});
+  var mesh = new THREE.Mesh(geo, mat);
+  // 뒷면 (약간 어둡게)
+  var backMat = new THREE.MeshStandardMaterial({color:0x111111});
+  var backGeo = new THREE.PlaneGeometry(CARD_W, CARD_H);
+  var back = new THREE.Mesh(backGeo, backMat);
+  back.rotation.y = Math.PI;
+  back.position.z = -0.005;
+  var group = new THREE.Group();
+  group.add(mesh);
+  group.add(back);
+  group.userData = {idx: i, project: p};
+  scene.add(group);
+  cards.push(group);
+});
+
+// 카드 위치 계산
+function layoutCards(offset) {
+  var centerF = -offset / SPREAD;
+  cards.forEach(function(g, i) {
+    var relF = i - centerF;
+    var angle = relF * 0.38;
+    var tx = relF * SPREAD;
+    var tz = -Math.abs(relF) * 1.2;
+    var ty = 0;
+    g.position.x += (tx - g.position.x) * 0.1;
+    g.position.z += (tz - g.position.z) * 0.1;
+    g.position.y += (ty - g.position.y) * 0.1;
+    g.rotation.y += (-angle - g.rotation.y) * 0.1;
+    // 스케일 — 중앙에 가까울수록 크게
+    var sc = 1 - Math.min(Math.abs(relF) * 0.08, 0.3);
+    g.scale.setScalar(sc + (g.scale.x - sc) * 0.9);
+  });
+  // 포커스 카드 찾기
+  var fi = Math.round(centerF);
+  fi = Math.max(0, Math.min(projects.length-1, fi));
+  if (fi !== hoveredIdx) {
+    hoveredIdx = fi;
+    document.getElementById('lbl-title').textContent = projects[fi].title;
+    document.getElementById('lbl-desc').textContent = projects[fi].desc;
+    document.getElementById('lbl-date').textContent = projects[fi].date;
+    document.getElementById('label').style.opacity = '1';
+  }
 }
 
-var mag = document.getElementById('magazine');
+// 입력
+var lastMouseX = 0;
+renderer.domElement.addEventListener('pointerdown', function(e) {
+  dragging = true; dragStartX = e.clientX; dragDeltaX = 0;
+  lastMouseX = e.clientX;
+});
+renderer.domElement.addEventListener('pointermove', function(e) {
+  if (!dragging) return;
+  var dx = e.clientX - lastMouseX;
+  targetX += dx * 0.012;
+  lastMouseX = e.clientX;
+  dragDeltaX = Math.abs(e.clientX - dragStartX);
+});
+renderer.domElement.addEventListener('pointerup', function(e) {
+  dragging = false;
+  // 짧은 클릭이면 이동
+  if (dragDeltaX < 8 && hoveredIdx >= 0) {
+    window.location.href = projects[hoveredIdx].path;
+  }
+  // 스냅
+  targetX = Math.round(targetX);
+});
+renderer.domElement.addEventListener('wheel', function(e) {
+  targetX += e.deltaY * 0.004 + e.deltaX * 0.004;
+}, {passive:true});
 
-// 행 1 — 히어로 2개
-var r1 = document.createElement('div'); r1.className='row-hero';
-r1.appendChild(makeCard(projects[0], 640, 480));
-r1.appendChild(makeCard(projects[1], 480, 320));
-mag.appendChild(r1);
+// 경계
+var MIN_X = 0, MAX_X = projects.length - 1;
 
-// 행 2 — 3개
-var r2 = document.createElement('div'); r2.className='row-three';
-r2.appendChild(makeCard(projects[2], 400, 280));
-r2.appendChild(makeCard(projects[3], 400, 280));
-r2.appendChild(makeCard(projects[4], 400, 280));
-mag.appendChild(r2);
+var clk = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  targetX = Math.max(MIN_X, Math.min(MAX_X, targetX));
+  currentX += (targetX - currentX) * 0.1;
+  layoutCards(currentX);
+  // 배경 컬러 변화
+  var fi = Math.round(currentX);
+  fi = Math.max(0, Math.min(projects.length-1, fi));
+  var bgHex = projects[fi].bg;
+  var r=parseInt(bgHex.slice(1,3)||'00',16)/255;
+  var g=parseInt(bgHex.slice(3,5)||'00',16)/255;
+  var b=parseInt(bgHex.slice(5,7)||'00',16)/255;
+  scene.background = new THREE.Color(r*0.5, g*0.5, b*0.5);
+  renderer.render(scene, camera);
+}
 
-// 행 3 — 4개
-var r3 = document.createElement('div'); r3.className='row-four';
-r3.appendChild(makeCard(projects[5], 300, 200));
-r3.appendChild(makeCard(projects[6], 300, 200));
-r3.appendChild(makeCard(projects[7], 300, 200));
-r3.appendChild(makeCard(projects[8], 300, 200));
-mag.appendChild(r3);
+// 초기 위치
+cards.forEach(function(g, i) {
+  g.position.set(i * SPREAD, 0, -Math.abs(i) * 1.2);
+  g.rotation.y = -i * 0.38;
+});
+
+// 인트로 애니메이션 — 처음에 접혀있다가 펼쳐짐
+var introTime = 0;
+var INTRO_DUR = 1.2;
+var originalPositions = cards.map(function(g) { return {x:0,z:-15,ry:0}; });
+cards.forEach(function(g,i){g.position.set(0,0,-15);g.rotation.y=0;g.scale.setScalar(0.01);});
+
+function animateIntro() {
+  introTime += 0.016;
+  var t = Math.min(introTime/INTRO_DUR, 1);
+  var ease = 1 - Math.pow(1-t, 3);
+  cards.forEach(function(g, i) {
+    var delay = i * 0.06;
+    var lt = Math.max(0, Math.min((introTime - delay)/(INTRO_DUR*0.7), 1));
+    var le = 1 - Math.pow(1-lt, 3);
+    var tx = i * SPREAD, tz = -Math.abs(i - (projects.length-1)*0.5) * 1.2;
+    g.position.x = tx * le;
+    g.position.z = -15 + (tz+15) * le;
+    g.rotation.y = -(i - (projects.length-1)*0.5) * 0.38 * le;
+    g.scale.setScalar(le * (1 - Math.abs(i - (projects.length-1)*0.5) * 0.08));
+  });
+  renderer.render(scene, camera);
+  if (introTime < INTRO_DUR + cards.length * 0.06) {
+    requestAnimationFrame(animateIntro);
+  } else {
+    animate();
+  }
+}
+
+animateIntro();
+
+window.addEventListener('resize', function(){
+  W=window.innerWidth; H=window.innerHeight;
+  camera.aspect=W/H; camera.updateProjectionMatrix();
+  renderer.setSize(W,H);
+});
 </script>
 </body>
 </html>
