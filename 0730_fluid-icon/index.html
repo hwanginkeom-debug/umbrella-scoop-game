@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluid Ghost</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#0a0010;overflow:hidden;cursor:none;}
+  canvas{display:block;}
+  .back-btn{position:fixed;top:12px;left:12px;z-index:999;color:rgba(200,150,255,0.6);font-size:10px;font-family:monospace;text-decoration:none;}
+  .back-btn:hover{color:#fff;}
+  #hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);color:rgba(200,150,255,0.4);font-size:11px;font-family:monospace;letter-spacing:1px;pointer-events:none;animation:fh 5s forwards;}
+  @keyframes fh{0%,70%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<a href="../bridge.html" class="back-btn">← BACK</a>
+<canvas id="c"></canvas>
+<div id="hint">마우스를 움직여보세요</div>
+<script>
+var W = window.innerWidth, H = window.innerHeight;
+var cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+var ctx = cv.getContext('2d');
+
+// displacement 필드
+var GW = 128, GH = 128;
+// 각 셀: dx, dy (현재 변위), vx, vy (속도)
+var dx = new Float32Array(GW*GH);
+var dy = new Float32Array(GW*GH);
+var vx = new Float32Array(GW*GH);
+var vy = new Float32Array(GW*GH);
+
+var SPRING  = 0.04;  // 복원력
+var DAMP    = 0.88;  // 감쇠 — 높을수록 오래 진동
+var SPREAD  = 0.18;  // 인접 전파
+
+function update() {
+  var nx, ny, i, j;
+  var ndx = new Float32Array(GW*GH);
+  var ndy = new Float32Array(GW*GH);
+
+  for (var y = 1; y < GH-1; y++) {
+    for (var x = 1; x < GW-1; x++) {
+      i = y*GW+x;
+      // 스프링 — 원점 복원
+      var ax = -SPRING * dx[i];
+      var ay = -SPRING * dy[i];
+      // 인접 전파 (라플라시안)
+      ax += SPREAD * (dx[i-1]+dx[i+1]+dx[i-GW]+dx[i+GW] - 4*dx[i]);
+      ay += SPREAD * (dy[i-1]+dy[i+1]+dy[i-GW]+dy[i+GW] - 4*dy[i]);
+      vx[i] = (vx[i] + ax) * DAMP;
+      vy[i] = (vy[i] + ay) * DAMP;
+      ndx[i] = dx[i] + vx[i];
+      ndy[i] = dy[i] + vy[i];
+    }
+  }
+  dx = ndx; dy = ndy;
+}
+
+function addForce(px, py, fx, fy) {
+  var r = 10;
+  var gx0 = Math.floor(px/W*GW);
+  var gy0 = Math.floor(py/H*GH);
+  for (var dy2 = -r; dy2 <= r; dy2++) {
+    for (var dx2 = -r; dx2 <= r; dx2++) {
+      var d = Math.sqrt(dx2*dx2+dy2*dy2);
+      if (d < r) {
+        var nx = gx0+dx2, ny = gy0+dy2;
+        if (nx>0&&nx<GW-1&&ny>0&&ny<GH-1) {
+          var w = (1-d/r);
+          vx[ny*GW+nx] += fx * w;
+          vy[ny*GW+nx] += fy * w;
+        }
+      }
+    }
+  }
+}
+
+// 마우스
+var mx=-1, my=-1, pmx=-1, pmy=-1;
+cv.addEventListener('mousemove', function(e) {
+  mx=e.clientX; my=e.clientY;
+  if (pmx>=0) {
+    var spd = Math.sqrt((mx-pmx)**2+(my-pmy)**2);
+    addForce(mx,my,(mx-pmx)*0.12*Math.min(spd/8,1),(my-pmy)*0.12*Math.min(spd/8,1));
+  }
+  pmx=mx; pmy=my;
+});
+cv.addEventListener('mouseleave',function(){mx=-1;my=-1;pmx=-1;pmy=-1;});
+cv.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  var t=e.touches[0];
+  if(pmx>=0) addForce(t.clientX,t.clientY,(t.clientX-pmx)*0.1,(t.clientY-pmy)*0.1);
+  pmx=t.clientX;pmy=t.clientY;
+},{passive:false});
+
+// 이미지 로드
+var img=new Image(), imgReady=false;
+img.onload=function(){imgReady=true;};
+img.src='./kiro-color.png';
+
+// 이미지 픽셀 캐시
+var cachedPixels=null, cacheW=0, cacheH=0;
+function cacheImg() {
+  if (!imgReady||cachedPixels) return;
+  var tmp=document.createElement('canvas');
+  tmp.width=W; tmp.height=H;
+  var tc=tmp.getContext('2d');
+  tc.fillStyle='#0a0010'; tc.fillRect(0,0,W,H);
+  var scale=Math.min(W/img.width,H/img.height)*0.85;
+  var iw=img.width*scale, ih=img.height*scale;
+  var ix=(W-iw)/2, iy=(H-ih)/2;
+  tc.drawImage(img,ix,iy,iw,ih);
+  cachedPixels=tc.getImageData(0,0,W,H);
+  cacheW=W; cacheH=H;
+}
+
+var outImg=ctx.createImageData(W,H);
+
+function render() {
+  if (!imgReady) { ctx.fillStyle='#0a0010'; ctx.fillRect(0,0,W,H); return; }
+  cacheImg();
+
+  var scaleX=W/GW, scaleY=H/GH;
+  var src=cachedPixels.data;
+
+  for (var y=0;y<H;y++) {
+    for (var x=0;x<W;x++) {
+      var gx=Math.min(GW-2,Math.floor(x/scaleX));
+      var gy=Math.min(GH-2,Math.floor(y/scaleY));
+      var gi=gy*GW+gx;
+      // bilinear blend
+      var tx=(x/scaleX)-gx, ty=(y/scaleY)-gy;
+      var ddx = dx[gi]*(1-tx)*(1-ty)+dx[gi+1]*tx*(1-ty)+dx[gi+GW]*(1-tx)*ty+dx[gi+GW+1]*tx*ty;
+      var ddy = dy[gi]*(1-tx)*(1-ty)+dy[gi+1]*tx*(1-ty)+dy[gi+GW]*(1-tx)*ty+dy[gi+GW+1]*tx*ty;
+      var sx=Math.max(0,Math.min(W-1,Math.round(x+ddx*scaleX*6)));
+      var sy=Math.max(0,Math.min(H-1,Math.round(y+ddy*scaleY*6)));
+      var di=(y*W+x)*4;
+      var si=(sy*W+sx)*4;
+      outImg.data[di]=src[si];
+      outImg.data[di+1]=src[si+1];
+      outImg.data[di+2]=src[si+2];
+      outImg.data[di+3]=255;
+    }
+  }
+  ctx.putImageData(outImg,0,0);
+  // 커서
+  if(mx>0){
+    ctx.save();
+    ctx.beginPath(); ctx.arc(mx,my,5,0,Math.PI*2);
+    ctx.strokeStyle='rgba(200,150,255,0.8)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.beginPath(); ctx.arc(mx,my,1.5,0,Math.PI*2);
+    ctx.fillStyle='rgba(220,180,255,1)'; ctx.fill();
+    ctx.restore();
+  }
+}
+
+function loop(){
+  requestAnimationFrame(loop);
+  update();
+  render();
+}
+
+(function wait(){imgReady?loop():setTimeout(wait,30);})();
+window.addEventListener('resize',function(){location.reload();});
+</script>
+</body>
+</html>
