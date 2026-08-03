@@ -23,7 +23,7 @@
 </style>
 </head>
 <body>
-<div id="hint">← 드래그 →</div>
+
 <div id="label" style="opacity:0">
   <div class="title" id="lbl-title"></div>
   <div class="desc" id="lbl-desc"></div>
@@ -33,15 +33,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 var projects = [
-  { title:'자유', desc:'구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.', path:'./0803_free/jayu-voxel-drop_2.html', date:'2026.07.30', bg:'#1a1a2e', accent:'#e8e0ff', thumb:'./0803_free/thumb.png' },
-  { title:'굿바이 키로', desc:'할루시네이션과 싸워보세요', path:'./0730_fluid-icon/index.html', date:'2026.08.03', bg:'#0a0010', accent:'#cc88ff', thumb:'./0730_fluid-icon/thumb.png' },
-  { title:'인간은 에일리언', desc:'외계인의 입장에서 지구인들을 바라보세요', path:'./0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html', date:'2026.07.30', bg:'#050a18', accent:'#4aefcc', thumb:'./0730_ alien-fluid-reveal_3/thumb.png' },
-  { title:'원두 월드', desc:'커피를 볶고 원두 향을 상상하세요', path:'./0729_coffee_poster/index.html', date:'2026.07.29', bg:'#5c2a08', accent:'#c47a3a', thumb:'./0729_coffee_poster/thumb.png' },
-  { title:'$$$인생역전드루와$$$', desc:'집에서도 할 수 있는 부업입니다', path:'./0728_자판기/index.html', date:'2026.07.28', bg:'#0a0a14', accent:'#ffdd44', thumb:'./0728_자판기/thumb.png' },
-  { title:'김밥천국', desc:'무슨 김밥을 좋아해?', path:'./0727_kimbap/index3d.html', date:'2026.07.27', bg:'#1a0f08', accent:'#66cc44', thumb:'./0727_kimbap/thumb.png' },
-  { title:'비상', desc:'오늘도 똑같은 하루였다', path:'./0724_interactive_movie/index.html', date:'2026.07.24', bg:'#0a0a14', accent:'#ffffff', thumb:'./0724_interactive_movie/thumb.png' },
-  { title:'어금니 과일', desc:'누구나 어금니에 조금씩 과일을 숨겨둔다', path:'./0723_vibe3/index.html', date:'2026.07.23', bg:'#0a0a0a', accent:'#cc1133', thumb:'./0723_vibe3/thumb.png' },
-  { title:'집샌물샌', desc:'클릭하여 비에 잠기는 집을 구하라', path:'./index.html', date:'2026.07.16', bg:'#1a1a2e', accent:'#3388ff', thumb:'./thumb.png' },
+  { title:'굿바이 키로', desc:'할루시네이션과 싸워보세요', path:'./0730_fluid-icon/index.html', date:'2026.08.03', bg:'#0a0010', accent:'#cc88ff', thumb:'./썸네일/굿바이-키로.jpg' },
+  { title:'자유', desc:'구체적이지 않고 겉보기에만 그럴싸한 자유는 언젠가 사라집니다.', path:'./0803_free/jayu-voxel-drop_2.html', date:'2026.07.30', bg:'#1a1a2e', accent:'#e8e0ff', thumb:'./썸네일/자유.jpg' },
+  { title:'인간은 에일리언', desc:'외계인의 입장에서 지구인들을 바라보세요', path:'./0730_ alien-fluid-reveal_3/alien-fluid-reveal_3.html', date:'2026.07.30', bg:'#050a18', accent:'#4aefcc', thumb:'./썸네일/인간은-에일리언.jpg' },
+  { title:'원두 월드', desc:'커피를 볶고 원두 향을 상상하세요', path:'./0729_coffee_poster/index.html', date:'2026.07.29', bg:'#5c2a08', accent:'#c47a3a', thumb:'./썸네일/원두-월드.jpg' },
+  { title:'$$$인생역전드루와$$$', desc:'집에서도 할 수 있는 부업입니다', path:'./0728_자판기/index.html', date:'2026.07.28', bg:'#0a0a14', accent:'#ffdd44', thumb:'./썸네일/인생역전드루와.jpg' },
+  { title:'김밥천국', desc:'무슨 김밥을 좋아해?', path:'./0727_kimbap/index3d.html', date:'2026.07.27', bg:'#1a0f08', accent:'#66cc44', thumb:'./썸네일/김밥천국.jpg' },
+  { title:'비상', desc:'오늘도 똑같은 하루였다', path:'./0724_interactive_movie/index.html', date:'2026.07.24', bg:'#0a0a14', accent:'#ffffff', thumb:'./썸네일/비상.jpg' },
+  { title:'어금니 과일', desc:'누구나 어금니에 조금씩 과일을 숨겨둔다', path:'./0723_vibe3/index.html', date:'2026.07.23', bg:'#0a0a0a', accent:'#cc1133', thumb:'./썸네일/어금니-과일.jpg' },
+  { title:'집샌물샌', desc:'클릭하여 비에 잠기는 집을 구하라', path:'./index.html', date:'2026.07.16', bg:'#1a1a2e', accent:'#3388ff', thumb:'./썸네일/집샌물샌.jpg' },
 ];
 
 var W = window.innerWidth, H = window.innerHeight;
