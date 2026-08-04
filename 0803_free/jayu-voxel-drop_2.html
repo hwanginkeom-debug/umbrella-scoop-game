@@ -136,7 +136,7 @@
       for (let i = 0; i < lines.length; i++) g.fillText(lines[i], W / 2, pad + lineH * (i + 0.5));
 
       const s = Math.min(ENV_W / W, ENV_H / H);
-      const stepPx = Math.max(1, DVS / s);
+      const stepPx = Math.max(1, (isWord ? DVS : DVS * 0.55) / s);
       const d = g.getImageData(0, 0, W, H).data;
       const positions = [];
       for (let y = 0; y < H; y += stepPx) {
